@@ -1,0 +1,6 @@
+[submodule "rectpack2d-rs"]
+	path = rectpack2d-rs
+	url = git@github.com:lyorig/rectpack2d-rs
+[submodule "halcyon-rs"]
+	path = halcyon-rs
+	url = git@github.com:lyorig/halcyon-rs.git
