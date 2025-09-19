@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 sdl3-sys = "0.5.5"
-halcyon = { path = "halcyon" }
+halcyon = { path = "halcyon-rs" }
 rectpack2d-rs = { path = "rectpack2d-rs" }
 
 # [target.release]
