@@ -16,6 +16,26 @@ struct Data {
     staged: RectXYWH,
 }
 
+impl Data {
+    pub fn new(s: Surface) -> Self {
+        let sz = s.size();
+        Self {
+            source: Some(s),
+            area: SDL_FRect::default(),
+            staged: RectXYWH::from_wh(sz.0, sz.1),
+        }
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.staged.x != -1
+    }
+
+    pub fn invalidate(&mut self) {
+        self.source = None;
+        self.staged.x = -1;
+    }
+}
+
 impl<'a> From<&'a Data> for &'a RectXYWH {
     fn from(value: &'a Data) -> Self {
         &value.staged
@@ -50,6 +70,33 @@ impl Atlas {
             pack_queued: false,
             texture: MaybeUninit::uninit(),
         }
+    }
+
+    pub fn push(&mut self, s: Surface) -> usize {
+        let data = Data::new(s);
+
+        let mut i = 0;
+        while i < self.data.len() {
+            let foo = &mut self.data[i];
+            if !foo.is_valid() {
+                *foo = data;
+                return i;
+            }
+
+            i += 1;
+        }
+
+        self.data.push(data);
+
+        i
+    }
+
+    pub fn remove(&mut self, i: usize) {
+        if self.data.len() <= i {
+            return;
+        }
+
+        self.data[i].invalidate();
     }
 
     pub fn pack(&mut self, rnd: RendererRef) {

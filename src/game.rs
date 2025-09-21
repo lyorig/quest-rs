@@ -1,7 +1,7 @@
 use halcyon::{
     event::{Event, EventIter},
-    keyboard::key_name,
     renderer::{Renderer, RendererBuilder},
+    subsystem::Video,
     window::{Window, WindowBuilder},
 };
 
@@ -17,11 +17,11 @@ pub struct Game {
 
 impl Game {
     /// Create a new game.
-    pub fn new() -> Self {
+    pub fn new(vid: &Video) -> Self {
         let window = WindowBuilder::new()
             .size((640, 480))
             .title(c"HalodaQuest [Euclid]")
-            .build()
+            .build(vid)
             .expect("Window creation failed");
 
         let renderer = RendererBuilder::new(&window)
@@ -48,15 +48,6 @@ impl Game {
 
             for evt in EventIter::new() {
                 match evt {
-                    Event::WindowMoved(e) => {
-                        self.debug
-                            .print(&format!("Window moved to [{},{}]", e.data1, e.data2));
-                    }
-                    Event::KeyDown(e) => {
-                        if !e.repeat {
-                            self.debug.print(&format!("Key {} down", key_name(e.key)))
-                        }
-                    }
                     Event::Quit => self.running = false,
                     _ => (),
                 }
