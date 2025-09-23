@@ -1,7 +1,5 @@
-use halcyon::coord::Pixel;
-
 struct Console {}
 
 impl Console {
-    fn new((rnd_x, rnd_y): (Pixel, Pixel)) {}
+    fn new((rnd_x, rnd_y): (i32, i32)) {}
 }

@@ -40,9 +40,19 @@ impl Game {
 
     /// Starts up the main loop.
     pub fn main_loop(&mut self) {
-        // Pre-loop: print debug info.
-        self.debug.print(&format!("Window ID {}", self.window.id()));
+        self.print_debug_data();
 
+        // I could probably just use a named loop and break it in case
+        // of a quit event, but there are two issues:
+        //
+        // 1) The Game class cannot easily be told to quit from other classes.
+        // 2) There are potentially important things running in the loop
+        // after events are polled, so breaking in the middle of polling events
+        // could cause some issues.
+        //
+        // In any case, it's literally one extra byte in exchange for a whole
+        // lot of extra flexibility, so I don't particularly mind implementing
+        // things this way.
         while self.running {
             let _ = self.renderer.clear();
 
@@ -57,5 +67,13 @@ impl Game {
 
             let _ = self.renderer.present();
         }
+    }
+
+    fn print_debug_data(&self) {
+        self.debug.print(&format!("Window ID {}", self.window.id()));
+        self.debug
+            .print(&format!("Rendering via \"{}\"", self.renderer.name()));
+        self.debug
+            .print(&format!("{} renderers available", Renderer::num_drivers()));
     }
 }
