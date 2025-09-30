@@ -1,6 +1,6 @@
 use std::mem::MaybeUninit;
 
-use halcyon::{renderer::RendererRef, surface::Surface, texture::Texture};
+use halcyon::{rect::RectF, renderer::RendererRef, surface::Surface, texture::Texture};
 use rectpack2d_rs::{
     best_bin_finder::CallbackResult,
     empty_space_allocators::DefaultEmptySpaces,
@@ -8,11 +8,11 @@ use rectpack2d_rs::{
     finders_interface::{Input, find_best_packing},
     rect_structs::RectXYWH,
 };
-use sdl3_sys::{pixels::SDL_PIXELFORMAT_RGBA32, rect::SDL_FRect, render::SDL_TEXTUREACCESS_TARGET};
+use sdl3_sys::{pixels::SDL_PIXELFORMAT_RGBA32, render::SDL_TEXTUREACCESS_TARGET};
 
 struct Data {
     source: Option<Surface>,
-    area: SDL_FRect,
+    area: RectF,
     staged: RectXYWH,
 }
 
@@ -21,7 +21,7 @@ impl Data {
         let sz = s.size();
         Self {
             source: Some(s),
-            area: SDL_FRect::default(),
+            area: Default::default(),
             staged: RectXYWH::from_wh(sz.0, sz.1),
         }
     }
@@ -99,7 +99,9 @@ impl Atlas {
         self.data[i].invalidate();
     }
 
-    pub fn pack(&mut self, rnd: RendererRef) {
+    pub fn pack(&mut self, rnd: impl Into<RendererRef>) {
+        let rnd = rnd.into();
+
         if !self.pack_queued {
             return;
         }
@@ -158,11 +160,6 @@ impl Atlas {
     }
 }
 
-fn to_frect(src: RectXYWH) -> SDL_FRect {
-    SDL_FRect {
-        x: src.x as f32,
-        y: src.y as f32,
-        w: src.w as f32,
-        h: src.h as f32,
-    }
+fn to_frect(src: RectXYWH) -> RectF {
+    RectF::new(src.x as f32, src.y as f32, src.w as f32, src.h as f32)
 }

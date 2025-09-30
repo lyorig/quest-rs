@@ -40,6 +40,7 @@ impl Game {
 
     /// Starts up the main loop.
     pub fn main_loop(&mut self) {
+        #[cfg(debug_assertions)]
         self.print_debug_data();
 
         // I could probably just use a named loop and break it in case
@@ -63,17 +64,25 @@ impl Game {
                 }
             }
 
-            self.atlas.pack(*self.renderer);
+            self.atlas.pack(&self.renderer);
 
             let _ = self.renderer.present();
         }
     }
 
+    #[cfg(debug_assertions)]
     fn print_debug_data(&self) {
+        use halcyon::context::Context;
+
+        self.debug
+            .print(&format!("Running on {}", Context::platform()));
+
         self.debug.print(&format!("Window ID {}", self.window.id()));
-        self.debug
-            .print(&format!("Rendering via \"{}\"", self.renderer.name()));
-        self.debug
-            .print(&format!("{} renderers available", Renderer::num_drivers()));
+
+        self.debug.print(&format!(
+            "Rendering via \"{}\" ({} available in total)",
+            self.renderer.name(),
+            Renderer::num_drivers()
+        ));
     }
 }
