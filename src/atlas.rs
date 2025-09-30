@@ -1,6 +1,6 @@
 use std::mem::MaybeUninit;
 
-use halcyon::{rect::RectF, renderer::RendererRef, surface::Surface, texture::Texture};
+use halcyon::{rect::RectF32, renderer::RendererRef, surface::Surface, texture::Texture};
 use rectpack2d_rs::{
     best_bin_finder::CallbackResult,
     empty_space_allocators::DefaultEmptySpaces,
@@ -12,7 +12,7 @@ use sdl3_sys::{pixels::SDL_PIXELFORMAT_RGBA32, render::SDL_TEXTUREACCESS_TARGET}
 
 struct Data {
     source: Option<Surface>,
-    area: RectF,
+    area: RectF32,
     staged: RectXYWH,
 }
 
@@ -22,7 +22,7 @@ impl Data {
         Self {
             source: Some(s),
             area: Default::default(),
-            staged: RectXYWH::from_wh(sz.0, sz.1),
+            staged: RectXYWH::from_wh(sz.x, sz.y),
         }
     }
 
@@ -160,6 +160,6 @@ impl Atlas {
     }
 }
 
-fn to_frect(src: RectXYWH) -> RectF {
-    RectF::new(src.x as f32, src.y as f32, src.w as f32, src.h as f32)
+fn to_frect(src: RectXYWH) -> RectF32 {
+    RectF32::new(src.x as f32, src.y as f32, src.w as f32, src.h as f32)
 }
