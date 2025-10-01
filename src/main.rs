@@ -4,7 +4,9 @@ use halcyon::{context::Context, subsystem::Video};
 mod atlas;
 mod console;
 mod debug;
+mod field;
 mod game;
+mod util;
 
 fn main() {
     let ctx = unsafe { Context::new() };
