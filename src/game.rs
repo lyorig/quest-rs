@@ -1,25 +1,28 @@
+use std::time::Instant;
+
 use halcyon::{
     event::{Event, EventIter},
+    rect::Point,
     renderer::{Renderer, RendererBuilder},
     subsystem::Video,
     window::{Window, WindowBuilder},
 };
 
-use crate::{atlas::Atlas, debugger::Debugger};
+use crate::atlas::Atlas;
 
 pub struct Game {
     window: Window,
     renderer: Renderer,
     running: bool,
-    debug: Debugger,
     atlas: Atlas,
+    epoch: Instant,
 }
 
 impl Game {
     /// Create a new game.
     pub fn new(vid: &Video) -> Self {
         let window = WindowBuilder::new()
-            .size((640, 480))
+            .size(Point::new(640, 480))
             .title(c"HalodaQuest [Euclid]")
             .build(vid)
             .expect("Window creation failed");
@@ -33,8 +36,8 @@ impl Game {
             window,
             renderer,
             running: true,
-            debug: Debugger::new(),
             atlas: Atlas::new(),
+            epoch: Instant::now(),
         }
     }
 
@@ -72,17 +75,18 @@ impl Game {
 
     #[cfg(debug_assertions)]
     fn print_debug_data(&self) {
+        use crate::dprint;
         use halcyon::context::Context;
 
-        self.debug
-            .print(&format!("Running on {}", Context::platform()));
+        let e = self.epoch;
 
-        self.debug.print(&format!("Window ID {}", self.window.id()));
-
-        self.debug.print(&format!(
+        dprint!(e, "Running on {}", Context::platform());
+        dprint!(e, "Window ID {}", self.window.id());
+        dprint!(
+            e,
             "Rendering via \"{}\" ({} available in total)",
             self.renderer.name(),
             Renderer::num_drivers()
-        ));
+        );
     }
 }

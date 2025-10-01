@@ -1,6 +1,11 @@
 use std::mem::MaybeUninit;
 
-use halcyon::{rect::RectF32, renderer::RendererRef, surface::Surface, texture::Texture};
+use halcyon::{
+    rect::{Point, RectF32},
+    renderer::RendererRef,
+    surface::Surface,
+    texture::Texture,
+};
 use rectpack2d_rs::{
     best_bin_finder::CallbackResult,
     empty_space_allocators::DefaultEmptySpaces,
@@ -120,7 +125,7 @@ impl Atlas {
             rnd,
             SDL_PIXELFORMAT_RGBA32,
             SDL_TEXTUREACCESS_TARGET,
-            (size.w, size.h),
+            Point::new(size.w, size.h),
         )
         .unwrap();
 

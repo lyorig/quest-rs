@@ -3,7 +3,7 @@ use halcyon::{context::Context, subsystem::Video};
 
 mod atlas;
 mod console;
-mod debugger;
+mod debug;
 mod game;
 
 fn main() {
