@@ -1,9 +1,4 @@
-use sdl3_sys::{
-    clipboard::SDL_HasClipboardText,
-    keycode::{
-        SDL_KMOD_CTRL, SDL_Keycode, SDLK_BACKSPACE, SDLK_LEFT, SDLK_RIGHT, SDLK_TAB, SDLK_V,
-    },
-};
+use sdl3_sys::{clipboard::SDL_HasClipboardText, keycode::*};
 
 struct Field {
     text: String,
@@ -123,13 +118,14 @@ impl Field {
                 if halcyon::keyboard::mod_state() & SDL_KMOD_CTRL != 0
                     && unsafe { SDL_HasClipboardText() }
                 {
-                    // let str = vid.clipboard();
-                    // const std::size_t sz { str.size() }; // one-time size calculation
-                    //
-                    // text.insert(cursor, str.c_str(), sz);
-                    // cursor += sz;
-                    //
-                    // return action::text_added;
+                    let clip = halcyon::clipboard::text();
+                    let size = clip.len();
+
+                    self.text.insert_str(self.cursor, &clip);
+
+                    self.cursor += size;
+
+                    return FieldAction::TextAdded;
                 }
             }
             _ => (),
@@ -138,9 +134,18 @@ impl Field {
         FieldAction::Noop
     }
 
-    pub fn trim(&self, off: usize) {}
+    pub fn trim(&mut self, off: usize) {
+        if self.cursor > off {
+            self.cursor -= self.cursor - off;
+        }
 
-    pub fn clear(&self) {}
+        self.text.remove(off);
+    }
+
+    pub fn clear(&mut self) {
+        self.text.clear();
+        self.cursor = 0;
+    }
 
     fn char_at(&self, i: usize) -> char {
         self.text.chars().nth(i).unwrap()

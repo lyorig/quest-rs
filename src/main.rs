@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use game::Game;
 use halcyon::{context::Context, subsystem::Video};
 
