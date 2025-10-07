@@ -1,6 +1,7 @@
 use std::time::Instant;
 
 use halcyon::{
+    color::Rgba,
     event::{Event, EventIter},
     rect::Point,
     renderer::{Renderer, RendererBuilder},
@@ -45,6 +46,8 @@ impl Game {
     pub fn main_loop(&mut self) {
         #[cfg(debug_assertions)]
         self.print_debug_data();
+        self.draw_gradient();
+        let _ = self.renderer.present();
 
         // I could probably just use a named loop and break it in case
         // of a quit event, but there are two issues:
@@ -58,18 +61,12 @@ impl Game {
         // lot of extra flexibility, so I don't particularly mind implementing
         // things this way.
         while self.running {
-            let _ = self.renderer.clear();
-
             for evt in EventIter::new() {
                 match evt {
                     Event::Quit => self.running = false,
                     _ => (),
                 }
             }
-
-            self.atlas.pack(&self.renderer);
-
-            let _ = self.renderer.present();
         }
     }
 
@@ -88,5 +85,34 @@ impl Game {
             self.renderer.name(),
             Renderer::num_drivers()
         );
+    }
+
+    fn draw_gradient(&self) {
+        let prev_col = self.renderer.draw_color_f32();
+        let mut size = self.renderer.output_size();
+
+        let mut col = Rgba::rgb(1., 1., 1.);
+        let mut step = -0.01;
+
+        while size.x != 0 {
+            self.renderer.set_draw_color_f32(col);
+            let _ = self.renderer.draw_line(
+                Point::new(size.x as _, 0.),
+                Point::new(size.x as _, size.y as _),
+            );
+
+            col.rgb.r += step;
+            if col.rgb.r <= 0. {
+                col.rgb.r = 0.;
+                step = 0.01;
+            } else if col.rgb.r >= 1. {
+                col.rgb.r = 1.;
+                step = -0.01;
+            }
+
+            size.x -= 1;
+        }
+
+        self.renderer.set_draw_color_f32(prev_col);
     }
 }
