@@ -6,6 +6,7 @@ use halcyon::{
     surface::Surface,
     texture::Texture,
 };
+
 use rectpack2d_rs::{
     best_bin_finder::CallbackResult,
     empty_space_allocators::DefaultEmptySpaces,
@@ -13,6 +14,7 @@ use rectpack2d_rs::{
     finders_interface::{Input, find_best_packing},
     rect_structs::RectXYWH,
 };
+
 use sdl3_sys::{pixels::SDL_PIXELFORMAT_RGBA32, render::SDL_TEXTUREACCESS_TARGET};
 
 struct Data {
@@ -20,6 +22,9 @@ struct Data {
     area: RectF32,
     staged: RectXYWH,
 }
+
+/// Resize in accordance with expected required atlas capacity.
+pub type AtlasId = u8;
 
 impl Data {
     pub fn new(s: Surface) -> Self {
@@ -77,7 +82,7 @@ impl Atlas {
         }
     }
 
-    pub fn push(&mut self, s: Surface) -> usize {
+    pub fn push(&mut self, s: Surface) -> AtlasId {
         let data = Data::new(s);
 
         let mut i = 0;
@@ -85,7 +90,7 @@ impl Atlas {
             let foo = &mut self.data[i];
             if !foo.is_valid() {
                 *foo = data;
-                return i;
+                return i as _;
             }
 
             i += 1;
@@ -93,15 +98,15 @@ impl Atlas {
 
         self.data.push(data);
 
-        i
+        i as _
     }
 
-    pub fn remove(&mut self, i: usize) {
-        if self.data.len() <= i {
+    pub fn remove(&mut self, i: AtlasId) {
+        if self.data.len() <= i as _ {
             return;
         }
 
-        self.data[i].invalidate();
+        self.data[i as usize].invalidate();
     }
 
     pub fn pack(&mut self, rnd: impl Into<RendererRef>) {

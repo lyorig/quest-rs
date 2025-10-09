@@ -1,11 +1,12 @@
-use sdl3_sys::{clipboard::SDL_HasClipboardText, keycode::*};
+use halcyon::clipboard;
+use sdl3_sys::keycode::*;
 
-struct Field {
-    text: String,
-    cursor: usize,
+pub struct Field {
+    pub text: String,
+    pub cursor: usize,
 }
 
-enum FieldAction {
+pub enum FieldAction {
     Noop,
     TextAdded,
     TextRemoved,
@@ -115,10 +116,8 @@ impl Field {
             }
 
             SDLK_V => {
-                if halcyon::keyboard::mod_state() & SDL_KMOD_CTRL != 0
-                    && unsafe { SDL_HasClipboardText() }
-                {
-                    let clip = halcyon::clipboard::text();
+                if halcyon::keyboard::mod_state() & SDL_KMOD_CTRL != 0 && clipboard::has_text() {
+                    let clip = clipboard::text();
                     let size = clip.len();
 
                     self.text.insert_str(self.cursor, &clip);

@@ -2,50 +2,70 @@ use std::time::Instant;
 
 use halcyon::{
     color::Rgba,
+    defs::SdlResult,
     event::{Event, EventIter},
     rect::Point,
     renderer::{Renderer, RendererBuilder},
     subsystem::Video,
+    ttf::TtfContext,
     window::{Window, WindowBuilder},
 };
+use sdl3_sys::keycode::SDLK_F1;
 
-use crate::atlas::Atlas;
+use crate::{
+    atlas::Atlas,
+    console::{Console, ConsoleState},
+    resource_loader::ResourceLoader,
+};
 
 pub struct Game {
-    window: Window,
-    renderer: Renderer,
-    running: bool,
-    atlas: Atlas,
-    epoch: Instant,
+    pub running: bool,
+    pub epoch: Instant,
+    pub res_ldr: ResourceLoader,
+
+    pub atlas: Atlas,
+    console: Console,
+
+    pub renderer: Renderer,
+    pub window: Window,
+
+    pub ttf: TtfContext,
 }
 
 impl Game {
     /// Create a new game.
-    pub fn new(vid: &Video) -> Self {
+    pub fn new(vid: &Video) -> SdlResult<Self> {
+        let ttf = TtfContext::new().expect("Should be able to initialize TTF");
+
         let window = WindowBuilder::new()
-            .size(Point::new(640, 480))
+            .size(Point::new(1280, 720))
+            .position(Point::new(Window::POS_CENTERED, Window::POS_CENTERED))
             .title(c"HalodaQuest [Euclid]")
-            .build(vid)
-            .expect("Window creation failed");
+            .build(vid)?;
 
-        let renderer = RendererBuilder::new(&window)
-            .vsync(1)
-            .build()
-            .expect("Renderer creation failed");
+        let renderer = RendererBuilder::new(&window).vsync(1).build()?;
 
-        Self {
-            window,
-            renderer,
+        let epoch = Instant::now();
+        let res_ldr = ResourceLoader::new();
+        let console = Console::new(&renderer, &ttf, epoch, res_ldr)?;
+
+        Ok(Self {
             running: true,
-            atlas: Atlas::new(),
             epoch: Instant::now(),
-        }
+            res_ldr,
+            atlas: Atlas::new(),
+            console,
+            renderer,
+            window,
+            ttf,
+        })
     }
 
     /// Starts up the main loop.
     pub fn main_loop(&mut self) {
         #[cfg(debug_assertions)]
         self.print_debug_data();
+
         self.draw_gradient();
         let _ = self.renderer.present();
 
@@ -64,6 +84,14 @@ impl Game {
             for evt in EventIter::new() {
                 match evt {
                     Event::Quit => self.running = false,
+                    Event::KeyDown(e) => match e.key {
+                        SDLK_F1 => self.console.switch(&mut self.atlas, &self.window),
+                        _ => (),
+                    },
+                    Event::TextInput(_e) => {
+                        if let ConsoleState::Enabled(_ac) = &self.console.state {}
+                    }
+
                     _ => (),
                 }
             }
@@ -104,10 +132,10 @@ impl Game {
             col.rgb.r += step;
             if col.rgb.r <= 0. {
                 col.rgb.r = 0.;
-                step = 0.01;
+                step = -step;
             } else if col.rgb.r >= 1. {
                 col.rgb.r = 1.;
-                step = -0.01;
+                step = -step;
             }
 
             size.x -= 1;

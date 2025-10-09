@@ -1,22 +1,23 @@
-use std::ffi::CStr;
+use std::{ffi::CStr, ptr::NonNull};
 
-use halcyon::ttf::{Font, Text, TtfContext};
+use halcyon::{
+    defs::SdlResult,
+    ttf::{Font, Text, TtfContext},
+};
 
-pub fn find_sized_font(ttf: &TtfContext, rel_path: &CStr, desired_height: i32) -> Font {
+pub fn find_sized_font(ttf: &TtfContext, rel_path: &CStr, desired_height: f32) -> SdlResult<Font> {
     const INCR: f32 = 1.;
     let mut curr = 4.;
 
-    loop {
-        let f = Font::new(ttf, rel_path, curr).expect("Cannot open font");
+    while curr < 256. {
+        let f = Font::new(ttf, rel_path, curr)?;
+
         curr += INCR;
 
-        if Text::new(&f, "X")
-            .expect("Text construction failed??")
-            .size()
-            .y
-            < desired_height
-        {
-            return f;
+        if (Text::new(&f, "X")?.size().y as f32) < desired_height {
+            return Ok(f);
         }
     }
+
+    Err(unsafe { NonNull::new_unchecked("Couldn't find suitable font".as_ptr().cast_mut().cast()) })
 }
