@@ -21,7 +21,7 @@ impl Field {
         }
     }
 
-    pub fn process(&mut self, inp: &str) -> bool {
+    pub fn process_str(&mut self, inp: &str) -> bool {
         self.text.insert_str(self.cursor, inp);
         self.cursor += inp.len();
 

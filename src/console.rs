@@ -12,11 +12,12 @@ use halcyon::{
     ttf::{Font, Text, TtfContext},
     window::WindowRef,
 };
+use sdl3_sys::keycode::*;
 
 use crate::{
     atlas::{Atlas, AtlasId},
     dprint,
-    field::Field,
+    field::{Field, FieldAction},
     resource_loader::ResourceLoader,
     util::find_sized_font,
 };
@@ -73,59 +74,94 @@ const CURSOR_BLINK_TIME: Duration = Duration::from_millis(500);
 const TEXT_OFFSET: PointF32 = Point::new(10., 10.);
 
 pub struct ActiveConsole {
+    field: Field,
     prefix_id: AtlasId,
     line_id: AtlasId,
     cursor_time: Duration,
+    should_repaint: bool,
     is_cursor_visible: bool,
 }
 
 impl ActiveConsole {
-    pub fn new(
-        prefix_id: AtlasId,
-        line_id: AtlasId,
-        cursor_time: Duration,
-        is_cursor_visible: bool,
-    ) -> Self {
+    pub fn new(prefix_id: AtlasId, line_id: AtlasId) -> Self {
         Self {
+            field: Field::new(),
             prefix_id,
             line_id,
-            cursor_time,
-            is_cursor_visible,
+            cursor_time: Duration::ZERO,
+            should_repaint: true,
+            is_cursor_visible: true,
         }
     }
 
+    fn calculate_cursor(pos: usize, tbc: f32, mut cursor: RectF32) -> RectF32 {
+        cursor.pos.x = tbc + (pos % MAX_CHARS as usize) as f32 * cursor.size.x;
+        cursor.pos.y = TEXT_OFFSET.y + cursor.size.y * (pos / MAX_CHARS as usize) as f32;
+
+        cursor
+    }
+
+    fn current_cursor(&self, tbc: f32, cursor: RectF32) -> RectF32 {
+        Self::calculate_cursor(self.field.cursor, tbc, cursor)
+    }
+
     pub fn set_cursor(&mut self, cons: &mut Console) {
-        cons.outline.pos.x = cons.tex_begin_crd
-            + (cons.field.cursor % MAX_CHARS as usize) as f32 * cons.outline.size.x;
-        cons.outline.pos.y =
-            TEXT_OFFSET.y + cons.outline.size.y * (cons.field.cursor / MAX_CHARS as usize) as f32;
+        cons.outline = Self::calculate_cursor(self.field.cursor, cons.tex_begin_crd, cons.outline);
 
         self.cursor_time = CURSOR_BLINK_TIME / 2;
         self.is_cursor_visible = true;
+    }
+
+    pub fn process_str(&mut self, input: &str) {
+        self.should_repaint = self.field.process_str(input);
+
+        if self.field.text.len() > MAX_CHARS as usize {
+            self.field.trim(MAX_CHARS as usize);
+        }
+    }
+
+    /// Hand over a pressed key to this console's `Field`, it'll decide what to do next.
+    /// Returns the rect that corresponds to the new outline.
+    pub fn process_key(&mut self, tbc: f32, k: SDL_Keycode, cursor: RectF32) -> RectF32 {
+        match k {
+            e => {
+                let op = self.field.process_key(e);
+
+                if self.field.text.len() > MAX_CHARS as usize {
+                    self.field.trim(MAX_CHARS as usize);
+                }
+
+                // TODO: Convert to a "nicer" (not visually!) block with fallthroughs.
+                match op {
+                    FieldAction::TextAdded | FieldAction::TextRemoved => {
+                        self.should_repaint = true;
+                    }
+                    _ => return cursor,
+                }
+
+                self.current_cursor(tbc, cursor)
+            }
+        }
     }
 }
 
 pub enum ConsoleState {
     Disabled,
-
-    /// (prefix_id, line_id, cursor_time, is_cursor_visible)
     Enabled(ActiveConsole),
 }
 
 /// Holds data required for Quest's console.
 /// Also caches certain things for the activated variant.
 pub struct Console {
-    field: Field,
-
     placeholder_index: u8,
 
     font: Font,
 
     padding_crd: f32,
-    tex_begin_crd: f32,
+    pub tex_begin_crd: f32,
 
     wrap_len: i32,
-    outline: RectF32,
+    pub outline: RectF32,
 
     line_chars: u8,
     pub state: ConsoleState,
@@ -171,8 +207,6 @@ impl Console {
         };
 
         Ok(Self {
-            field: Field::new(),
-
             placeholder_index: 0,
 
             font,
@@ -205,12 +239,7 @@ impl Console {
 
                 let line_id = atlas.push(self.make_placeholder());
 
-                self.state = ConsoleState::Enabled(ActiveConsole::new(
-                    prefix_id,
-                    line_id,
-                    Duration::ZERO,
-                    true,
-                ));
+                self.state = ConsoleState::Enabled(ActiveConsole::new(prefix_id, line_id));
             }
 
             ConsoleState::Enabled(ac) => {
@@ -218,8 +247,6 @@ impl Console {
 
                 atlas.remove(ac.prefix_id);
                 atlas.remove(ac.line_id);
-
-                self.field.clear();
 
                 self.state = ConsoleState::Disabled;
             }

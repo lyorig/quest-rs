@@ -8,6 +8,7 @@ use halcyon::{
     renderer::{Renderer, RendererBuilder},
     subsystem::Video,
     ttf::TtfContext,
+    util::c_ptr_to_str,
     window::{Window, WindowBuilder},
 };
 use sdl3_sys::keycode::SDLK_F1;
@@ -86,10 +87,20 @@ impl Game {
                     Event::Quit => self.running = false,
                     Event::KeyDown(e) => match e.key {
                         SDLK_F1 => self.console.switch(&mut self.atlas, &self.window),
-                        _ => (),
+                        k => {
+                            if let ConsoleState::Enabled(ac) = &mut self.console.state {
+                                self.console.outline = ac.process_key(
+                                    self.console.tex_begin_crd,
+                                    k,
+                                    self.console.outline,
+                                );
+                            }
+                        }
                     },
-                    Event::TextInput(_e) => {
-                        if let ConsoleState::Enabled(_ac) = &self.console.state {}
+                    Event::TextInput(e) => {
+                        if let ConsoleState::Enabled(ac) = &mut self.console.state {
+                            ac.process_str(unsafe { c_ptr_to_str(e.text) });
+                        }
                     }
 
                     _ => (),
