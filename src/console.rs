@@ -21,7 +21,7 @@ use crate::{
     util::find_sized_font,
 };
 
-const PLACEHOLDERS: [&str; 39] = [
+const PLACEHOLDERS: [&str; 40] = [
     "[meow]",
     "[redacted]",
     "[your turn]",
@@ -32,6 +32,7 @@ const PLACEHOLDERS: [&str; 39] = [
     "[be not afraid]",
     "[see you again]",
     "[forget me not]",
+    "[all is pretty]",
     "[sudo deez nuts]",
     "[openest source]",
     "[at your service]",
@@ -64,17 +65,17 @@ const PLACEHOLDERS: [&str; 39] = [
 ];
 
 const MAX_CHARS: usize = 128;
-
 const PREFIX_TEXT: &str = "raine1@Arctic~ %";
-
 const CURSOR_BLINK_TIME: Duration = Duration::from_millis(500);
-
 const TEXT_OFFSET: PointF32 = Point::new(10., 10.);
 
-fn make_placeholder(font: impl Into<FontRef>, placeholder_index: usize) -> Surface {
+fn make_placeholder(font: impl Into<FontRef>, placeholder_index: u8) -> Surface {
     let font: FontRef = font.into();
-    font.render_text_blended(PLACEHOLDERS[placeholder_index], Rgba::rgb(0x80, 0x80, 0x80))
-        .unwrap()
+    font.render_text_blended(
+        PLACEHOLDERS[placeholder_index as usize],
+        Rgba::rgb(0x80, 0x80, 0x80),
+    )
+    .unwrap()
 }
 
 pub struct ActiveConsole {
@@ -109,15 +110,17 @@ impl ActiveConsole {
         Self::calculate_cursor(self.field.cursor, tbc, cursor)
     }
 
-    pub fn set_cursor(&mut self, cons: &mut Console) {
-        cons.outline = Self::calculate_cursor(self.field.cursor, cons.tex_begin_crd, cons.outline);
+    pub fn set_cursor(&mut self, tbc: f32, outline: &mut RectF32) {
+        *outline = Self::calculate_cursor(self.field.cursor, tbc, *outline);
 
         self.cursor_time = CURSOR_BLINK_TIME / 2;
         self.is_cursor_visible = true;
     }
 
-    pub fn process_str(&mut self, input: &str) {
+    pub fn process_str(&mut self, input: &str, tbc: f32, outline: &mut RectF32) {
         self.should_repaint = self.field.process_str(input);
+
+        self.set_cursor(tbc, outline);
 
         if self.field.text.len() > MAX_CHARS {
             self.field.trim(MAX_CHARS);
@@ -147,10 +150,9 @@ impl ActiveConsole {
     pub fn draw(
         &mut self,
         tbc: f32,
-        m_wrap: f32,
         m_outline: RectF32,
         font: impl Into<FontRef>,
-        placeholder: usize,
+        placeholder: u8,
         atlas: &mut Atlas,
         rnd: impl Into<RendererRef>,
     ) {
@@ -162,16 +164,8 @@ impl ActiveConsole {
 
         atlas.draw(rnd, self.prefix_id, TEXT_OFFSET);
 
-        let mut r#where = PointF32::new(tbc, TEXT_OFFSET.y);
-        let m_line_size_x = atlas.area(self.line_id).size.x;
-        let mut crd = RectF32::xywh(m_line_size_x.min(m_wrap), m_outline.size.y, 0., 0.);
-
-        while m_line_size_x - crd.pos.x > 0. {
-            r#where.y += m_outline.size.y;
-            crd.pos.x += m_wrap;
-            crd.size.x = m_wrap.min(m_line_size_x - crd.pos.x);
-            atlas.draw_part(rnd, self.line_id, crd, r#where);
-        }
+        let r#where = PointF32::new(tbc, TEXT_OFFSET.y);
+        atlas.draw(rnd, self.line_id, r#where);
 
         if self.is_cursor_visible {
             rnd.set_draw_color_f32(Rgba::rgba(1., 1., 1., 0.5));
@@ -186,7 +180,7 @@ impl ActiveConsole {
         rnd.set_draw_color_f32(old_col);
     }
 
-    pub fn make_line(&self, font: impl Into<FontRef>, placeholder: usize) -> Surface {
+    pub fn make_line(&self, font: impl Into<FontRef>, placeholder: u8) -> Surface {
         if self.field.text.is_empty() {
             make_placeholder(font, placeholder)
         } else {
@@ -212,7 +206,7 @@ pub struct Console {
     padding_crd: f32,
     pub tex_begin_crd: f32,
 
-    wrap_len: i32,
+    wrap_len: f32,
     pub outline: RectF32,
 
     line_chars: u8,
@@ -263,7 +257,7 @@ impl Console {
             padding_crd,
             tex_begin_crd,
 
-            wrap_len: wrap_len as _,
+            wrap_len,
             outline,
 
             line_chars: (wrap_len / outline.size.x) as _,
@@ -314,10 +308,9 @@ impl Console {
         if let ConsoleState::Enabled(ac) = &mut self.state {
             ac.draw(
                 self.tex_begin_crd,
-                self.wrap_len as _,
                 self.outline,
                 &self.font,
-                self.placeholder_index as _,
+                self.placeholder_index,
                 atlas,
                 rnd,
             );
@@ -332,14 +325,14 @@ impl Console {
     ) {
         for evt in events {
             match evt {
-                Event::KeyDown(k) => {
-                    if k.key == SDLK_F1 {
-                        self.switch(atlas, wnd)
-                    }
-                }
+                Event::KeyDown(k) => match k.key {
+                    SDLK_F1 => self.switch(atlas, wnd),
+                    k => self.try_process_key(k),
+                },
                 Event::TextInput(e) => {
                     if let ConsoleState::Enabled(ac) = &mut self.state {
-                        ac.process_str(unsafe { c_ptr_to_str(e.text) });
+                        let foo = unsafe { c_ptr_to_str(e.text) };
+                        ac.process_str(foo, self.tex_begin_crd, &mut self.outline);
                     }
                 }
 
@@ -354,6 +347,6 @@ impl Console {
             self.placeholder_index = 0;
         }
 
-        make_placeholder(&self.font, self.placeholder_index as _)
+        make_placeholder(&self.font, self.placeholder_index)
     }
 }

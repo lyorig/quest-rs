@@ -1,14 +1,16 @@
 use std::time::Instant;
 
 use halcyon::{
+    color::Rgba,
     defs::SdlResult,
     event::{Event, EventIter},
-    rect::Point,
+    rect::{Point, Rect},
     renderer::{Renderer, RendererBuilder},
     subsystem::Video,
     ttf::TtfContext,
     window::{Window, WindowBuilder},
 };
+use sdl3_sys::blendmode::SDL_BLENDMODE_BLEND;
 
 use crate::{atlas::Atlas, console::Console, resource_loader::ResourceLoader};
 
@@ -25,7 +27,7 @@ pub struct Game {
 
     pub ttf: TtfContext,
 
-    events: Vec<Event>,
+    pub events: Vec<Event>,
 }
 
 impl Game {
@@ -63,6 +65,8 @@ impl Game {
         #[cfg(debug_assertions)]
         self.print_debug_data();
 
+        self.renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
+
         // I could probably just use a named loop and break it in case
         // of a quit event, but there are two issues:
         //
@@ -75,10 +79,11 @@ impl Game {
         // lot of extra flexibility, so I don't particularly mind implementing
         // things this way.
         while self.running {
+            self.renderer.set_draw_color_f32(Rgba::rgb(0., 0., 0.75));
             let _ = self.renderer.clear();
             self.events = EventIter::new().collect();
 
-            // The game itself is interested in certain events...
+            // The game itself is interested in certain events.
             for evt in &self.events {
                 match evt {
                     Event::Quit => self.running = false,
@@ -89,7 +94,16 @@ impl Game {
             self.console
                 .process_events(&self.events, &mut self.atlas, &self.window);
 
+            self.atlas.pack(&self.renderer);
             self.console.try_draw(&self.renderer, &mut self.atlas);
+
+            if let Some(at) = self.atlas.texture.as_ref() {
+                let sz = Rect::new(Point::new(300., 300.), at.size());
+                self.renderer.set_draw_color_f32(Rgba::rgb(0., 0., 0.));
+
+                let _ = self.renderer.draw_rect(sz);
+                let _ = self.renderer.draw(at, None, Some(&sz));
+            }
 
             let _ = self.renderer.present();
         }

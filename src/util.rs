@@ -14,10 +14,10 @@ pub fn find_sized_font(ttf: &TtfContext, rel_path: &CStr, desired_height: f32) -
 
         curr += INCR;
 
-        if (Text::new(&f, "X")?.size().y as f32) < desired_height {
+        if (Text::new(&f, "X")?.size().y as f32) >= desired_height {
             return Ok(f);
         }
     }
 
-    Err(unsafe { NonNull::new_unchecked("Couldn't find suitable font".as_ptr().cast_mut().cast()) })
+    Err(unsafe { NonNull::new_unchecked(c"Couldn't find suitable font".as_ptr().cast_mut()) })
 }

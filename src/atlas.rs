@@ -1,7 +1,5 @@
-use std::mem::MaybeUninit;
-
 use halcyon::{
-    rect::{Point, PointF32, RectF32},
+    rect::{Point, PointF32, PointI32, RectF32},
     renderer::RendererRef,
     surface::Surface,
     texture::Texture,
@@ -16,6 +14,14 @@ use rectpack2d_rs::{
 };
 
 use sdl3_sys::{pixels::SDL_PIXELFORMAT_RGBA32, render::SDL_TEXTUREACCESS_TARGET};
+
+fn to_frect(src: RectXYWH) -> RectF32 {
+    RectF32::xywh(src.x as f32, src.y as f32, src.w as f32, src.h as f32)
+}
+
+fn to_r2d(src: PointI32) -> RectXYWH {
+    RectXYWH::from_wh(src.x, src.y)
+}
 
 struct Data {
     source: Option<Surface>,
@@ -70,7 +76,7 @@ pub struct Atlas {
     pack_queued: bool,
 
     /// The atlas texture itself.
-    texture: MaybeUninit<Texture>,
+    pub texture: Option<Texture>,
 }
 
 impl Atlas {
@@ -79,14 +85,16 @@ impl Atlas {
             data: Vec::new(),
             empty_spaces: EmptySpaces::default(),
             pack_queued: false,
-            texture: MaybeUninit::uninit(),
+            texture: None,
         }
     }
 
     pub fn push(&mut self, s: Surface) -> AtlasId {
-        let data = Data::new(s);
+        self.pack_queued = true;
 
+        let data = Data::new(s);
         let mut i = 0;
+
         while i < self.data.len() {
             let foo = &mut self.data[i];
             if !foo.is_valid() {
@@ -153,12 +161,12 @@ impl Atlas {
                 }
                 None => {
                     // Old, draw from previous rect to new one.
-                    rnd.draw(
-                        unsafe { self.texture.assume_init_ref() },
+                    let _ = rnd.draw(
+                        // If a Surface has been consumed, it's guaranteed to be residing on a Texture.
+                        self.texture.as_ref().unwrap(),
                         None,
                         Some(&new_area),
-                    )
-                    .expect("Cannot draw old atlas texture");
+                    );
 
                     d.area = new_area;
                 }
@@ -167,21 +175,16 @@ impl Atlas {
 
         let _ = rnd.reset_target();
 
-        self.texture.write(new_tex);
+        self.texture = Some(new_tex);
     }
 
     pub fn draw(&self, rnd: impl Into<RendererRef>, id: AtlasId, dst: PointF32) {
-        let rnd: RendererRef = rnd.into();
-        let area = self.data[id.0 as usize].area;
+        if let Some(tex) = &self.texture {
+            let rnd: RendererRef = rnd.into();
+            let area = self.data[id.0 as usize].area;
 
-        let _ = rnd.draw(
-            unsafe { self.texture.assume_init_ref() },
-            Some(&area),
-            Some(&RectF32 {
-                pos: dst,
-                size: area.size,
-            }),
-        );
+            let _ = rnd.draw(tex, Some(&area), Some(&RectF32::new(dst, area.size)));
+        }
     }
 
     pub fn draw_part(
@@ -191,20 +194,15 @@ impl Atlas {
         mut src: RectF32,
         dst: PointF32,
     ) {
-        let rnd: RendererRef = rnd.into();
-        let area = self.data[id.0 as usize].area;
+        if let Some(tex) = &self.texture {
+            let rnd: RendererRef = rnd.into();
+            let area = self.data[id.0 as usize].area;
 
-        src.pos.x += area.pos.x;
-        src.pos.y += area.pos.y;
+            src.pos.x += area.pos.x;
+            src.pos.y += area.pos.y;
 
-        let _ = rnd.draw(
-            unsafe { self.texture.assume_init_ref() },
-            Some(&src),
-            Some(&RectF32 {
-                pos: dst,
-                size: area.size,
-            }),
-        );
+            let _ = rnd.draw(tex, Some(&src), Some(&RectF32::new(dst, area.size)));
+        }
     }
 
     pub fn area(&self, id: AtlasId) -> RectF32 {
@@ -212,25 +210,25 @@ impl Atlas {
     }
 
     pub fn replace(&mut self, id: AtlasId, rnd: impl Into<RendererRef>, surf: Surface) {
-        let d = &self.data[id.0 as usize];
+        let d = &mut self.data[id.0 as usize];
 
         if Into::<PointF32>::into(surf.size()) == d.area.size {
             return self.replace_exact(id, rnd, surf);
         }
+
+        self.pack_queued = true;
+        d.staged = to_r2d(surf.size());
+        d.source = Some(surf);
     }
 
     pub fn replace_exact(&mut self, id: AtlasId, rnd: impl Into<RendererRef>, s: Surface) {
-        let rnd: RendererRef = rnd.into();
+        if let Some(tex) = &self.texture {
+            let rnd: RendererRef = rnd.into();
+            let rep = Texture::from_surface(rnd, &s).unwrap();
 
-        let _ = rnd.set_target(unsafe { self.texture.assume_init_ref() });
-        let tex = Texture::from_surface(rnd, &s).unwrap();
-
-        let _ = rnd.draw(&tex, None, Some(&self.data[id.0 as usize].area));
-
-        let _ = rnd.reset_target();
+            let _ = rnd.set_target(tex);
+            let _ = rnd.draw(&rep, None, Some(&self.data[id.0 as usize].area));
+            let _ = rnd.reset_target();
+        }
     }
-}
-
-fn to_frect(src: RectXYWH) -> RectF32 {
-    RectF32::xywh(src.x as f32, src.y as f32, src.w as f32, src.h as f32)
 }

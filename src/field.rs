@@ -25,7 +25,9 @@ impl Field {
         self.text.insert_str(self.cursor, inp);
         self.cursor += inp.len();
 
-        inp.chars().any(|c| c.is_whitespace())
+        println!("field = {}", self.text);
+
+        inp.chars().any(|c| !c.is_whitespace())
     }
 
     pub fn process_key(&mut self, k: SDL_Keycode) -> FieldAction {
@@ -85,8 +87,20 @@ impl Field {
 
                         self.cursor -= end - begin;
                     }
+
+                    todo!("Ctrl-Backspace not impl'd yet, sorry");
+
+                    // return FieldAction::TextRemoved;
                 } else {
-                    self.text.remove(self.cursor);
+                    if self.cursor != 0 {
+                        self.cursor -= 1;
+                    }
+
+                    if self.cursor == self.text.len() {
+                        self.text.pop();
+                    } else {
+                        self.text.remove(self.cursor);
+                    }
 
                     return FieldAction::TextRemoved;
                 }
