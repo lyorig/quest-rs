@@ -214,10 +214,7 @@ impl Atlas {
     pub fn replace(&mut self, id: AtlasId, rnd: impl Into<RendererRef>, surf: Surface) {
         let d = &self.data[id.0 as usize];
 
-        let ss = surf.size();
-        let cast_point = Point::new(ss.x as f32, ss.y as f32);
-
-        if cast_point == d.area.size {
+        if Into::<PointF32>::into(surf.size()) == d.area.size {
             return self.replace_exact(id, rnd, surf);
         }
     }
@@ -235,5 +232,5 @@ impl Atlas {
 }
 
 fn to_frect(src: RectXYWH) -> RectF32 {
-    RectF32::new(src.x as f32, src.y as f32, src.w as f32, src.h as f32)
+    RectF32::xywh(src.x as f32, src.y as f32, src.w as f32, src.h as f32)
 }

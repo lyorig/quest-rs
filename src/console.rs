@@ -4,7 +4,7 @@ use halcyon::{
     color::Rgba,
     defs::SdlResult,
     event::Event,
-    rect::{Point, PointF32, PointI32, RectF32},
+    rect::{Point, PointF32, RectF32},
     renderer::RendererRef,
     surface::Surface,
     ttf::{Font, FontRef, Text, TtfContext},
@@ -164,7 +164,7 @@ impl ActiveConsole {
 
         let mut r#where = PointF32::new(tbc, TEXT_OFFSET.y);
         let m_line_size_x = atlas.area(self.line_id).size.x;
-        let mut crd = RectF32::new(m_line_size_x.min(m_wrap), m_outline.size.y, 0., 0.);
+        let mut crd = RectF32::xywh(m_line_size_x.min(m_wrap), m_outline.size.y, 0., 0.);
 
         while m_line_size_x - crd.pos.x > 0. {
             r#where.y += m_outline.size.y;
@@ -222,18 +222,15 @@ pub struct Console {
     is_cursor_visible: bool,
 }
 
-fn cast_point(pt: PointI32) -> PointF32 {
-    Point::new(pt.x as _, pt.y as _)
-}
-
 impl Console {
     pub fn new(
-        renderer: impl Into<RendererRef>,
+        rnd: impl Into<RendererRef>,
         ttf: &TtfContext,
         epoch: Instant,
         base: ResourceLoader,
     ) -> SdlResult<Self> {
-        let rs = cast_point(renderer.into().output_size());
+        let rnd: RendererRef = rnd.into();
+        let rs: PointF32 = rnd.output_size().into();
 
         let font = find_sized_font(
             ttf,
@@ -253,10 +250,10 @@ impl Console {
         let tex_begin_crd =
             TEXT_OFFSET.x + Text::new(&font, PREFIX_TEXT)?.size().x as f32 + padding_crd;
         let wrap_len = rs.x - tex_begin_crd - padding_crd;
-        let outline = RectF32 {
-            pos: Point::new(tex_begin_crd, TEXT_OFFSET.y),
-            size: cast_point(Text::new(&font, " ")?.size().into()),
-        };
+        let outline = RectF32::new(
+            Point::new(tex_begin_crd, TEXT_OFFSET.y),
+            Text::new(&font, " ")?.size().into(),
+        );
 
         Ok(Self {
             placeholder_index: 0,
