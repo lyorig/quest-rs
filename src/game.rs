@@ -1,23 +1,16 @@
 use std::time::Instant;
 
 use halcyon::{
-    color::Rgba,
     defs::SdlResult,
     event::{Event, EventIter},
     rect::Point,
     renderer::{Renderer, RendererBuilder},
     subsystem::Video,
     ttf::TtfContext,
-    util::c_ptr_to_str,
     window::{Window, WindowBuilder},
 };
-use sdl3_sys::keycode::SDLK_F1;
 
-use crate::{
-    atlas::Atlas,
-    console::{Console, ConsoleState},
-    resource_loader::ResourceLoader,
-};
+use crate::{atlas::Atlas, console::Console, resource_loader::ResourceLoader};
 
 pub struct Game {
     pub running: bool,
@@ -31,6 +24,8 @@ pub struct Game {
     pub window: Window,
 
     pub ttf: TtfContext,
+
+    events: Vec<Event>,
 }
 
 impl Game {
@@ -59,6 +54,7 @@ impl Game {
             renderer,
             window,
             ttf,
+            events: Vec::new(),
         })
     }
 
@@ -66,9 +62,6 @@ impl Game {
     pub fn main_loop(&mut self) {
         #[cfg(debug_assertions)]
         self.print_debug_data();
-
-        self.draw_gradient();
-        let _ = self.renderer.present();
 
         // I could probably just use a named loop and break it in case
         // of a quit event, but there are two issues:
@@ -82,30 +75,23 @@ impl Game {
         // lot of extra flexibility, so I don't particularly mind implementing
         // things this way.
         while self.running {
-            for evt in EventIter::new() {
+            let _ = self.renderer.clear();
+            self.events = EventIter::new().collect();
+
+            // The game itself is interested in certain events...
+            for evt in &self.events {
                 match evt {
                     Event::Quit => self.running = false,
-                    Event::KeyDown(e) => match e.key {
-                        SDLK_F1 => self.console.switch(&mut self.atlas, &self.window),
-                        k => {
-                            if let ConsoleState::Enabled(ac) = &mut self.console.state {
-                                self.console.outline = ac.process_key(
-                                    self.console.tex_begin_crd,
-                                    k,
-                                    self.console.outline,
-                                );
-                            }
-                        }
-                    },
-                    Event::TextInput(e) => {
-                        if let ConsoleState::Enabled(ac) = &mut self.console.state {
-                            ac.process_str(unsafe { c_ptr_to_str(e.text) });
-                        }
-                    }
-
                     _ => (),
                 }
             }
+
+            self.console
+                .process_events(&self.events, &mut self.atlas, &self.window);
+
+            self.console.try_draw(&self.renderer, &mut self.atlas);
+
+            let _ = self.renderer.present();
         }
     }
 
@@ -124,34 +110,5 @@ impl Game {
             self.renderer.name(),
             Renderer::num_drivers()
         );
-    }
-
-    fn draw_gradient(&self) {
-        let prev_col = self.renderer.draw_color_f32();
-        let mut size = self.renderer.output_size();
-
-        let mut col = Rgba::rgb(1., 1., 1.);
-        let mut step = -0.01;
-
-        while size.x != 0 {
-            self.renderer.set_draw_color_f32(col);
-            let _ = self.renderer.draw_line(
-                Point::new(size.x as _, 0.),
-                Point::new(size.x as _, size.y as _),
-            );
-
-            col.rgb.r += step;
-            if col.rgb.r <= 0. {
-                col.rgb.r = 0.;
-                step = -step;
-            } else if col.rgb.r >= 1. {
-                col.rgb.r = 1.;
-                step = -step;
-            }
-
-            size.x -= 1;
-        }
-
-        self.renderer.set_draw_color_f32(prev_col);
     }
 }
