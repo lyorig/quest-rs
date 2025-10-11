@@ -162,8 +162,8 @@ impl Atlas {
                 None => {
                     // Old, draw from previous rect to new one.
                     let _ = rnd.draw(
-                        // If a Surface has been consumed, it's guaranteed to be residing on a Texture.
-                        self.texture.as_ref().unwrap(),
+                        // SAFETY: If a Surface has been consumed, it's guaranteed to be residing on a Texture.
+                        unsafe { self.texture.as_ref().unwrap_unchecked() },
                         Some(&d.area),
                         Some(&new_area),
                     );
