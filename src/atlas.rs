@@ -1,5 +1,6 @@
 use halcyon::{
     color::Rgba,
+    guard::{DrawColorGuard, RenderTargetGuard},
     rect::{Point, PointF32, PointI32, RectF32},
     renderer::RendererRef,
     surface::Surface,
@@ -140,8 +141,9 @@ impl Atlas {
         )
         .unwrap();
 
-        let _ = rnd.set_target(&new_tex);
-        rnd.set_draw_color_f32(Rgba::rgba(0.0, 0.0, 0.0, 0.0));
+        let _tgt = RenderTargetGuard::new(rnd, &new_tex);
+        let _col = DrawColorGuard::new(rnd, Rgba::rgba(0.0, 0.0, 0.0, 0.0));
+
         let _ = rnd.clear();
 
         for d in &mut self.data {
@@ -174,8 +176,6 @@ impl Atlas {
         }
 
         self.texture = Some(new_tex);
-
-        let _ = rnd.reset_target();
     }
 
     pub fn draw(&self, rnd: impl Into<RendererRef>, id: AtlasId, dst: PointF32) {

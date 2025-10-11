@@ -4,6 +4,7 @@ use halcyon::{
     color::Rgba,
     defs::SdlResult,
     event::Event,
+    guard::DrawColorGuard,
     rect::{Point, PointF32, RectF32},
     renderer::RendererRef,
     resource_loader::ResourceLoader,
@@ -158,15 +159,14 @@ impl ActiveConsole {
     ) {
         let rnd: RendererRef = rnd.into();
 
-        let old_col = rnd.draw_color_f32();
-        rnd.set_draw_color_f32(Rgba::rgba(0., 0., 0., 0.5));
+        let guard = DrawColorGuard::new(rnd, Rgba::rgba(0., 0., 0., 0.5));
         let _ = rnd.fill_target();
 
         atlas.draw(rnd, self.prefix_id, TEXT_OFFSET);
         atlas.draw(rnd, self.line_id, PointF32::new(tbc, TEXT_OFFSET.y));
 
         if self.is_cursor_visible {
-            rnd.set_draw_color_f32(Rgba::rgba(1., 1., 1., 0.5));
+            guard.set(Rgba::rgba(1., 1., 1., 0.5));
             let _ = rnd.fill_rect(m_outline);
         }
 
@@ -174,8 +174,6 @@ impl ActiveConsole {
             self.should_repaint = false;
             atlas.replace(self.line_id, rnd, self.make_line(font, placeholder));
         }
-
-        rnd.set_draw_color_f32(old_col);
     }
 
     pub fn make_line(&self, font: impl Into<FontRef>, placeholder: u8) -> Surface {
