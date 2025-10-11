@@ -148,6 +148,19 @@ impl ActiveConsole {
         }
     }
 
+    pub fn process_events(&mut self, events: &[Event], tex_begin_crd: f32, outline: &mut RectF32) {
+        for evt in events {
+            match evt {
+                Event::TextInput(e) => {
+                    let foo = unsafe { c_ptr_to_str(e.text) };
+                    self.process_str(foo, tex_begin_crd, outline);
+                }
+
+                _ => (),
+            }
+        }
+    }
+
     pub fn draw(
         &mut self,
         tbc: f32,
@@ -320,21 +333,26 @@ impl Console {
         atlas: &mut Atlas,
         wnd: impl Into<WindowRef> + Copy,
     ) {
+        // If multiple F1 presses somehow occur in a single frame,
+        // this ensures the console is only switched once.
+        let mut should_switch = false;
+
         for evt in events {
             match evt {
                 Event::KeyDown(k) => match k.key {
-                    SDLK_F1 => self.switch(atlas, wnd),
+                    SDLK_F1 => should_switch = !should_switch,
                     k => self.try_process_key(k),
                 },
-                Event::TextInput(e) => {
-                    if let ConsoleState::Enabled(ac) = &mut self.state {
-                        let foo = unsafe { c_ptr_to_str(e.text) };
-                        ac.process_str(foo, self.tex_begin_crd, &mut self.outline);
-                    }
-                }
-
                 _ => (),
             }
+        }
+
+        if let ConsoleState::Enabled(ac) = &mut self.state {
+            ac.process_events(events, self.tex_begin_crd, &mut self.outline);
+        }
+
+        if should_switch {
+            self.switch(atlas, wnd);
         }
     }
 
