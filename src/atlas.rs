@@ -15,7 +15,7 @@ use rectpack2d_rs::{
     rect_structs::RectXYWH,
 };
 
-use sdl3_sys::{pixels::SDL_PIXELFORMAT_RGBA32, render::SDL_TEXTUREACCESS_TARGET};
+use sdl3_sys::{blendmode::*, pixels::SDL_PIXELFORMAT_RGBA32, render::SDL_TEXTUREACCESS_TARGET};
 
 fn to_frect(src: RectXYWH) -> RectF32 {
     RectF32::xywh(src.x as f32, src.y as f32, src.w as f32, src.h as f32)
@@ -75,6 +75,9 @@ pub struct Atlas {
     empty_spaces: EmptySpaces<DefaultEmptySpaces>,
 
     /// If `false`, `Atlas::pack()` is a no-op.
+    /// This enables the caller to call said function in a loop without
+    /// caring about anything else, while the atlas internally ensures
+    /// it only executes when there's something to be done.
     pack_queued: bool,
 
     /// The atlas texture itself.
@@ -133,13 +136,14 @@ impl Atlas {
         };
 
         let size = find_best_packing(&mut self.empty_spaces, &mut self.data, &input);
-        let new_tex = Texture::new(
+        let mut new_tex = Texture::new(
             rnd,
             SDL_PIXELFORMAT_RGBA32,
             SDL_TEXTUREACCESS_TARGET,
             Point::new(size.w, size.h),
         )
         .unwrap();
+        new_tex.set_blend_mode(SDL_BLENDMODE_ADD_PREMULTIPLIED);
 
         let _tgt = RenderTargetGuard::new(rnd, &new_tex);
         let _col = DrawColorGuard::new(rnd, Rgba::rgba(0.0, 0.0, 0.0, 0.0));
