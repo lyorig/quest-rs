@@ -6,13 +6,15 @@ use halcyon::{
     event::{Event, EventIter},
     rect::{Point, Rect},
     renderer::{Renderer, RendererBuilder},
+    resource_loader::ResourceLoader,
     subsystem::Video,
     ttf::TtfContext,
     window::{Window, WindowBuilder},
 };
+
 use sdl3_sys::blendmode::SDL_BLENDMODE_BLEND;
 
-use crate::{atlas::Atlas, console::Console, resource_loader::ResourceLoader};
+use crate::{atlas::Atlas, console::Console};
 
 pub struct Game {
     pub running: bool,
@@ -42,6 +44,7 @@ impl Game {
             .build(vid)?;
 
         let renderer = RendererBuilder::new(&window).vsync(1).build()?;
+        renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
 
         let epoch = Instant::now();
         let res_ldr = ResourceLoader::new();
@@ -65,8 +68,6 @@ impl Game {
         #[cfg(debug_assertions)]
         self.print_debug_data();
 
-        self.renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
-
         // I could probably just use a named loop and break it in case
         // of a quit event, but there are two issues:
         //
@@ -79,7 +80,7 @@ impl Game {
         // lot of extra flexibility, so I don't particularly mind implementing
         // things this way.
         while self.running {
-            self.renderer.set_draw_color_f32(Rgba::rgb(0., 0., 0.75));
+            self.renderer.set_draw_color_f32(Rgba::rgb(0.0, 0.0, 0.75));
             let _ = self.renderer.clear();
             self.events = EventIter::new().collect();
 
@@ -98,8 +99,8 @@ impl Game {
             self.console.try_draw(&self.renderer, &mut self.atlas);
 
             if let Some(at) = self.atlas.texture.as_ref() {
-                let sz = Rect::new(Point::new(300., 300.), at.size());
-                self.renderer.set_draw_color_f32(Rgba::rgb(0., 0., 0.));
+                let sz = Rect::new(Point::new(300.0, 300.0), at.size());
+                self.renderer.set_draw_color_f32(Rgba::rgb(0.0, 0.0, 0.0));
 
                 let _ = self.renderer.draw_rect(sz);
                 let _ = self.renderer.draw(at, None, Some(&sz));

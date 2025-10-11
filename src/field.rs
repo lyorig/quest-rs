@@ -25,8 +25,6 @@ impl Field {
         self.text.insert_str(self.cursor, inp);
         self.cursor += inp.len();
 
-        println!("field = {}", self.text);
-
         inp.chars().any(|c| !c.is_whitespace())
     }
 

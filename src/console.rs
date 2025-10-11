@@ -6,6 +6,7 @@ use halcyon::{
     event::Event,
     rect::{Point, PointF32, RectF32},
     renderer::RendererRef,
+    resource_loader::ResourceLoader,
     surface::Surface,
     ttf::{Font, FontRef, Text, TtfContext},
     util::c_ptr_to_str,
@@ -17,7 +18,6 @@ use crate::{
     atlas::{Atlas, AtlasId},
     dprint,
     field::{Field, FieldAction},
-    resource_loader::ResourceLoader,
     util::find_sized_font,
 };
 
@@ -140,11 +140,11 @@ impl ActiveConsole {
         match op {
             FieldAction::TextAdded | FieldAction::TextRemoved => {
                 self.should_repaint = true;
+                self.current_cursor(tbc, cursor)
             }
-            _ => return cursor,
+            FieldAction::CursorMoved => self.current_cursor(tbc, cursor),
+            FieldAction::Noop => cursor,
         }
-
-        self.current_cursor(tbc, cursor)
     }
 
     pub fn draw(
@@ -163,9 +163,7 @@ impl ActiveConsole {
         let _ = rnd.fill_target();
 
         atlas.draw(rnd, self.prefix_id, TEXT_OFFSET);
-
-        let r#where = PointF32::new(tbc, TEXT_OFFSET.y);
-        atlas.draw(rnd, self.line_id, r#where);
+        atlas.draw(rnd, self.line_id, PointF32::new(tbc, TEXT_OFFSET.y));
 
         if self.is_cursor_visible {
             rnd.set_draw_color_f32(Rgba::rgba(1., 1., 1., 0.5));
@@ -283,6 +281,7 @@ impl Console {
                 let line_id = atlas.push(self.make_placeholder());
 
                 self.state = ConsoleState::Enabled(ActiveConsole::new(prefix_id, line_id));
+                self.outline.pos = Point::new(self.tex_begin_crd, TEXT_OFFSET.y);
             }
 
             ConsoleState::Enabled(ac) => {

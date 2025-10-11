@@ -8,7 +8,6 @@ mod console;
 mod debug;
 mod field;
 mod game;
-mod resource_loader;
 mod util;
 
 fn main() {
