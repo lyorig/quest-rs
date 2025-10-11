@@ -1,4 +1,5 @@
 use halcyon::{
+    color::Rgba,
     rect::{Point, PointF32, PointI32, RectF32},
     renderer::RendererRef,
     surface::Surface,
@@ -111,15 +112,11 @@ impl Atlas {
     }
 
     pub fn remove(&mut self, i: AtlasId) {
-        if self.data.len() <= i.0 as _ {
-            return;
-        }
-
         self.data[i.0 as usize].invalidate();
     }
 
     pub fn pack(&mut self, rnd: impl Into<RendererRef>) {
-        let rnd = rnd.into();
+        let rnd: RendererRef = rnd.into();
 
         if !self.pack_queued {
             return;
@@ -129,7 +126,7 @@ impl Atlas {
 
         let input = Input {
             max_bin_side: 4096,
-            discard_step: 4,
+            discard_step: -4,
             handle_successful_insertion: |_| CallbackResult::ContinuePacking,
             handle_unsuccessful_insertion: |_| CallbackResult::AbortPacking,
         };
@@ -143,39 +140,42 @@ impl Atlas {
         )
         .unwrap();
 
-        rnd.set_target(*new_tex).expect("Cannot set render target");
+        let _ = rnd.set_target(&new_tex);
+        rnd.set_draw_color_f32(Rgba::rgba(0.0, 0.0, 0.0, 0.0));
+        let _ = rnd.clear();
 
         for d in &mut self.data {
+            if !d.is_valid() {
+                continue;
+            }
+
             let new_area = to_frect(d.staged);
 
             match &d.source {
                 Some(surf) => {
                     // Newly staged, just draw to the new texture.
                     let tex = Texture::from_surface(rnd, surf).unwrap();
-
-                    rnd.draw(&tex, None, Some(&new_area))
-                        .expect("Cannot draw new atlas texture");
+                    let _ = rnd.draw(&tex, None, Some(&new_area));
 
                     d.source = None;
-                    d.area = new_area;
                 }
                 None => {
                     // Old, draw from previous rect to new one.
                     let _ = rnd.draw(
                         // If a Surface has been consumed, it's guaranteed to be residing on a Texture.
                         self.texture.as_ref().unwrap(),
-                        None,
+                        Some(&d.area),
                         Some(&new_area),
                     );
-
-                    d.area = new_area;
                 }
             }
+
+            d.area = new_area;
         }
 
-        let _ = rnd.reset_target();
-
         self.texture = Some(new_tex);
+
+        let _ = rnd.reset_target();
     }
 
     pub fn draw(&self, rnd: impl Into<RendererRef>, id: AtlasId, dst: PointF32) {
