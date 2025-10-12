@@ -25,8 +25,6 @@ impl Field {
         self.text.insert_str(self.cursor_byte_index(), inp);
         self.cursor += inp.chars().count();
 
-        println!("Cursor now at pos {}", self.cursor);
-
         inp.chars().any(|c| !c.is_whitespace())
     }
 
@@ -45,18 +43,23 @@ impl Field {
                         (begin, end) = (0, 0);
 
                         let curr = self.char_at(begin);
+                        let chars = self.text.chars().count();
 
                         if curr.is_whitespace() {
-                            while end != self.text.len() && self.char_at(end).is_whitespace() {
+                            while end != chars && self.char_at(end).is_whitespace() {
                                 end += 1;
                             }
                         } else if curr.is_alphabetic() {
-                            while end != self.text.len() && self.char_at(end).is_alphabetic() {
+                            while end != chars && self.char_at(end).is_alphabetic() {
                                 end += 1;
                             }
                         } else {
-                            let c = self.char_at(end);
-                            while end != self.text.len() && !c.is_alphabetic() && c != ' ' {
+                            while end != chars {
+                                let c = self.char_at(end);
+                                if c.is_alphabetic() || c == ' ' {
+                                    break;
+                                }
+
                                 end += 1;
                             }
                         }
@@ -75,9 +78,10 @@ impl Field {
                                 begin -= 1;
                             }
                         } else {
-                            let c = self.char_at(begin);
+                            let mut c = self.char_at(begin);
                             while begin != 0 && !c.is_alphabetic() && c != ' ' {
                                 begin -= 1;
+                                c = self.char_at(begin);
                             }
 
                             if begin != 0 {
@@ -132,7 +136,6 @@ impl Field {
                     let size = clip.len();
 
                     self.text.insert_str(self.cursor, &clip);
-
                     self.cursor += size;
 
                     return FieldAction::TextAdded;
