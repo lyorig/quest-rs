@@ -1,1 +1,6 @@
 /target
+
+# I should probably find a better way to serve dependencies
+# to MSVC. Or perhaps Microsoft should find a better way for
+# their operating system to handle installing and finding them!
+*.lib
