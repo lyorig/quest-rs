@@ -22,8 +22,10 @@ impl Field {
     }
 
     pub fn process_str(&mut self, inp: &str) -> bool {
-        self.text.insert_str(self.cursor, inp);
-        self.cursor += inp.len();
+        self.text.insert_str(self.cursor_byte_index(), inp);
+        self.cursor += inp.chars().count();
+
+        println!("Cursor now at pos {}", self.cursor);
 
         inp.chars().any(|c| !c.is_whitespace())
     }
@@ -94,11 +96,7 @@ impl Field {
                         self.cursor -= 1;
                     }
 
-                    if self.cursor == self.text.len() {
-                        self.text.pop();
-                    } else {
-                        self.text.remove(self.cursor);
-                    }
+                    self.text.remove(self.cursor_byte_index());
 
                     return FieldAction::TextRemoved;
                 }
@@ -160,5 +158,13 @@ impl Field {
 
     fn char_at(&self, i: usize) -> char {
         self.text.chars().nth(i).unwrap()
+    }
+
+    fn cursor_byte_index(&self) -> usize {
+        self.text
+            .char_indices()
+            .nth(self.cursor)
+            .map(|f| f.0)
+            .unwrap_or(self.text.len())
     }
 }
