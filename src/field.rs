@@ -88,9 +88,10 @@ impl Field {
                         self.cursor -= end - begin;
                     }
 
-                    todo!("Ctrl-Backspace not impl'd yet, sorry");
+                    self.text
+                        .replace_range(self.byte_index(begin)..self.byte_index(end), "");
 
-                    // return FieldAction::TextRemoved;
+                    return FieldAction::TextRemoved;
                 } else {
                     if self.cursor != 0 {
                         self.cursor -= 1;
@@ -160,11 +161,15 @@ impl Field {
         self.text.chars().nth(i).unwrap()
     }
 
-    fn cursor_byte_index(&self) -> usize {
+    fn byte_index(&self, i: usize) -> usize {
         self.text
             .char_indices()
-            .nth(self.cursor)
+            .nth(i)
             .map(|f| f.0)
             .unwrap_or(self.text.len())
+    }
+
+    fn cursor_byte_index(&self) -> usize {
+        self.byte_index(self.cursor)
     }
 }
