@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use halcyon::{
-    color::Rgba,
+    color::{Rgb, Rgba},
     defs::SdlResult,
     event::Event,
     guard::DrawColorGuard,
@@ -68,7 +68,7 @@ const PLACEHOLDERS: [&str; 40] = [
 const MAX_CHARS: usize = 128;
 const PREFIX_TEXT: &str = "raine1@Arctic~ %";
 const CURSOR_BLINK_TIME: Duration = Duration::from_millis(500);
-const TEXT_OFFSET: PointF32 = Point::new(10., 10.);
+const TEXT_OFFSET: PointF32 = Point::new(10.0, 10.0);
 
 fn make_placeholder(data: &mut CachedData) -> Surface {
     let ret = data
@@ -163,7 +163,7 @@ impl ActiveConsole {
     fn draw(&mut self, data: &mut CachedData, atlas: &mut Atlas, rnd: impl Into<RendererRef>) {
         let rnd: RendererRef = rnd.into();
 
-        let guard = DrawColorGuard::new(rnd, Rgba::rgba(0., 0., 0., 0.5));
+        let guard = DrawColorGuard::new(rnd, Rgba::new(Rgb::BLACK, 0.5));
         let _ = rnd.fill_target();
 
         atlas.draw(rnd, self.prefix_id, TEXT_OFFSET);
@@ -174,7 +174,7 @@ impl ActiveConsole {
         );
 
         if self.is_cursor_visible {
-            guard.set(Rgba::rgba(1., 1., 1., 0.5));
+            guard.set(Rgba::WHITE);
             let _ = rnd.fill_rect(data.outline);
         }
 
@@ -190,7 +190,7 @@ impl ActiveConsole {
             make_placeholder(data)
         } else {
             data.font
-                .render_text_blended(&self.field.text, Rgba::rgb(255, 255, 255))
+                .render_text_blended(&self.field.text, Rgba::WHITE)
                 .unwrap()
         }
     }
@@ -278,7 +278,7 @@ impl Console {
                 let prefix_id = atlas.push(
                     self.data
                         .font
-                        .render_text_blended(PREFIX_TEXT, Rgba::rgb(0, 255, 0))
+                        .render_text_blended(PREFIX_TEXT, Rgba::GREEN)
                         .unwrap(),
                 );
 

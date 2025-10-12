@@ -146,7 +146,7 @@ impl Atlas {
         new_tex.set_blend_mode(SDL_BLENDMODE_ADD_PREMULTIPLIED);
 
         let _tgt = RenderTargetGuard::new(rnd, &new_tex);
-        let _col = DrawColorGuard::new(rnd, Rgba::rgba(0.0, 0.0, 0.0, 0.0));
+        let _col = DrawColorGuard::new(rnd, Rgba::TRANSPARENT);
 
         let _ = rnd.clear();
 
@@ -232,7 +232,7 @@ impl Atlas {
             let dst = self.data[id.0 as usize].area;
 
             let _blend = BlendModeGuard::new(rnd, SDL_BLENDMODE_NONE);
-            let _col = DrawColorGuard::new(rnd, Rgba::rgba(0.0, 0.0, 0.0, 0.0));
+            let _col = DrawColorGuard::new(rnd, Rgba::TRANSPARENT);
             let _tgt = RenderTargetGuard::new(rnd, tex);
 
             let _ = rnd.fill_rect(dst);

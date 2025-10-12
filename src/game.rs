@@ -103,7 +103,7 @@ impl Game {
 
             if let Some(at) = self.atlas.texture.as_ref() {
                 let sz = Rect::new(Point::new(300.0, 300.0), at.size());
-                let _col = DrawColorGuard::new(&self.renderer, Rgba::rgb(0.0, 0.0, 0.0));
+                let _col = DrawColorGuard::new(&self.renderer, Rgba::BLACK);
 
                 let _ = self.renderer.draw_rect(sz);
                 let _ = self.renderer.draw(at, None, Some(&sz));
