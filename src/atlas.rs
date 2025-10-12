@@ -1,6 +1,6 @@
 use halcyon::{
     color::Rgba,
-    guard::{DrawColorGuard, RenderTargetGuard},
+    guard::{BlendModeGuard, DrawColorGuard, RenderTargetGuard},
     rect::{Point, PointF32, PointI32, RectF32},
     renderer::RendererRef,
     surface::Surface,
@@ -229,10 +229,14 @@ impl Atlas {
         if let Some(tex) = &self.texture {
             let rnd: RendererRef = rnd.into();
             let rep = Texture::from_surface(rnd, &s).unwrap();
+            let dst = self.data[id.0 as usize].area;
 
-            let _ = rnd.set_target(tex);
-            let _ = rnd.draw(&rep, None, Some(&self.data[id.0 as usize].area));
-            let _ = rnd.reset_target();
+            let _blend = BlendModeGuard::new(rnd, SDL_BLENDMODE_NONE);
+            let _col = DrawColorGuard::new(rnd, Rgba::rgba(0.0, 0.0, 0.0, 0.0));
+            let _tgt = RenderTargetGuard::new(rnd, tex);
+
+            let _ = rnd.fill_rect(dst);
+            let _ = rnd.draw(&rep, None, Some(&dst));
         }
     }
 }

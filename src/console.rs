@@ -180,6 +180,7 @@ impl ActiveConsole {
 
         if self.should_repaint {
             self.should_repaint = false;
+
             atlas.replace(self.line_id, rnd, self.make_line(data));
         }
     }
@@ -318,14 +319,14 @@ impl Console {
         atlas: &mut Atlas,
         wnd: impl Into<WindowRef> + Copy,
     ) {
-        // If multiple F1 presses somehow occur in a single frame,
-        // this ensures the console is only switched once.
-        let mut should_switch = false;
-
         for evt in events {
             match evt {
                 Event::KeyDown(k) => match k.key {
-                    SDLK_F1 => should_switch = !should_switch,
+                    SDLK_F1 => {
+                        if !k.repeat {
+                            self.switch(atlas, wnd)
+                        }
+                    }
                     k => self.try_process_key(k),
                 },
                 _ => (),
@@ -334,10 +335,6 @@ impl Console {
 
         if let ConsoleState::Enabled(ac) = &mut self.state {
             ac.process_events(&mut self.data, events);
-        }
-
-        if should_switch {
-            self.switch(atlas, wnd);
         }
     }
 }
