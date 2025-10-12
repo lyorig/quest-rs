@@ -9,7 +9,7 @@ use halcyon::{
     renderer::RendererRef,
     resource_loader::ResourceLoader,
     surface::Surface,
-    ttf::{Font, FontRef, Text, TtfContext},
+    ttf::{Font, Text, TtfContext},
     util::c_ptr_to_str,
     window::WindowRef,
 };
@@ -70,13 +70,18 @@ const PREFIX_TEXT: &str = "raine1@Arctic~ %";
 const CURSOR_BLINK_TIME: Duration = Duration::from_millis(500);
 const TEXT_OFFSET: PointF32 = Point::new(10., 10.);
 
-fn make_placeholder(font: impl Into<FontRef>, placeholder_index: u8) -> Surface {
-    let font: FontRef = font.into();
-    font.render_text_blended(
-        PLACEHOLDERS[placeholder_index as usize],
-        Rgba::rgb(0x80, 0x80, 0x80),
-    )
-    .unwrap()
+fn make_placeholder(data: &mut CachedData) -> Surface {
+    let ret = data
+        .font
+        .render_text_blended(
+            PLACEHOLDERS[data.placeholder_index as usize],
+            Rgba::rgb(0x80, 0x80, 0x80),
+        )
+        .unwrap();
+
+    data.placeholder_index = (data.placeholder_index + 1) % PLACEHOLDERS.len() as u8;
+
+    ret
 }
 
 pub struct ActiveConsole {
@@ -100,28 +105,22 @@ impl ActiveConsole {
         }
     }
 
-    fn calculate_cursor(pos: usize, tbc: f32, mut cursor: RectF32) -> RectF32 {
-        cursor.pos.x = tbc + (pos % MAX_CHARS) as f32 * cursor.size.x;
-        cursor.pos.y = TEXT_OFFSET.y + cursor.size.y * (pos / MAX_CHARS) as f32;
-
-        cursor
+    fn calculate_cursor(pos: usize, data: &mut CachedData) {
+        data.outline.pos.x = data.tex_begin_crd + (pos % MAX_CHARS) as f32 * data.outline.size.x;
+        data.outline.pos.y = TEXT_OFFSET.y + data.outline.size.y * (pos / MAX_CHARS) as f32;
     }
 
-    fn current_cursor(&self, tbc: f32, cursor: RectF32) -> RectF32 {
-        Self::calculate_cursor(self.field.cursor, tbc, cursor)
-    }
-
-    pub fn set_cursor(&mut self, tbc: f32, outline: &mut RectF32) {
-        *outline = Self::calculate_cursor(self.field.cursor, tbc, *outline);
+    fn set_cursor(&mut self, data: &mut CachedData) {
+        Self::calculate_cursor(self.field.cursor, data);
 
         self.cursor_time = CURSOR_BLINK_TIME / 2;
         self.is_cursor_visible = true;
     }
 
-    pub fn process_str(&mut self, input: &str, tbc: f32, outline: &mut RectF32) {
+    fn process_str(&mut self, input: &str, data: &mut CachedData) {
         self.should_repaint = self.field.process_str(input);
 
-        self.set_cursor(tbc, outline);
+        self.set_cursor(data);
 
         if self.field.text.len() > MAX_CHARS {
             self.field.trim(MAX_CHARS);
@@ -130,7 +129,7 @@ impl ActiveConsole {
 
     /// Hand over a pressed key to this console's `Field`, it'll decide what to do next.
     /// Returns the rect that corresponds to the new outline.
-    pub fn process_key(&mut self, tbc: f32, k: SDL_Keycode, cursor: RectF32) -> RectF32 {
+    fn process_key(&mut self, data: &mut CachedData, k: SDL_Keycode) {
         let op = self.field.process_key(k);
 
         if self.field.text.len() > MAX_CHARS {
@@ -141,19 +140,19 @@ impl ActiveConsole {
         match op {
             FieldAction::TextAdded | FieldAction::TextRemoved => {
                 self.should_repaint = true;
-                self.current_cursor(tbc, cursor)
+                self.set_cursor(data)
             }
-            FieldAction::CursorMoved => self.current_cursor(tbc, cursor),
-            FieldAction::Noop => cursor,
+            FieldAction::CursorMoved => self.set_cursor(data),
+            FieldAction::Noop => (),
         }
     }
 
-    pub fn process_events(&mut self, events: &[Event], tex_begin_crd: f32, outline: &mut RectF32) {
+    fn process_events(&mut self, data: &mut CachedData, events: &[Event]) {
         for evt in events {
             match evt {
                 Event::TextInput(e) => {
                     let foo = unsafe { c_ptr_to_str(e.text) };
-                    self.process_str(foo, tex_begin_crd, outline);
+                    self.process_str(foo, data);
                 }
 
                 _ => (),
@@ -161,40 +160,36 @@ impl ActiveConsole {
         }
     }
 
-    pub fn draw(
-        &mut self,
-        tbc: f32,
-        m_outline: RectF32,
-        font: impl Into<FontRef>,
-        placeholder: u8,
-        atlas: &mut Atlas,
-        rnd: impl Into<RendererRef>,
-    ) {
+    fn draw(&mut self, data: &mut CachedData, atlas: &mut Atlas, rnd: impl Into<RendererRef>) {
         let rnd: RendererRef = rnd.into();
 
         let guard = DrawColorGuard::new(rnd, Rgba::rgba(0., 0., 0., 0.5));
         let _ = rnd.fill_target();
 
         atlas.draw(rnd, self.prefix_id, TEXT_OFFSET);
-        atlas.draw(rnd, self.line_id, PointF32::new(tbc, TEXT_OFFSET.y));
+        atlas.draw(
+            rnd,
+            self.line_id,
+            PointF32::new(data.tex_begin_crd, TEXT_OFFSET.y),
+        );
 
         if self.is_cursor_visible {
             guard.set(Rgba::rgba(1., 1., 1., 0.5));
-            let _ = rnd.fill_rect(m_outline);
+            let _ = rnd.fill_rect(data.outline);
         }
 
         if self.should_repaint {
             self.should_repaint = false;
-            atlas.replace(self.line_id, rnd, self.make_line(font, placeholder));
+            atlas.replace(self.line_id, rnd, self.make_line(data));
         }
     }
 
-    pub fn make_line(&self, font: impl Into<FontRef>, placeholder: u8) -> Surface {
+    fn make_line(&self, data: &mut CachedData) -> Surface {
         if self.field.text.is_empty() {
-            make_placeholder(font, placeholder)
+            make_placeholder(data)
         } else {
-            let font: FontRef = font.into();
-            font.render_text_blended(&self.field.text, Rgba::rgb(255, 255, 255))
+            data.font
+                .render_text_blended(&self.field.text, Rgba::rgb(255, 255, 255))
                 .unwrap()
         }
     }
@@ -205,24 +200,23 @@ pub enum ConsoleState {
     Enabled(ActiveConsole),
 }
 
+struct CachedData {
+    placeholder_index: u8,
+    font: Font,
+    padding_crd: f32,
+    tex_begin_crd: f32,
+    wrap_len: f32,
+    outline: RectF32,
+    line_chars: u8,
+    should_repaint: bool,
+    is_cursor_visible: bool,
+}
+
 /// Holds data required for Quest's console.
 /// Also caches certain things for the activated variant.
 pub struct Console {
-    placeholder_index: u8,
-
-    font: Font,
-
-    padding_crd: f32,
-    pub tex_begin_crd: f32,
-
-    wrap_len: f32,
-    pub outline: RectF32,
-
-    line_chars: u8,
+    data: CachedData,
     pub state: ConsoleState,
-
-    should_repaint: bool,
-    is_cursor_visible: bool,
 }
 
 impl Console {
@@ -259,21 +253,18 @@ impl Console {
         );
 
         Ok(Self {
-            placeholder_index: 0,
-
-            font,
-
-            padding_crd,
-            tex_begin_crd,
-
-            wrap_len,
-            outline,
-
-            line_chars: (wrap_len / outline.size.x) as _,
+            data: CachedData {
+                placeholder_index: 0,
+                font,
+                padding_crd,
+                tex_begin_crd,
+                wrap_len,
+                outline,
+                line_chars: (wrap_len / outline.size.x) as _,
+                should_repaint: false,
+                is_cursor_visible: false,
+            },
             state: ConsoleState::Disabled,
-
-            should_repaint: false,
-            is_cursor_visible: false,
         })
     }
 
@@ -281,18 +272,19 @@ impl Console {
         match &self.state {
             ConsoleState::Disabled => {
                 let _ = halcyon::keyboard::text_input_start(wnd);
-                self.is_cursor_visible = true;
+                self.data.is_cursor_visible = true;
 
                 let prefix_id = atlas.push(
-                    self.font
+                    self.data
+                        .font
                         .render_text_blended(PREFIX_TEXT, Rgba::rgb(0, 255, 0))
                         .unwrap(),
                 );
 
-                let line_id = atlas.push(self.make_placeholder());
+                let line_id = atlas.push(make_placeholder(&mut self.data));
 
                 self.state = ConsoleState::Enabled(ActiveConsole::new(prefix_id, line_id));
-                self.outline.pos = Point::new(self.tex_begin_crd, TEXT_OFFSET.y);
+                self.data.outline.pos = Point::new(self.data.tex_begin_crd, TEXT_OFFSET.y);
             }
 
             ConsoleState::Enabled(ac) => {
@@ -310,20 +302,13 @@ impl Console {
     /// Otherwise, does nothing.
     pub fn try_process_key(&mut self, k: SDL_Keycode) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
-            self.outline = ac.process_key(self.tex_begin_crd, k, self.outline);
+            ac.process_key(&mut self.data, k);
         }
     }
 
     pub fn try_draw(&mut self, rnd: impl Into<RendererRef>, atlas: &mut Atlas) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
-            ac.draw(
-                self.tex_begin_crd,
-                self.outline,
-                &self.font,
-                self.placeholder_index,
-                atlas,
-                rnd,
-            );
+            ac.draw(&mut self.data, atlas, rnd);
         }
     }
 
@@ -348,20 +333,11 @@ impl Console {
         }
 
         if let ConsoleState::Enabled(ac) = &mut self.state {
-            ac.process_events(events, self.tex_begin_crd, &mut self.outline);
+            ac.process_events(&mut self.data, events);
         }
 
         if should_switch {
             self.switch(atlas, wnd);
         }
-    }
-
-    fn make_placeholder(&mut self) -> Surface {
-        self.placeholder_index += 1;
-        if self.placeholder_index as usize == PLACEHOLDERS.len() {
-            self.placeholder_index = 0;
-        }
-
-        make_placeholder(&self.font, self.placeholder_index)
     }
 }
