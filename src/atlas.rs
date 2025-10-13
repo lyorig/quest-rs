@@ -191,28 +191,6 @@ impl Atlas {
         }
     }
 
-    pub fn draw_part(
-        &self,
-        rnd: impl Into<RendererRef>,
-        id: AtlasId,
-        mut src: RectF32,
-        dst: PointF32,
-    ) {
-        if let Some(tex) = &self.texture {
-            let rnd: RendererRef = rnd.into();
-            let area = self.data[id.0 as usize].area;
-
-            src.pos.x += area.pos.x;
-            src.pos.y += area.pos.y;
-
-            let _ = rnd.draw(tex, Some(&src), Some(&RectF32::new(dst, area.size)));
-        }
-    }
-
-    pub fn area(&self, id: AtlasId) -> RectF32 {
-        self.data[id.0 as usize].area
-    }
-
     pub fn replace(&mut self, id: AtlasId, rnd: impl Into<RendererRef>, surf: Surface) {
         let d = &mut self.data[id.0 as usize];
 

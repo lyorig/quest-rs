@@ -11,10 +11,11 @@ use halcyon::{
     subsystem::Video,
     traits::BlendMode,
     ttf::TtfContext,
+    util::c_ptr_to_str,
     window::{Window, WindowBuilder},
 };
 
-use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::SDLK_RETURN};
+use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
 
 use crate::{
     atlas::Atlas,
@@ -23,8 +24,6 @@ use crate::{
 
 pub struct Game {
     pub running: bool,
-    pub epoch: Instant,
-    pub res_ldr: ResourceLoader,
 
     pub atlas: Atlas,
     console: Console,
@@ -32,9 +31,7 @@ pub struct Game {
     pub renderer: Renderer,
     pub window: Window,
 
-    pub ttf: TtfContext,
-
-    pub events: Vec<Event>,
+    pub _ttf: TtfContext,
 }
 
 impl Game {
@@ -60,22 +57,16 @@ impl Game {
 
         Ok(Self {
             running: true,
-            epoch: Instant::now(),
-            res_ldr,
             atlas: Atlas::new(),
             console,
             renderer,
             window,
-            ttf,
-            events: Vec::new(),
+            _ttf: TtfContext::new()?,
         })
     }
 
     /// Starts up the main loop.
     pub fn main_loop(&mut self) {
-        #[cfg(debug_assertions)]
-        self.print_debug_data();
-
         // I could probably just use a named loop and break it in case
         // of a quit event, but there are two issues:
         //
@@ -89,41 +80,8 @@ impl Game {
         // things this way.
         while self.running {
             let _ = self.renderer.clear();
-            self.events = EventIter::new().collect();
 
-            // The game itself is interested in certain events.
-            for evt in &self.events {
-                match evt {
-                    Event::Quit => self.running = false,
-                    Event::KeyDown(k) => match k.key {
-                        SDLK_RETURN => {
-                            if let ConsoleState::Enabled(ac) = &mut self.console.state {
-                                let mut split = ac.field.text.split(' ');
-                                if let Some(name) = split.next() {
-                                    match name {
-                                        "exit" => {
-                                            self.running = false;
-                                        }
-                                        "testargs" => {
-                                            for (i, arg) in split.enumerate() {
-                                                println!("arg #{i} = \"{arg}\"");
-                                            }
-                                        }
-                                        _ => println!("unknown command \"{name}\""),
-                                    }
-
-                                    ac.clear(&mut self.console.data);
-                                }
-                            }
-                        }
-                        _ => (),
-                    },
-                    _ => (),
-                }
-            }
-
-            self.console
-                .process_events(&self.events, &mut self.atlas, &self.window);
+            self.process_events();
 
             self.atlas.pack(&self.renderer);
             self.console.try_draw(&self.renderer, &mut self.atlas);
@@ -140,20 +98,44 @@ impl Game {
         }
     }
 
-    #[cfg(debug_assertions)]
-    fn print_debug_data(&self) {
-        use crate::dprint;
-        use halcyon::context::Context;
+    fn process_events(&mut self) {
+        for evt in EventIter::new() {
+            match evt {
+                Event::Quit => self.running = false,
+                Event::KeyDown(k) => match k.key {
+                    SDLK_F1 => {
+                        if !k.repeat {
+                            self.console.switch(&mut self.atlas, &self.window);
+                        }
+                    }
+                    SDLK_RETURN => {
+                        if let ConsoleState::Enabled(ac) = &mut self.console.state {
+                            let mut split = ac.field.text.split(' ');
+                            if let Some(name) = split.next() {
+                                match name {
+                                    "exit" => {
+                                        self.running = false;
+                                    }
+                                    "testargs" => {
+                                        for (i, arg) in split.enumerate() {
+                                            println!("arg #{i} = \"{arg}\"");
+                                        }
+                                    }
+                                    _ => println!("unknown command \"{name}\""),
+                                }
 
-        let e = self.epoch;
-
-        dprint!(e, "Running on {}", Context::platform());
-        dprint!(e, "Window ID {}", self.window.id());
-        dprint!(
-            e,
-            "Rendering via \"{}\" ({} available in total)",
-            self.renderer.name(),
-            Renderer::num_drivers()
-        );
+                                ac.clear(&mut self.console.data);
+                            }
+                        }
+                    }
+                    other => self.console.try_process_key(other),
+                },
+                Event::TextInput(ti) => {
+                    self.console
+                        .try_process_str(unsafe { c_ptr_to_str(ti.text) });
+                }
+                _ => (),
+            }
+        }
     }
 }

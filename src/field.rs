@@ -152,7 +152,7 @@ impl Field {
             self.cursor -= self.cursor - off;
         }
 
-        self.text.remove(off);
+        self.text.replace_range(off.., "");
     }
 
     pub fn clear(&mut self) {
