@@ -111,7 +111,6 @@ impl Atlas {
         }
 
         self.data.push(data);
-
         AtlasId(i as _)
     }
 
@@ -129,7 +128,7 @@ impl Atlas {
         self.pack_queued = false;
 
         let input = Input {
-            max_bin_side: 4096,
+            max_bin_side: 1024,
             discard_step: -4,
             handle_successful_insertion: |_| CallbackResult::ContinuePacking,
             handle_unsuccessful_insertion: |_| CallbackResult::AbortPacking,

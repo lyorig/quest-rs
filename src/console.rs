@@ -276,7 +276,7 @@ impl Console {
 
     /// If the console is active, calls `ActiveConsole::process_key()`.
     /// Otherwise, does nothing.
-    pub fn try_process_key(&mut self, k: SDL_Keycode) {
+    pub fn process_key(&mut self, k: SDL_Keycode) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
             ac.process_key(&mut self.data, k);
         }
@@ -284,7 +284,7 @@ impl Console {
 
     /// If the console is active, calls `ActiveConsole::process_str()`.
     /// Otherwise, does nothing.
-    pub fn try_process_str(&mut self, text: &str) {
+    pub fn process_str(&mut self, text: &str) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
             ac.process_str(&mut self.data, text);
         }
@@ -292,7 +292,7 @@ impl Console {
 
     /// If the console is active, calls `ActiveConsole::draw()`.
     /// Otherwise, does nothing.
-    pub fn try_draw(&mut self, rnd: impl Into<RendererRef>, atlas: &mut Atlas) {
+    pub fn draw(&mut self, rnd: impl Into<RendererRef>, atlas: &mut Atlas) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
             ac.draw(&mut self.data, atlas, rnd);
         }

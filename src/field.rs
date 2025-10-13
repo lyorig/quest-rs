@@ -44,6 +44,7 @@ impl Field {
         }
     }
 
+    /// Returns whether any graphical changes have been made to the string.
     pub fn process_str(&mut self, inp: &str) -> bool {
         self.text.insert_str(self.cursor_byte_index(), inp);
         self.cursor += inp.chars().count();

@@ -15,7 +15,11 @@ use halcyon::{
     window::{Window, WindowBuilder},
 };
 
-use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
+use sdl3_sys::{
+    blendmode::{SDL_BLENDMODE_BLEND, SDL_BLENDMODE_NONE},
+    keycode::*,
+    render::SDL_SetTextureBlendMode,
+};
 
 use crate::{
     atlas::Atlas,
@@ -89,7 +93,7 @@ impl Game {
             self.process_events();
 
             self.atlas.pack(&self.renderer);
-            self.console.try_draw(&self.renderer, &mut self.atlas);
+            self.console.draw(&self.renderer, &mut self.atlas);
 
             if let Some(at) = self.atlas.texture.as_ref() {
                 let sz = Rect::new(Point::new(300.0, 300.0), at.size());
@@ -108,38 +112,50 @@ impl Game {
             match evt {
                 Event::Quit => self.running = false,
                 Event::KeyDown(k) => match k.key {
-                    SDLK_F1 => {
-                        if !k.repeat {
-                            self.console.switch(&mut self.atlas, &self.window);
-                        }
-                    }
-                    SDLK_RETURN => {
-                        if let ConsoleState::Enabled(ac) = &mut self.console.state {
-                            let mut split = ac.field.text.split(' ');
-                            if let Some(name) = split.next() {
-                                match name {
-                                    "exit" => {
-                                        self.running = false;
-                                    }
-                                    "testargs" => {
-                                        for (i, arg) in split.enumerate() {
-                                            println!("arg #{i} = \"{arg}\"");
-                                        }
-                                    }
-                                    _ => println!("unknown command \"{name}\""),
-                                }
-
-                                ac.clear(&mut self.console.data);
-                            }
-                        }
-                    }
-                    other => self.console.try_process_key(other),
+                    SDLK_F1 => self.console.switch(&mut self.atlas, &self.window),
+                    SDLK_RETURN => self.process_command(),
+                    other => self.console.process_key(other),
                 },
                 Event::TextInput(ti) => {
-                    self.console
-                        .try_process_str(unsafe { c_ptr_to_str(ti.text) });
+                    self.console.process_str(unsafe { c_ptr_to_str(ti.text) });
                 }
                 _ => (),
+            }
+        }
+    }
+
+    fn process_command(&mut self) {
+        if let ConsoleState::Enabled(ac) = &mut self.console.state {
+            let mut args = ac.field.text.split(' ');
+            if let Some(name) = args.next() {
+                match name {
+                    "exit" => {
+                        self.running = false;
+                    }
+                    "test-args" => {
+                        for (i, arg) in args.enumerate() {
+                            println!("arg #{i} = \"{arg}\"");
+                        }
+                    }
+                    "get-error" => println!("{}", {
+                        let err = halcyon::error::get_owned();
+                        if err.is_empty() {
+                            "[no error]".into()
+                        } else {
+                            err
+                        }
+                    }),
+                    "set-error" => match args.next() {
+                        Some(v) => halcyon::error::set(v),
+                        None => println!("usage: set-error [value]"),
+                    },
+                    "cause-error" => unsafe {
+                        SDL_SetTextureBlendMode(std::ptr::null_mut(), SDL_BLENDMODE_NONE);
+                    },
+                    _ => println!("unknown command \"{name}\""),
+                }
+
+                ac.clear(&mut self.console.data);
             }
         }
     }
