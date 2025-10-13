@@ -85,7 +85,7 @@ fn make_placeholder(data: &mut CachedData) -> Surface {
 }
 
 pub struct ActiveConsole {
-    field: Field,
+    pub field: Field,
     prefix_id: AtlasId,
     line_id: AtlasId,
     cursor_time: Duration,
@@ -127,7 +127,7 @@ impl ActiveConsole {
         }
     }
 
-    /// Hand over a pressed key to this console's `Field`, it'll decide what to do next.
+    /// Hands over a pressed key to this console's `Field`, which decides what to do next.
     /// Returns the rect that corresponds to the new outline.
     fn process_key(&mut self, data: &mut CachedData, k: SDL_Keycode) {
         let op = self.field.process_key(k);
@@ -194,6 +194,13 @@ impl ActiveConsole {
                 .unwrap()
         }
     }
+
+    pub fn clear(&mut self, data: &mut CachedData) {
+        self.field.clear();
+        self.set_cursor(data);
+
+        self.should_repaint = true;
+    }
 }
 
 pub enum ConsoleState {
@@ -201,7 +208,7 @@ pub enum ConsoleState {
     Enabled(ActiveConsole),
 }
 
-struct CachedData {
+pub struct CachedData {
     placeholder_index: u8,
     font: Font,
     padding_crd: f32,
@@ -216,7 +223,7 @@ struct CachedData {
 /// Holds data required for Quest's console.
 /// Also caches certain things for the activated variant.
 pub struct Console {
-    data: CachedData,
+    pub data: CachedData,
     pub state: ConsoleState,
 }
 

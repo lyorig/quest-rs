@@ -9,13 +9,17 @@ use halcyon::{
     renderer::{Renderer, RendererBuilder},
     resource_loader::ResourceLoader,
     subsystem::Video,
+    traits::BlendMode,
     ttf::TtfContext,
     window::{Window, WindowBuilder},
 };
 
-use sdl3_sys::blendmode::SDL_BLENDMODE_BLEND;
+use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::SDLK_RETURN};
 
-use crate::{atlas::Atlas, console::Console};
+use crate::{
+    atlas::Atlas,
+    console::{Console, ConsoleState},
+};
 
 pub struct Game {
     pub running: bool,
@@ -91,6 +95,29 @@ impl Game {
             for evt in &self.events {
                 match evt {
                     Event::Quit => self.running = false,
+                    Event::KeyDown(k) => match k.key {
+                        SDLK_RETURN => {
+                            if let ConsoleState::Enabled(ac) = &mut self.console.state {
+                                let mut split = ac.field.text.split(' ');
+                                if let Some(name) = split.next() {
+                                    match name {
+                                        "exit" => {
+                                            self.running = false;
+                                        }
+                                        "testargs" => {
+                                            for (i, arg) in split.enumerate() {
+                                                println!("arg #{i} = \"{arg}\"");
+                                            }
+                                        }
+                                        _ => println!("unknown command \"{name}\""),
+                                    }
+
+                                    ac.clear(&mut self.console.data);
+                                }
+                            }
+                        }
+                        _ => (),
+                    },
                     _ => (),
                 }
             }
