@@ -45,7 +45,12 @@ impl Game {
             .title(c"HalodaQuest [Euclid]")
             .build(vid)?;
 
-        let renderer = RendererBuilder::new(&window).vsync(1).build()?;
+        let mut renderer = RendererBuilder::new(&window);
+        if let None = std::env::args().find(|x| x == "--no-vsync") {
+            renderer.vsync(1);
+        }
+
+        let renderer = renderer.build()?;
 
         renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
         renderer.set_draw_color_f32(Rgba::rgb(0.0, 0.0, 0.75));

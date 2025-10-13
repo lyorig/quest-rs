@@ -104,9 +104,7 @@ impl ActiveConsole {
 
     fn process_str(&mut self, data: &mut CachedData, input: &str) {
         self.should_repaint = self.field.process_str(input);
-
         self.field.trim_check();
-
         self.set_cursor(data);
     }
 
