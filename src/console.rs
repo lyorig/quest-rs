@@ -83,29 +83,36 @@ fn make_placeholder(data: &mut CachedData) -> Surface {
 
 pub struct ActiveConsole {
     pub field: Field,
+
+    /// Where the cursor is currently being drawn to.
+    /// Only updated when `self.update_outline()` is called,
+    /// which sets its location to correspond to the `Field` cursor.
+    cursor_pos: PointF32,
+
     prefix_id: AtlasId,
     line_id: AtlasId,
     should_repaint: bool,
 }
 
 impl ActiveConsole {
-    pub fn new(prefix_id: AtlasId, line_id: AtlasId) -> Self {
+    pub fn new(data: &CachedData, prefix_id: AtlasId, line_id: AtlasId) -> Self {
         Self {
             field: Field::new(),
+            cursor_pos: PointF32::new(data.input_x_origin, TEXT_OFFSET.y),
             prefix_id,
             line_id,
             should_repaint: true,
         }
     }
 
-    fn set_cursor(&mut self, data: &mut CachedData) {
-        data.outline.pos.x = data.tex_begin_crd + self.field.cursor as f32 * data.outline.size.x;
+    fn update_outline(&mut self, data: &mut CachedData) {
+        self.cursor_pos.x = data.input_x_origin + self.field.cursor as f32 * data.glyph_size.x;
     }
 
     fn process_str(&mut self, data: &mut CachedData, input: &str) {
         self.should_repaint = self.field.process_str(input);
         self.field.trim_check();
-        self.set_cursor(data);
+        self.update_outline(data);
     }
 
     /// Hands over a pressed key to this console's `Field`, which decides what to do next.
@@ -119,9 +126,9 @@ impl ActiveConsole {
         match op {
             FieldAction::TextAdded | FieldAction::TextRemoved => {
                 self.should_repaint = true;
-                self.set_cursor(data)
+                self.update_outline(data)
             }
-            FieldAction::CursorMoved => self.set_cursor(data),
+            FieldAction::CursorMoved => self.update_outline(data),
             FieldAction::Noop => (),
         }
     }
@@ -136,11 +143,11 @@ impl ActiveConsole {
         atlas.draw(
             rnd,
             self.line_id,
-            PointF32::new(data.tex_begin_crd, TEXT_OFFSET.y),
+            PointF32::new(data.input_x_origin, TEXT_OFFSET.y),
         );
 
         guard.set(Rgba::new(Rgb::WHITE, 0.5));
-        let _ = rnd.fill_rect(data.outline);
+        let _ = rnd.fill_rect(RectF32::new(self.cursor_pos, data.glyph_size));
 
         if self.should_repaint {
             self.should_repaint = false;
@@ -159,9 +166,11 @@ impl ActiveConsole {
         }
     }
 
+    /// Clear the `Field` and update the cursor,
+    /// and signal for a repaint.
     pub fn clear(&mut self, data: &mut CachedData) {
         self.field.clear();
-        self.set_cursor(data);
+        self.update_outline(data);
 
         self.should_repaint = true;
     }
@@ -172,16 +181,25 @@ pub enum ConsoleState {
     Enabled(ActiveConsole),
 }
 
-/// Not all data needs to be recreated for the
+/// Not all data needs to be recreated every time the console is activated
+/// (i.e. on every `ActiveConsole::new()`). This struct aims to achieve just
+/// that, while also preventing double-mutable-borrow errors that would otherwise
+/// occur if the calling `Console` passed itself as a parameter.
 pub struct CachedData {
     placeholder_index: u8,
+
     font: Font,
-    tex_begin_crd: f32,
-    outline: RectF32,
+
+    /// The X coordinate of the input itself, equal to (placeholder names):
+    /// `left_prefix_padding + prefix_length + right_prefix_padding`
+    input_x_origin: f32,
+
+    /// This is cached because the size component is the size of
+    /// one glyph, and since `Self::font` is cached as well, we don't
+    /// need to re-calculate it on every console activation.
+    glyph_size: PointF32,
 }
 
-/// Holds data required for Quest's console.
-/// Also caches certain things for the activated variant.
 pub struct Console {
     pub data: CachedData,
     pub state: ConsoleState,
@@ -214,17 +232,14 @@ impl Console {
         let padding_crd = rs.x * 0.015;
         let tex_begin_crd =
             TEXT_OFFSET.x + Text::new(&font, PREFIX_TEXT)?.size().x as f32 + padding_crd;
-        let outline = RectF32::new(
-            Point::new(tex_begin_crd, TEXT_OFFSET.y),
-            Text::new(&font, " ")?.size().into(),
-        );
+        let glyph_size = Text::new(&font, " ")?.size().into();
 
         Ok(Self {
             data: CachedData {
                 placeholder_index: 0,
                 font,
-                tex_begin_crd,
-                outline,
+                input_x_origin: tex_begin_crd,
+                glyph_size,
             },
             state: ConsoleState::Disabled,
         })
@@ -244,8 +259,8 @@ impl Console {
 
                 let line_id = atlas.push(make_placeholder(&mut self.data));
 
-                self.state = ConsoleState::Enabled(ActiveConsole::new(prefix_id, line_id));
-                self.data.outline.pos = Point::new(self.data.tex_begin_crd, TEXT_OFFSET.y);
+                self.state =
+                    ConsoleState::Enabled(ActiveConsole::new(&self.data, prefix_id, line_id));
             }
 
             ConsoleState::Enabled(ac) => {
@@ -267,12 +282,16 @@ impl Console {
         }
     }
 
+    /// If the console is active, calls `ActiveConsole::process_str()`.
+    /// Otherwise, does nothing.
     pub fn try_process_str(&mut self, text: &str) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
             ac.process_str(&mut self.data, text);
         }
     }
 
+    /// If the console is active, calls `ActiveConsole::draw()`.
+    /// Otherwise, does nothing.
     pub fn try_draw(&mut self, rnd: impl Into<RendererRef>, atlas: &mut Atlas) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
             ac.draw(&mut self.data, atlas, rnd);

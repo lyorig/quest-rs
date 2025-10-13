@@ -3,8 +3,29 @@ use sdl3_sys::keycode::*;
 
 use crate::console::MAX_CHARS;
 
+/// Represents the `Console`'s text input field.
+///
+/// This is an intermediary between the console's graphical
+/// presentation of what's being typed, and the in-memory one.
+/// As such, many functions are written in a way that perform
+/// the necessary internal logic, but also return values that
+/// act as hints that the console uses to find out whether it's
+/// necessary to act on whatever processing just took place
+/// (mainly concerning re-constructing and drawing textures).
+///
+/// There may be many edge cases left in here; for now, I'm happy
+/// with a state of "oh well, at least it works", but a future
+/// analysis of an optimal way to perform UTF-8 operations may
+/// very well be in order.
 pub struct Field {
+    /// The current contents of the `Field`.
     pub text: String,
+
+    /// The **character** index of where the cursor lies.
+    /// Special care must be taken when using this variable
+    /// within Rust's `String` API, since they expect indices
+    /// to lie on a **byte** boundary. Use `self.cursor_byte_index()`
+    /// in order to find out which byte index it corresponds to.
     pub cursor: usize,
 }
 
@@ -137,7 +158,7 @@ impl Field {
                     let clip = clipboard::text();
                     let size = clip.len();
 
-                    self.text.insert_str(self.cursor, &clip);
+                    self.text.insert_str(self.cursor_byte_index(), &clip);
                     self.cursor += size;
 
                     return FieldAction::TextAdded;
@@ -150,10 +171,11 @@ impl Field {
     }
 
     pub fn trim_check(&mut self) {
-        if self.text.chars().count() > MAX_CHARS {
+        let c = self.text.chars().count();
+        if c > MAX_CHARS {
             self.text
                 .replace_range(self.text.char_indices().nth(MAX_CHARS).unwrap().0.., "");
-            self.cursor = self.text.len();
+            self.cursor = MAX_CHARS;
         }
     }
 
