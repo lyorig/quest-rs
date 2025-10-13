@@ -63,7 +63,7 @@ const PLACEHOLDERS: [&str; 40] = [
     "[MSVC is the real final boss]",
 ];
 
-const MAX_CHARS: usize = 32;
+pub const MAX_CHARS: usize = 32;
 const PREFIX_TEXT: &str = "raine1@Arctic~ %";
 const TEXT_OFFSET: PointF32 = Point::new(10.0, 10.0);
 
@@ -105,9 +105,7 @@ impl ActiveConsole {
     fn process_str(&mut self, data: &mut CachedData, input: &str) {
         self.should_repaint = self.field.process_str(input);
 
-        if self.field.text.chars().count() > MAX_CHARS {
-            self.field.trim(MAX_CHARS);
-        }
+        self.field.trim_check();
 
         self.set_cursor(data);
     }
@@ -117,9 +115,7 @@ impl ActiveConsole {
     fn process_key(&mut self, data: &mut CachedData, k: SDL_Keycode) {
         let op = self.field.process_key(k);
 
-        if self.field.text.chars().count() > MAX_CHARS {
-            self.field.trim(MAX_CHARS);
-        }
+        self.field.trim_check();
 
         // TODO: Convert to a "nicer" (not visually!) block with fallthroughs.
         match op {

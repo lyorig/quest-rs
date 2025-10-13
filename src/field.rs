@@ -1,6 +1,8 @@
 use halcyon::clipboard;
 use sdl3_sys::keycode::*;
 
+use crate::console::MAX_CHARS;
+
 pub struct Field {
     pub text: String,
     pub cursor: usize,
@@ -147,12 +149,12 @@ impl Field {
         FieldAction::Noop
     }
 
-    pub fn trim(&mut self, off: usize) {
-        if self.cursor > off {
-            self.cursor -= self.cursor - off;
+    pub fn trim_check(&mut self) {
+        if self.text.chars().count() > MAX_CHARS {
+            self.text
+                .replace_range(self.text.char_indices().nth(MAX_CHARS).unwrap().0.., "");
+            self.cursor = self.text.len();
         }
-
-        self.text.replace_range(off.., "");
     }
 
     pub fn clear(&mut self) {
