@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use halcyon::{
     color::{Rgb, Rgba},
@@ -88,6 +88,7 @@ pub struct ActiveConsole {
     /// Only updated when `self.update_outline()` is called,
     /// which sets its location to correspond to the `Field` cursor.
     cursor_area: PointF32,
+    cursor_time: Duration,
 
     prefix_id: AtlasId,
     line_id: AtlasId,
@@ -99,6 +100,7 @@ impl ActiveConsole {
         Self {
             field: Field::new(),
             cursor_area: PointF32::new(data.input_x_origin, TEXT_OFFSET.y),
+            cursor_time: Duration::ZERO,
             prefix_id,
             line_id,
             should_repaint: true,
@@ -107,6 +109,11 @@ impl ActiveConsole {
 
     fn update_outline(&mut self, data: &mut CachedData) {
         self.cursor_area.x = data.input_x_origin + self.field.cursor as f32 * data.glyph_size.x;
+        self.cursor_time = Duration::ZERO;
+    }
+
+    fn update_delta(&mut self, delta: Duration) {
+        self.cursor_time += delta;
     }
 
     fn process_str(&mut self, data: &mut CachedData, input: &str) {
@@ -147,7 +154,10 @@ impl ActiveConsole {
         );
 
         guard.set(Rgba::new(Rgb::WHITE, 0.5));
-        let _ = rnd.fill_rect(RectF32::new(self.cursor_area, data.glyph_size));
+
+        if self.cursor_time.subsec_millis() < 500 {
+            let _ = rnd.fill_rect(RectF32::new(self.cursor_area, data.glyph_size));
+        }
 
         if self.should_repaint {
             self.should_repaint = false;
@@ -295,6 +305,12 @@ impl Console {
     pub fn draw(&mut self, rnd: impl Into<RendererRef>, atlas: &mut Atlas) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
             ac.draw(&mut self.data, atlas, rnd);
+        }
+    }
+
+    pub fn update_delta(&mut self, elapsed: Duration) {
+        if let ConsoleState::Enabled(ac) = &mut self.state {
+            ac.update_delta(elapsed);
         }
     }
 }

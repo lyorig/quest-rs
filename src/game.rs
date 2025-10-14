@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use halcyon::{
     color::Rgba,
@@ -72,6 +72,8 @@ impl Game {
 
     /// Starts up the main loop.
     pub fn main_loop(&mut self) {
+        let mut delta = Instant::now();
+
         // I could probably just use a named loop and break it in case
         // of a quit event, but there are two issues:
         //
@@ -84,20 +86,18 @@ impl Game {
         // lot of extra flexibility, so I don't particularly mind implementing
         // things this way.
         while self.running {
+            // --- Processing ---
             let _ = self.renderer.clear();
 
+            self.update_delta(delta.elapsed());
+            delta = Instant::now();
+
             self.process_events();
-
             self.atlas.pack(&self.renderer);
+
+            // --- Drawing ---
             self.console.draw(&self.renderer, &mut self.atlas);
-
-            if let Some(at) = self.atlas.texture.as_ref() {
-                let sz = Rect::new(Point::new(300.0, 300.0), at.size());
-                let _col = DrawColorGuard::new(&self.renderer, Rgba::BLACK);
-
-                let _ = self.renderer.draw_rect(sz);
-                let _ = self.renderer.draw(at, None, Some(&sz));
-            }
+            self.draw_atlas();
 
             let _ = self.renderer.present();
         }
@@ -136,10 +136,7 @@ impl Game {
                             println!("arg #{i} = \"{arg}\"");
                         }
                     }
-                    "get-error" => println!("{}", {
-                        let err = unsafe { halcyon::error::get_str() };
-                        if err.is_empty() { "[no error]" } else { err }
-                    }),
+                    "get-error" => println!("\"{}\"", { unsafe { halcyon::error::get_str() } }),
                     "set-error" => match args.next() {
                         Some(v) => halcyon::error::set(v),
                         None => println!("usage: set-error [value]"),
@@ -149,6 +146,20 @@ impl Game {
 
                 ac.clear(&mut self.console.data);
             }
+        }
+    }
+
+    fn update_delta(&mut self, elapsed: Duration) {
+        self.console.update_delta(elapsed);
+    }
+
+    fn draw_atlas(&self) {
+        if let Some(at) = self.atlas.texture.as_ref() {
+            let sz = Rect::new(Point::new(300.0, 300.0), at.size());
+            let _col = DrawColorGuard::new(&self.renderer, Rgba::BLACK);
+
+            let _ = self.renderer.draw_rect(sz);
+            let _ = self.renderer.draw(at, None, Some(&sz));
         }
     }
 }
