@@ -87,7 +87,7 @@ pub struct ActiveConsole {
     /// Where the cursor is currently being drawn to.
     /// Only updated when `self.update_outline()` is called,
     /// which sets its location to correspond to the `Field` cursor.
-    cursor_pos: PointF32,
+    cursor_area: PointF32,
 
     prefix_id: AtlasId,
     line_id: AtlasId,
@@ -98,7 +98,7 @@ impl ActiveConsole {
     pub fn new(data: &CachedData, prefix_id: AtlasId, line_id: AtlasId) -> Self {
         Self {
             field: Field::new(),
-            cursor_pos: PointF32::new(data.input_x_origin, TEXT_OFFSET.y),
+            cursor_area: PointF32::new(data.input_x_origin, TEXT_OFFSET.y),
             prefix_id,
             line_id,
             should_repaint: true,
@@ -106,7 +106,7 @@ impl ActiveConsole {
     }
 
     fn update_outline(&mut self, data: &mut CachedData) {
-        self.cursor_pos.x = data.input_x_origin + self.field.cursor as f32 * data.glyph_size.x;
+        self.cursor_area.x = data.input_x_origin + self.field.cursor as f32 * data.glyph_size.x;
     }
 
     fn process_str(&mut self, data: &mut CachedData, input: &str) {
@@ -147,7 +147,7 @@ impl ActiveConsole {
         );
 
         guard.set(Rgba::new(Rgb::WHITE, 0.5));
-        let _ = rnd.fill_rect(RectF32::new(self.cursor_pos, data.glyph_size));
+        let _ = rnd.fill_rect(RectF32::new(self.cursor_area, data.glyph_size));
 
         if self.should_repaint {
             self.should_repaint = false;

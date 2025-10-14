@@ -138,12 +138,8 @@ impl Game {
                         }
                     }
                     "get-error" => println!("{}", {
-                        let err = halcyon::error::get_owned();
-                        if err.is_empty() {
-                            "[no error]".into()
-                        } else {
-                            err
-                        }
+                        let err = unsafe { halcyon::error::get_str() };
+                        if err.is_empty() { "[no error]" } else { err }
                     }),
                     "set-error" => match args.next() {
                         Some(v) => halcyon::error::set(v),
