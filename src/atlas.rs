@@ -101,9 +101,9 @@ impl Atlas {
         let mut i = 0;
 
         while i < self.data.len() {
-            let foo = &mut self.data[i];
-            if !foo.is_valid() {
-                *foo = data;
+            let d = &mut self.data[i];
+            if !d.is_valid() {
+                *d = data;
                 return AtlasId(i as _);
             }
 

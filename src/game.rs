@@ -15,11 +15,7 @@ use halcyon::{
     window::{Window, WindowBuilder},
 };
 
-use sdl3_sys::{
-    blendmode::{SDL_BLENDMODE_BLEND, SDL_BLENDMODE_NONE},
-    keycode::*,
-    render::SDL_SetTextureBlendMode,
-};
+use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
 
 use crate::{
     atlas::Atlas,
@@ -50,7 +46,7 @@ impl Game {
             .build(vid)?;
 
         let mut renderer = RendererBuilder::new(&window);
-        if let None = std::env::args().find(|x| x == "--no-vsync") {
+        if !std::env::args().any(|x| x == "--no-vsync") {
             renderer.vsync(1);
         }
 
@@ -124,6 +120,9 @@ impl Game {
         }
     }
 
+    /// Command handling differs from the C++ version in that operations
+    /// on the `Game` class need to be performed by itself, or we risk
+    /// pissing off the borrow checker with multiple mutable borrows.
     fn process_command(&mut self) {
         if let ConsoleState::Enabled(ac) = &mut self.console.state {
             let mut args = ac.field.text.split(' ');
@@ -144,9 +143,6 @@ impl Game {
                     "set-error" => match args.next() {
                         Some(v) => halcyon::error::set(v),
                         None => println!("usage: set-error [value]"),
-                    },
-                    "cause-error" => unsafe {
-                        SDL_SetTextureBlendMode(std::ptr::null_mut(), SDL_BLENDMODE_NONE);
                     },
                     _ => println!("unknown command \"{name}\""),
                 }
