@@ -118,31 +118,13 @@ impl Atlas {
         self.data[i.0 as usize].invalidate();
     }
 
-    pub fn pack(&mut self, rnd: impl Into<RendererRef>) {
-        let rnd: RendererRef = rnd.into();
+    fn create_texture(&mut self, rnd: RendererRef, size: PointI32) {
+        let mut new_tex =
+            Texture::new(rnd, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, size).unwrap();
 
-        if !self.pack_queued {
-            return;
-        }
-
-        self.pack_queued = false;
-
-        let input = Input {
-            max_bin_side: 1024,
-            discard_step: -4,
-            handle_successful_insertion: |_| CallbackResult::ContinuePacking,
-            handle_unsuccessful_insertion: |_| CallbackResult::AbortPacking,
-        };
-
-        let size = find_best_packing(&mut self.empty_spaces, &mut self.data, &input);
-        let mut new_tex = Texture::new(
-            rnd,
-            SDL_PIXELFORMAT_RGBA32,
-            SDL_TEXTUREACCESS_TARGET,
-            Point::new(size.w, size.h),
-        )
-        .unwrap();
-        new_tex.set_blend_mode(SDL_BLENDMODE_ADD_PREMULTIPLIED);
+        // PERF: This means "just copy the textures without doing any calculations"
+        // which is absolutely sufficient for our case.
+        new_tex.set_blend_mode(SDL_BLENDMODE_NONE);
 
         let _tgt = RenderTargetGuard::new(rnd, &new_tex);
         let _col = DrawColorGuard::new(rnd, Rgba::TRANSPARENT);
@@ -178,7 +160,29 @@ impl Atlas {
             d.area = new_area;
         }
 
+        new_tex.set_blend_mode(SDL_BLENDMODE_ADD_PREMULTIPLIED);
         self.texture = Some(new_tex);
+    }
+
+    pub fn pack(&mut self, rnd: impl Into<RendererRef>) {
+        let rnd: RendererRef = rnd.into();
+
+        if !self.pack_queued {
+            return;
+        }
+
+        self.pack_queued = false;
+
+        let input = Input {
+            max_bin_side: 1024,
+            discard_step: -4,
+            handle_successful_insertion: |_| CallbackResult::ContinuePacking,
+            handle_unsuccessful_insertion: |_| CallbackResult::AbortPacking,
+        };
+
+        let size = find_best_packing(&mut self.empty_spaces, &mut self.data, &input);
+
+        self.create_texture(rnd, Point::new(size.w as _, size.h as _));
     }
 
     pub fn draw(&self, rnd: impl Into<RendererRef>, id: AtlasId, dst: PointF32) {

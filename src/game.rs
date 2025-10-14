@@ -88,11 +88,11 @@ impl Game {
         while self.running {
             // --- Processing ---
             let _ = self.renderer.clear();
+            self.process_events();
 
             self.update_delta(delta.elapsed());
             delta = Instant::now();
 
-            self.process_events();
             self.atlas.pack(&self.renderer);
 
             // --- Drawing ---
