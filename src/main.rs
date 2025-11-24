@@ -1,8 +1,9 @@
-// #![allow(dead_code)]
+#![allow(dead_code)]
 
 use game::Game;
 use halcyon::{context::Context, subsystem::Video, util::c_ptr_to_str};
 
+mod anim;
 mod atlas;
 mod console;
 mod debug;

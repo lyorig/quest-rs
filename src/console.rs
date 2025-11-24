@@ -161,7 +161,6 @@ impl ActiveConsole {
 
         if self.should_repaint {
             self.should_repaint = false;
-
             atlas.replace(self.line_id, rnd, self.make_line(data));
         }
     }
