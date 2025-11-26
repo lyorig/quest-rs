@@ -11,7 +11,7 @@ use rectpack2d_rs::{
     best_bin_finder::CallbackResult,
     empty_space_allocators::DefaultEmptySpaces,
     empty_spaces::EmptySpaces,
-    finders_interface::{Input, find_best_packing},
+    finders_interface::{find_best_packing, Input},
     rect_structs::RectXYWH,
 };
 
