@@ -2,7 +2,8 @@ use std::str::Split;
 
 use crate::game::GameData;
 
-type CommandFn = fn(&mut GameData, Split<'_, char>);
+type ArgsSplit<'a> = Split<'a, char>;
+type CommandFn = fn(&mut GameData, ArgsSplit);
 
 pub struct Command {
     name: &'static str,
@@ -15,7 +16,7 @@ impl Command {
         Self { name, help, func }
     }
 
-    pub fn execute(&self, data: &mut GameData, args: Split<'_, char>) {
+    pub fn execute(&self, data: &mut GameData, args: ArgsSplit<'_>) {
         (self.func)(data, args)
     }
 }
