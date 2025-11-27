@@ -4,6 +4,7 @@ use halcyon::{
     color::Rgba,
     defs::SdlResult,
     event::{Event, EventIter},
+    guard::DrawColorGuard,
     rect::{Point, Rect},
     renderer::{Renderer, RendererBuilder},
     resource_loader::ResourceLoader,
@@ -38,7 +39,8 @@ impl GameData {
         if let Some(at) = self.atlas.texture.as_ref() {
             let sz = Rect::new(Point::new(300.0, 300.0), at.size());
 
-            self.renderer.set_draw_color_f32(Rgba::BLACK);
+            let _dcl = DrawColorGuard::new(&self.renderer, Rgba::BLACK);
+
             let _ = self.renderer.draw_rect(sz);
             let _ = self.renderer.draw(at, None, Some(&sz));
         }
@@ -101,9 +103,7 @@ impl Game {
         // lot of extra flexibility, so I don't particularly mind implementing
         // things this way.
         while self.data.running {
-            self.data
-                .renderer
-                .set_draw_color_f32(Rgba::rgb(0.0, 0.0, 0.75));
+            let _col = DrawColorGuard::new(&self.data.renderer, Rgba::rgb(0.0, 0.0, 0.75));
             let _ = self.data.renderer.clear();
 
             // --- Processing ---

@@ -1,6 +1,6 @@
 use halcyon::{
     color::Rgba,
-    guard::{BlendModeGuard, RenderTargetGuard},
+    guard::{BlendModeGuard, DrawColorGuard, RenderTargetGuard},
     rect::{Point, PointF32, PointI32, RectF32},
     renderer::RendererRef,
     surface::Surface,
@@ -127,7 +127,7 @@ impl Atlas {
         new_tex.set_blend_mode(SDL_BLENDMODE_NONE);
 
         let _tgt = RenderTargetGuard::new(rnd, &new_tex);
-        rnd.set_draw_color_f32(Rgba::TRANSPARENT);
+        let _dcl = DrawColorGuard::new(rnd, Rgba::TRANSPARENT);
 
         let _ = rnd.clear();
 
@@ -214,8 +214,7 @@ impl Atlas {
 
             let _blend = BlendModeGuard::new(rnd, SDL_BLENDMODE_NONE);
             let _tgt = RenderTargetGuard::new(rnd, tex);
-
-            rnd.set_draw_color_f32(Rgba::TRANSPARENT);
+            let _col = DrawColorGuard::new(rnd, Rgba::TRANSPARENT);
 
             let _ = rnd.fill_rect(dst);
             let _ = rnd.draw(&rep, None, Some(&dst));
