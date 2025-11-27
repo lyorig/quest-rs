@@ -19,19 +19,36 @@ use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
 
 use crate::{
     atlas::Atlas,
+    command::COMMANDS,
     console::{Console, ConsoleState},
 };
 
-pub struct Game {
+pub struct GameData {
     pub running: bool,
 
     pub atlas: Atlas,
-    console: Console,
 
     pub renderer: Renderer,
     pub window: Window,
 
     pub _ttf: TtfContext,
+}
+
+impl GameData {
+    pub fn draw_atlas(&self) {
+        if let Some(at) = self.atlas.texture.as_ref() {
+            let sz = Rect::new(Point::new(300.0, 300.0), at.size());
+            let _col = DrawColorGuard::new(&self.renderer, Rgba::BLACK);
+
+            let _ = self.renderer.draw_rect(sz);
+            let _ = self.renderer.draw(at, None, Some(&sz));
+        }
+    }
+}
+
+pub struct Game {
+    pub data: GameData,
+    console: Console,
 }
 
 impl Game {
@@ -61,12 +78,14 @@ impl Game {
         let console = Console::new(&renderer, &ttf, epoch, res_ldr)?;
 
         Ok(Self {
-            running: true,
-            atlas: Atlas::new(),
+            data: GameData {
+                running: true,
+                atlas: Atlas::new(),
+                renderer,
+                window,
+                _ttf: TtfContext::new()?,
+            },
             console,
-            renderer,
-            window,
-            _ttf: TtfContext::new()?,
         })
     }
 
@@ -85,30 +104,30 @@ impl Game {
         // In any case, it's literally one extra byte in exchange for a whole
         // lot of extra flexibility, so I don't particularly mind implementing
         // things this way.
-        while self.running {
+        while self.data.running {
             // --- Processing ---
-            let _ = self.renderer.clear();
+            let _ = self.data.renderer.clear();
             self.process_events();
 
             self.update_delta(delta.elapsed());
             delta = Instant::now();
 
-            self.atlas.pack(&self.renderer);
+            self.data.atlas.pack(&self.data.renderer);
 
             // --- Drawing ---
-            self.console.draw(&self.renderer, &mut self.atlas);
-            self.draw_atlas();
+            self.console.draw(&self.data.renderer, &mut self.data.atlas);
+            self.data.draw_atlas();
 
-            let _ = self.renderer.present();
+            let _ = self.data.renderer.present();
         }
     }
 
     fn process_events(&mut self) {
         for evt in EventIter::new() {
             match evt {
-                Event::Quit => self.running = false,
+                Event::Quit => self.data.running = false,
                 Event::KeyDown(k) => match k.key {
-                    SDLK_F1 => self.console.switch(&mut self.atlas, &self.window),
+                    SDLK_F1 => self.console.switch(&mut self.data.atlas, &self.data.window),
                     SDLK_RETURN => self.process_command(),
                     other => self.console.process_key(other),
                 },
@@ -120,28 +139,22 @@ impl Game {
         }
     }
 
-    /// Command handling differs from the C++ version in that operations
-    /// on the `Game` class need to be performed by itself, or we risk
-    /// pissing off the borrow checker with multiple mutable borrows.
     fn process_command(&mut self) {
         if let ConsoleState::Enabled(ac) = &mut self.console.state {
             let mut args = ac.field.text.split(' ');
             if let Some(name) = args.next() {
                 match name {
-                    "exit" => {
-                        self.running = false;
-                    }
-                    "test-args" => {
-                        for (i, arg) in args.enumerate() {
-                            println!("arg #{i} = \"{arg}\"");
-                        }
-                    }
-                    "get-error" => println!("\"{}\"", { unsafe { halcyon::error::get_str() } }),
-                    "set-error" => match args.next() {
-                        Some(v) => halcyon::error::set(v),
-                        None => println!("usage: set-error [value]"),
+                    "help" => match args.next() {
+                        Some(command) => match COMMANDS.iter().find(|c| c.name == command) {
+                            Some(cmd) => println!("{command}: {}", cmd.help),
+                            None => println!("help: cannot find command \"{command}\""),
+                        },
+                        None => println!("usage: help [command]"),
                     },
-                    _ => println!("unknown command \"{name}\""),
+                    command => match COMMANDS.iter().find(|c| c.name == command) {
+                        Some(cmd) => (cmd.func)(&mut self.data, args),
+                        None => println!("unknown command \"{name}\""),
+                    },
                 }
 
                 ac.clear(&mut self.console.data);
@@ -151,15 +164,5 @@ impl Game {
 
     fn update_delta(&mut self, elapsed: Duration) {
         self.console.update_delta(elapsed);
-    }
-
-    fn draw_atlas(&self) {
-        if let Some(at) = self.atlas.texture.as_ref() {
-            let sz = Rect::new(Point::new(300.0, 300.0), at.size());
-            let _col = DrawColorGuard::new(&self.renderer, Rgba::BLACK);
-
-            let _ = self.renderer.draw_rect(sz);
-            let _ = self.renderer.draw(at, None, Some(&sz));
-        }
     }
 }
