@@ -4,7 +4,6 @@ use halcyon::{
     color::Rgba,
     defs::SdlResult,
     event::{Event, EventIter},
-    guard::DrawColorGuard,
     rect::{Point, Rect},
     renderer::{Renderer, RendererBuilder},
     resource_loader::ResourceLoader,
@@ -19,7 +18,7 @@ use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
 
 use crate::{
     atlas::Atlas,
-    command::COMMANDS,
+    command::{self},
     console::{Console, ConsoleState},
 };
 
@@ -38,8 +37,8 @@ impl GameData {
     pub fn draw_atlas(&self) {
         if let Some(at) = self.atlas.texture.as_ref() {
             let sz = Rect::new(Point::new(300.0, 300.0), at.size());
-            let _col = DrawColorGuard::new(&self.renderer, Rgba::BLACK);
 
+            self.renderer.set_draw_color_f32(Rgba::BLACK);
             let _ = self.renderer.draw_rect(sz);
             let _ = self.renderer.draw(at, None, Some(&sz));
         }
@@ -68,10 +67,7 @@ impl Game {
         }
 
         let renderer = renderer.build()?;
-
         renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
-        renderer.set_draw_color_f32(Rgba::rgb(0.0, 0.0, 0.75));
-        let _ = renderer.clear();
 
         let epoch = Instant::now();
         let res_ldr = ResourceLoader::new();
@@ -105,19 +101,23 @@ impl Game {
         // lot of extra flexibility, so I don't particularly mind implementing
         // things this way.
         while self.data.running {
-            // --- Processing ---
+            self.data
+                .renderer
+                .set_draw_color_f32(Rgba::rgb(0.0, 0.0, 0.75));
             let _ = self.data.renderer.clear();
+
+            // --- Processing ---
             self.process_events();
 
+            // --- Updating ---
             self.update_delta(delta.elapsed());
             delta = Instant::now();
-
-            self.data.atlas.pack(&self.data.renderer);
 
             // --- Drawing ---
             self.console.draw(&self.data.renderer, &mut self.data.atlas);
             self.data.draw_atlas();
 
+            self.data.atlas.pack(&self.data.renderer);
             let _ = self.data.renderer.present();
         }
     }
@@ -144,15 +144,8 @@ impl Game {
             let mut args = ac.field.text.split(' ');
             if let Some(name) = args.next() {
                 match name {
-                    "help" => match args.next() {
-                        Some(command) => match COMMANDS.iter().find(|c| c.name == command) {
-                            Some(cmd) => println!("{command}: {}", cmd.help),
-                            None => println!("help: cannot find command \"{command}\""),
-                        },
-                        None => println!("usage: help [command]"),
-                    },
-                    command => match COMMANDS.iter().find(|c| c.name == command) {
-                        Some(cmd) => (cmd.func)(&mut self.data, args),
+                    c => match command::find(c) {
+                        Some(c) => c.execute(&mut self.data, args),
                         None => println!("unknown command \"{name}\""),
                     },
                 }

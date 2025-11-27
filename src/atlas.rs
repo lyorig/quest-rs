@@ -1,6 +1,6 @@
 use halcyon::{
     color::Rgba,
-    guard::{BlendModeGuard, DrawColorGuard, RenderTargetGuard},
+    guard::{BlendModeGuard, RenderTargetGuard},
     rect::{Point, PointF32, PointI32, RectF32},
     renderer::RendererRef,
     surface::Surface,
@@ -11,7 +11,7 @@ use rectpack2d_rs::{
     best_bin_finder::CallbackResult,
     empty_space_allocators::DefaultEmptySpaces,
     empty_spaces::EmptySpaces,
-    finders_interface::{find_best_packing, Input},
+    finders_interface::{Input, find_best_packing},
     rect_structs::RectXYWH,
 };
 
@@ -127,7 +127,7 @@ impl Atlas {
         new_tex.set_blend_mode(SDL_BLENDMODE_NONE);
 
         let _tgt = RenderTargetGuard::new(rnd, &new_tex);
-        let _col = DrawColorGuard::new(rnd, Rgba::TRANSPARENT);
+        rnd.set_draw_color_f32(Rgba::TRANSPARENT);
 
         let _ = rnd.clear();
 
@@ -213,8 +213,9 @@ impl Atlas {
             let dst = self.data[id.0 as usize].area;
 
             let _blend = BlendModeGuard::new(rnd, SDL_BLENDMODE_NONE);
-            let _col = DrawColorGuard::new(rnd, Rgba::TRANSPARENT);
             let _tgt = RenderTargetGuard::new(rnd, tex);
+
+            rnd.set_draw_color_f32(Rgba::TRANSPARENT);
 
             let _ = rnd.fill_rect(dst);
             let _ = rnd.draw(&rep, None, Some(&dst));

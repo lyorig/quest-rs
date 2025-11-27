@@ -7,6 +7,7 @@ pub trait Animatable:
     Add<Output = Self> + Sub<Output = Self> + Mul<f64, Output = Self> + Copy + Default
 {
 }
+
 impl<T: Add<Output = Self> + Sub<Output = Self> + Mul<f64, Output = Self> + Copy + Default>
     Animatable for T
 {

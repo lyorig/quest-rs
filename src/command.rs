@@ -5,18 +5,27 @@ use crate::game::GameData;
 type CommandFn = fn(&mut GameData, Split<'_, char>);
 
 pub struct Command {
-    pub name: &'static str,
-    pub help: &'static str,
-    pub func: CommandFn,
+    name: &'static str,
+    help: &'static str,
+    func: CommandFn,
 }
 
 impl Command {
-    pub const fn new(name: &'static str, help: &'static str, func: CommandFn) -> Self {
+    const fn new(name: &'static str, help: &'static str, func: CommandFn) -> Self {
         Self { name, help, func }
+    }
+
+    pub fn execute(&self, data: &mut GameData, args: Split<'_, char>) {
+        (self.func)(data, args)
     }
 }
 
-pub const COMMANDS: [Command; 4] = [
+const COMMANDS: [Command; 5] = [
+    Command::new(
+        "help",
+        "Print a command's provided help text.",
+        |_, mut args| help(args.next()),
+    ),
     Command::new("exit", "Exit the game.", |g, _| g.running = false),
     Command::new("commit", "Print the commit hash.", |_, _| {
         println!("{}", env!("BUILD_COMMIT_HASH"))
@@ -32,3 +41,21 @@ pub const COMMANDS: [Command; 4] = [
         |_, _| println!("\"{}\"", unsafe { halcyon::error::get_str() }),
     ),
 ];
+
+pub fn find(name: &str) -> Option<&Command> {
+    COMMANDS.iter().find(|c| c.name == name)
+}
+
+fn help(cmd: Option<&str>) {
+    match cmd {
+        Some(cmd) => match find(cmd) {
+            Some(c) => help_exact(c),
+            None => println!("help: unknown command {cmd}"),
+        },
+        None => help_exact(&COMMANDS[0]),
+    }
+}
+
+fn help_exact(cmd: &Command) {
+    println!("help: {} => {}", cmd.name, cmd.help)
+}

@@ -3,7 +3,6 @@ use std::time::{Duration, Instant};
 use halcyon::{
     color::{Rgb, Rgba},
     defs::SdlResult,
-    guard::DrawColorGuard,
     rect::{Point, PointF32, RectF32},
     renderer::RendererRef,
     resource_loader::ResourceLoader,
@@ -143,7 +142,7 @@ impl ActiveConsole {
     fn draw(&mut self, data: &mut CachedData, atlas: &mut Atlas, rnd: impl Into<RendererRef>) {
         let rnd: RendererRef = rnd.into();
 
-        let guard = DrawColorGuard::new(rnd, Rgba::new(Rgb::BLACK, 0.5));
+        rnd.set_draw_color_f32(Rgba::new(Rgb::BLACK, 0.5));
         let _ = rnd.fill_target();
 
         atlas.draw(rnd, self.prefix_id, TEXT_OFFSET);
@@ -153,7 +152,7 @@ impl ActiveConsole {
             PointF32::new(data.input_x_origin, TEXT_OFFSET.y),
         );
 
-        guard.set(Rgba::new(Rgb::WHITE, 0.5));
+        rnd.set_draw_color_f32(Rgba::new(Rgb::WHITE, 0.5));
 
         if self.cursor_time.subsec_millis() < 500 {
             let _ = rnd.fill_rect(RectF32::new(self.cursor_area, data.glyph_size));
