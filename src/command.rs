@@ -21,26 +21,34 @@ impl Command {
     }
 }
 
+fn cmd_help(_: &mut GameData, mut args: ArgsSplit<'_>) {
+    help(args.next());
+}
+
+fn cmd_exit(g: &mut GameData, _: ArgsSplit<'_>) {
+    g.running = false;
+}
+
+fn cmd_commit(_: &mut GameData, _: ArgsSplit<'_>) {
+    println!("{}", env!("BUILD_COMMIT_HASH"))
+}
+
+fn cmd_test_args(_: &mut GameData, args: ArgsSplit<'_>) {
+    for (i, arg) in args.enumerate() {
+        println!("{i}: {arg}");
+    }
+}
+
+fn cmd_get_error(_: &mut GameData, _: ArgsSplit<'_>) {
+    println!("\"{}\"", unsafe { halcyon::error::get_str() })
+}
+
 const COMMANDS: [Command; 5] = [
-    Command::new(
-        "help",
-        "Print a command's provided help text.",
-        |_, mut args| help(args.next()),
-    ),
-    Command::new("exit", "Exit the game.", |g, _| g.running = false),
-    Command::new("commit", "Print the commit hash.", |_, _| {
-        println!("{}", env!("BUILD_COMMIT_HASH"))
-    }),
-    Command::new("test-args", "Print all arguments.", |_, args| {
-        for (i, arg) in args.enumerate() {
-            println!("{i}: {arg}");
-        }
-    }),
-    Command::new(
-        "get-error",
-        "Print the return value of SDL_GetError().",
-        |_, _| println!("\"{}\"", unsafe { halcyon::error::get_str() }),
-    ),
+    Command::new("help", "Print a command's provided help text.", cmd_help),
+    Command::new("exit", "Exit the game.", cmd_exit),
+    Command::new("commit", "Print the commit hash.", cmd_commit),
+    Command::new("test-args", "Print all arguments.", cmd_test_args),
+    Command::new("get-error", "Print SDL_GetError().", cmd_get_error),
 ];
 
 pub fn find(name: &str) -> Option<&Command> {
