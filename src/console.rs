@@ -63,7 +63,6 @@ const PLACEHOLDERS: [&str; 40] = [
     "[MSVC is the real final boss]",
 ];
 
-pub const MAX_CHARS: usize = 32;
 const PREFIX_TEXT: &str = "raine1@Arctic~ %";
 const TEXT_OFFSET: PointF32 = Point::new(10.0, 10.0);
 

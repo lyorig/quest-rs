@@ -1,7 +1,7 @@
 use halcyon::clipboard;
 use sdl3_sys::keycode::*;
 
-use crate::console::MAX_CHARS;
+const MAX_CHARS: usize = 32;
 
 /// Represents the `Console`'s text input field.
 ///

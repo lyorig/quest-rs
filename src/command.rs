@@ -22,7 +22,14 @@ impl Command {
 }
 
 fn cmd_help(_: &mut GameData, mut args: ArgsSplit<'_>) {
-    help(args.next());
+    let cmd = args.next();
+    match cmd {
+        Some(cmd) => match find(cmd) {
+            Some(c) => help_exact(c),
+            None => println!("help: unknown command {cmd}"),
+        },
+        None => help_exact(&COMMANDS[0]),
+    }
 }
 
 fn cmd_exit(g: &mut GameData, _: ArgsSplit<'_>) {
@@ -53,16 +60,6 @@ const COMMANDS: [Command; 5] = [
 
 pub fn find(name: &str) -> Option<&Command> {
     COMMANDS.iter().find(|c| c.name == name)
-}
-
-fn help(cmd: Option<&str>) {
-    match cmd {
-        Some(cmd) => match find(cmd) {
-            Some(c) => help_exact(c),
-            None => println!("help: unknown command {cmd}"),
-        },
-        None => help_exact(&COMMANDS[0]),
-    }
 }
 
 fn help_exact(cmd: &Command) {
