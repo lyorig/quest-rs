@@ -10,6 +10,7 @@ mod console;
 mod debug;
 mod field;
 mod game;
+mod glyph_map;
 mod util;
 
 fn main() {

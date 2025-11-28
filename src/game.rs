@@ -138,11 +138,9 @@ impl Game {
         if let ConsoleState::Enabled(ac) = &mut self.console.state {
             let mut args = ac.field.text.split(' ');
             if let Some(name) = args.next() {
-                match name {
-                    c => match command::find(c) {
-                        Some(c) => c.execute(&mut self.data, args),
-                        None => println!("unknown command \"{name}\""),
-                    },
+                match command::find(name) {
+                    Some(c) => c.execute(&mut self.data, args),
+                    None => println!("unknown command \"{name}\""),
                 }
 
                 ac.clear(&mut self.console.data);
