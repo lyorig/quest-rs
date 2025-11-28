@@ -8,7 +8,7 @@ use halcyon::{
     renderer::RendererRef,
     resource_loader::ResourceLoader,
     surface::Surface,
-    ttf::{Font, Text, TtfContext},
+    ttf::{Font, Text},
     window::WindowRef,
 };
 use sdl3_sys::keycode::*;
@@ -217,7 +217,6 @@ pub struct Console {
 impl Console {
     pub fn new(
         rnd: impl Into<RendererRef>,
-        ttf: &TtfContext,
         epoch: Instant,
         base: ResourceLoader,
     ) -> SdlResult<Self> {
@@ -225,7 +224,6 @@ impl Console {
         let rs: PointF32 = rnd.output_size().into();
 
         let font = find_sized_font(
-            ttf,
             &base.resolve("../../bin/assets/UbuntuMono.ttf"),
             rs.y * 0.045,
         )?;

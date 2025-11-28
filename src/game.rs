@@ -10,7 +10,6 @@ use halcyon::{
     resource_loader::ResourceLoader,
     subsystem::Video,
     traits::BlendMode,
-    ttf::TtfContext,
     util::c_ptr_to_str,
     window::{Window, WindowBuilder},
 };
@@ -30,8 +29,6 @@ pub struct GameData {
 
     pub renderer: Renderer,
     pub window: Window,
-
-    pub _ttf: TtfContext,
 }
 
 impl GameData {
@@ -55,8 +52,6 @@ pub struct Game {
 impl Game {
     /// Create a new game.
     pub fn new(vid: &Video) -> SdlResult<Self> {
-        let ttf = TtfContext::new().expect("Should be able to initialize TTF");
-
         let window = WindowBuilder::new()
             .size(Point::new(1280, 720))
             .position(Point::new(Window::POS_CENTERED, Window::POS_CENTERED))
@@ -73,7 +68,7 @@ impl Game {
 
         let epoch = Instant::now();
         let res_ldr = ResourceLoader::new();
-        let console = Console::new(&renderer, &ttf, epoch, res_ldr)?;
+        let console = Console::new(&renderer, epoch, res_ldr)?;
 
         Ok(Self {
             data: GameData {
@@ -81,7 +76,6 @@ impl Game {
                 atlas: Atlas::new(),
                 renderer,
                 window,
-                _ttf: TtfContext::new()?,
             },
             console,
         })
@@ -113,11 +107,12 @@ impl Game {
             self.update_delta(delta.elapsed());
             delta = Instant::now();
 
+            self.data.atlas.pack(&self.data.renderer);
+
             // --- Drawing ---
             self.console.draw(&self.data.renderer, &mut self.data.atlas);
             self.data.draw_atlas();
 
-            self.data.atlas.pack(&self.data.renderer);
             let _ = self.data.renderer.present();
         }
     }
