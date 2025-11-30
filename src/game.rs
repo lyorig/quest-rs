@@ -10,6 +10,7 @@ use halcyon::{
     resource_loader::ResourceLoader,
     subsystem::Video,
     traits::BlendMode,
+    ttf::TtfContext,
     util::c_ptr_to_str,
     window::{Window, WindowBuilder},
 };
@@ -29,6 +30,7 @@ pub struct GameData {
 
     pub renderer: Renderer,
     pub window: Window,
+    pub ttf: TtfContext,
 }
 
 impl GameData {
@@ -44,14 +46,14 @@ impl GameData {
     }
 }
 
-pub struct Game {
+pub struct Game<'a> {
     pub data: GameData,
-    console: Console,
+    console: Console<'a>,
 }
 
-impl Game {
+impl Game<'_> {
     /// Create a new game.
-    pub fn new(vid: &Video) -> SdlResult<Self> {
+    pub fn new<'a>(vid: &Video, ttf: &'a TtfContext) -> SdlResult<Game<'a>> {
         let window = WindowBuilder::new()
             .size(Point::new(1280, 720))
             .position(Point::new(Window::POS_CENTERED, Window::POS_CENTERED))
@@ -68,17 +70,18 @@ impl Game {
 
         let epoch = Instant::now();
         let res_ldr = ResourceLoader::new();
-        let console = Console::new(&renderer, epoch, res_ldr)?;
 
-        Ok(Self {
-            data: GameData {
-                running: true,
-                atlas: Atlas::new(),
-                renderer,
-                window,
-            },
-            console,
-        })
+        let data = GameData {
+            running: true,
+            atlas: Atlas::new(),
+            renderer,
+            window,
+            ttf: ttf.try_clone()?,
+        };
+
+        let console = Console::new(&data.renderer, epoch, res_ldr, &ttf)?;
+
+        Ok(Game::<'a> { data, console })
     }
 
     /// Starts up the main loop.

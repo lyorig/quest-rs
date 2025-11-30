@@ -8,7 +8,7 @@ use halcyon::{
     renderer::RendererRef,
     resource_loader::ResourceLoader,
     surface::Surface,
-    ttf::{Font, Text},
+    ttf::{Font, Text, TtfContext},
     window::WindowRef,
 };
 use sdl3_sys::keycode::*;
@@ -193,10 +193,10 @@ pub enum ConsoleState {
 /// (i.e. on every `ActiveConsole::new()`). This struct aims to achieve just
 /// that, while also preventing double-mutable-borrow errors that would otherwise
 /// occur if the calling `Console` passed itself as a parameter.
-pub struct CachedData {
+pub struct CachedData<'a> {
     placeholder_index: u8,
 
-    font: Font,
+    font: Font<'a>,
 
     /// The X coordinate of the input itself, equal to (placeholder names):
     /// `left_prefix_padding + prefix_length + right_prefix_padding`
@@ -208,21 +208,23 @@ pub struct CachedData {
     glyph_size: PointF32,
 }
 
-pub struct Console {
-    pub data: CachedData,
+pub struct Console<'a> {
+    pub data: CachedData<'a>,
     pub state: ConsoleState,
 }
 
-impl Console {
-    pub fn new(
+impl Console<'_> {
+    pub fn new<'a>(
         rnd: impl Into<RendererRef>,
         epoch: Instant,
         base: ResourceLoader,
-    ) -> SdlResult<Self> {
+        ttf: &'a TtfContext,
+    ) -> SdlResult<Console<'a>> {
         let rnd: RendererRef = rnd.into();
         let rs: PointF32 = rnd.output_size().into();
 
         let font = find_sized_font(
+            ttf,
             &base.resolve("../../bin/assets/UbuntuMono.ttf"),
             rs.y * 0.045,
         )?;
@@ -240,8 +242,8 @@ impl Console {
             TEXT_OFFSET.x + Text::new(&font, PREFIX_TEXT)?.size().x as f32 + padding_crd;
         let glyph_size = Text::new(&font, " ")?.size().into();
 
-        Ok(Self {
-            data: CachedData {
+        Ok(Console::<'a> {
+            data: CachedData::<'a> {
                 placeholder_index: 0,
                 font,
                 input_x_origin: tex_begin_crd,
