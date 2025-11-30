@@ -127,10 +127,11 @@ impl Game<'_> {
                 Event::KeyDown(k) => match k.key {
                     SDLK_F1 => self.console.switch(&mut self.data.atlas, &self.data.window),
                     SDLK_RETURN => self.process_command(),
-                    other => self.console.process_key(other),
+                    other => self.console.process_key(other, &mut self.data.atlas),
                 },
                 Event::TextInput(ti) => {
-                    self.console.process_str(unsafe { c_ptr_to_str(ti.text) });
+                    self.console
+                        .process_str(&mut self.data.atlas, unsafe { c_ptr_to_str(ti.text) });
                 }
                 _ => (),
             }

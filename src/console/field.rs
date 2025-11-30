@@ -1,6 +1,8 @@
 use halcyon::clipboard;
 use sdl3_sys::keycode::*;
 
+use crate::{atlas::Atlas, glyph_map::GlyphMap};
+
 const MAX_CHARS: usize = 32;
 
 /// Represents the `Console`'s text input field.
@@ -29,13 +31,6 @@ pub struct Field {
     pub cursor: usize,
 }
 
-pub enum FieldAction {
-    Noop,
-    TextAdded,
-    TextRemoved,
-    CursorMoved,
-}
-
 impl Field {
     pub fn new() -> Self {
         Self {
@@ -44,15 +39,18 @@ impl Field {
         }
     }
 
-    /// Returns whether any graphical changes have been made to the string.
-    pub fn process_str(&mut self, inp: &str) -> bool {
+    pub fn process_str(&mut self, inp: &str) {
         self.text.insert_str(self.cursor_byte_index(), inp);
         self.cursor += inp.chars().count();
-
-        inp.chars().any(|c| !c.is_whitespace())
     }
 
-    pub fn process_key(&mut self, k: SDL_Keycode) -> FieldAction {
+    /// Returns whether the cursor should be moved.
+    pub fn process_key(
+        &mut self,
+        k: SDL_Keycode,
+        atlas: &mut Atlas,
+        glyph_map: &mut GlyphMap,
+    ) -> bool {
         match k {
             SDLK_BACKSPACE => 'a: {
                 if self.text.is_empty() {
@@ -116,18 +114,24 @@ impl Field {
                         self.cursor -= end - begin;
                     }
 
+                    begin = self.byte_index(begin);
+                    end = self.byte_index(end);
+
+                    glyph_map.remove_str(atlas, &self.text[begin..end]);
+
                     self.text
                         .replace_range(self.byte_index(begin)..self.byte_index(end), "");
 
-                    return FieldAction::TextRemoved;
+                    return true;
                 } else {
                     if self.cursor != 0 {
                         self.cursor -= 1;
                     }
 
+                    glyph_map.remove(atlas, self.char_at(self.cursor));
                     self.text.remove(self.cursor_byte_index());
 
-                    return FieldAction::TextRemoved;
+                    return true;
                 }
             }
 
@@ -136,12 +140,12 @@ impl Field {
                     self.cursor -= 1;
                 }
 
-                return FieldAction::CursorMoved;
+                return true;
             }
 
             SDLK_RIGHT => {
                 self.cursor = (self.cursor + 1).min(self.text.len());
-                return FieldAction::CursorMoved;
+                return true;
             }
 
             SDLK_TAB => {
@@ -151,7 +155,7 @@ impl Field {
                 );
                 self.cursor += 4;
 
-                return FieldAction::TextAdded;
+                return true;
             }
 
             SDLK_V => {
@@ -162,13 +166,13 @@ impl Field {
                     self.text.insert_str(self.cursor_byte_index(), &clip);
                     self.cursor += size;
 
-                    return FieldAction::TextAdded;
+                    return true;
                 }
             }
-            _ => (),
-        };
+            _ => return false,
+        }
 
-        FieldAction::Noop
+        false
     }
 
     pub fn trim_check(&mut self) {

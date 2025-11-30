@@ -1,12 +1,13 @@
 pub mod active;
-pub mod cache;
+mod cache;
+pub mod command;
+mod field;
 pub mod state;
-pub mod writer;
+mod writer;
 
 use std::time::{Duration, Instant};
 
 use halcyon::{
-    color::Rgba,
     defs::SdlResult,
     rect::PointF32,
     renderer::RendererRef,
@@ -20,7 +21,7 @@ use sdl3_sys::keycode::*;
 use crate::{
     atlas::Atlas,
     console::{
-        active::{ActiveConsole, TEXT_OFFSET, make_placeholder},
+        active::{ActiveConsole, TEXT_OFFSET},
         cache::CachedData,
         state::ConsoleState,
     },
@@ -85,24 +86,19 @@ impl Console<'_> {
             ConsoleState::Disabled => {
                 let _ = halcyon::keyboard::text_input_start(wnd);
 
-                let prefix_id = atlas.push(
-                    self.data
-                        .font
-                        .render_text_blended(PREFIX_TEXT, Rgba::GREEN)
-                        .unwrap(),
-                );
+                self.data.glyph_map.add(atlas, *self.data.font, PREFIX_TEXT);
 
-                let line_id = atlas.push(make_placeholder(&mut self.data));
+                let plc = self.data.next_placeholder();
+                self.data.glyph_map.add(atlas, *self.data.font, plc);
 
-                self.state =
-                    ConsoleState::Enabled(ActiveConsole::new(&self.data, prefix_id, line_id));
+                self.state = ConsoleState::Enabled(ActiveConsole::new(&self.data));
             }
 
             ConsoleState::Enabled(ac) => {
                 let _ = halcyon::keyboard::text_input_stop(wnd);
 
-                atlas.remove(ac.prefix_id);
-                atlas.remove(ac.line_id);
+                self.data.glyph_map.remove_str(atlas, PREFIX_TEXT);
+                self.data.glyph_map.remove_str(atlas, &ac.field.text);
 
                 self.state = ConsoleState::Disabled;
             }
@@ -111,17 +107,17 @@ impl Console<'_> {
 
     /// If the console is active, calls `ActiveConsole::process_key()`.
     /// Otherwise, does nothing.
-    pub fn process_key(&mut self, k: SDL_Keycode) {
+    pub fn process_key(&mut self, k: SDL_Keycode, atlas: &mut Atlas) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
-            ac.process_key(&mut self.data, k);
+            ac.process_key(atlas, &mut self.data, k);
         }
     }
 
     /// If the console is active, calls `ActiveConsole::process_str()`.
     /// Otherwise, does nothing.
-    pub fn process_str(&mut self, text: &str) {
+    pub fn process_str(&mut self, atlas: &mut Atlas, text: &str) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
-            ac.process_str(&mut self.data, text);
+            ac.process_str(atlas, &mut self.data, text);
         }
     }
 

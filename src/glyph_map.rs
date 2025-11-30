@@ -28,9 +28,9 @@ impl GlyphMap {
             match self.usage.get_mut(&glyph) {
                 Some(u) => u.count += 1,
                 None => {
-                    let surf = font
-                        .render_glyph_blended(glyph, Rgba::WHITE)
-                        .expect("Glyph rendering really shouldn't be an issue");
+                    let Ok(surf) = font.render_glyph_blended(glyph, Rgba::WHITE) else {
+                        panic!("Failed to render glyph {glyph}");
+                    };
 
                     self.usage.insert(
                         glyph,
@@ -44,18 +44,33 @@ impl GlyphMap {
         }
     }
 
-    pub fn id(&self, glyph: char) -> Option<AtlasId> {
-        self.usage.get(&glyph).map(|f| f.id)
+    pub fn id(&self, glyph: char) -> AtlasId {
+        match self.usage.get(&glyph).map(|f| f.id) {
+            Some(c) => c,
+            None => panic!("Glyph \"{glyph}\" not present"),
+        }
     }
 
-    pub fn remove(&mut self, atlas: &mut Atlas, text: &str) {
+    pub fn remove_str(&mut self, atlas: &mut Atlas, text: &str) {
         for glyph in text.chars() {
-            if let Some(u) = self.usage.get_mut(&glyph) {
+            self.remove(atlas, glyph);
+        }
+    }
+
+    pub fn remove(&mut self, atlas: &mut Atlas, glyph: char) {
+        if glyph.is_whitespace() {
+            return;
+        }
+
+        match self.usage.get_mut(&glyph) {
+            Some(u) => {
                 u.count -= 1;
                 if u.count == 0 {
                     atlas.remove(u.id);
+                    self.usage.remove(&glyph);
                 }
-            };
-        }
+            }
+            None => panic!("Cannot remove unused character {glyph}"),
+        };
     }
 }
