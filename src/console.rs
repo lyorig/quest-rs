@@ -8,7 +8,7 @@ use halcyon::{
     renderer::RendererRef,
     resource_loader::ResourceLoader,
     surface::Surface,
-    ttf::{Font, Text, TtfContext},
+    ttf::{Font, Text},
     window::WindowRef,
 };
 use sdl3_sys::keycode::*;
@@ -214,20 +214,20 @@ pub struct Console<'a> {
 }
 
 impl Console<'_> {
-    pub fn new<'a>(
+    pub unsafe fn new(
         rnd: impl Into<RendererRef>,
         epoch: Instant,
         base: ResourceLoader,
-        ttf: &'a TtfContext,
-    ) -> SdlResult<Console<'a>> {
+    ) -> SdlResult<Console<'_>> {
         let rnd: RendererRef = rnd.into();
         let rs: PointF32 = rnd.output_size().into();
 
-        let font = find_sized_font(
-            ttf,
-            &base.resolve("../../bin/assets/UbuntuMono.ttf"),
-            rs.y * 0.045,
-        )?;
+        let font = unsafe {
+            find_sized_font(
+                &base.resolve("../../bin/assets/UbuntuMono.ttf"),
+                rs.y * 0.045,
+            )
+        }?;
 
         if !font.is_mono() {
             dprint!(
@@ -242,8 +242,8 @@ impl Console<'_> {
             TEXT_OFFSET.x + Text::new(&font, PREFIX_TEXT)?.size().x as f32 + padding_crd;
         let glyph_size = Text::new(&font, " ")?.size().into();
 
-        Ok(Console::<'a> {
-            data: CachedData::<'a> {
+        Ok(Console {
+            data: CachedData {
                 placeholder_index: 0,
                 font,
                 input_x_origin: tex_begin_crd,

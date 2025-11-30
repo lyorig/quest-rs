@@ -10,7 +10,6 @@ use halcyon::{
     resource_loader::ResourceLoader,
     subsystem::Video,
     traits::BlendMode,
-    ttf::TtfContext,
     util::c_ptr_to_str,
     window::{Window, WindowBuilder},
 };
@@ -30,7 +29,6 @@ pub struct GameData {
 
     pub renderer: Renderer,
     pub window: Window,
-    pub ttf: TtfContext,
 }
 
 impl GameData {
@@ -53,7 +51,10 @@ pub struct Game<'a> {
 
 impl Game<'_> {
     /// Create a new game.
-    pub fn new<'a>(vid: &Video, ttf: &'a TtfContext) -> SdlResult<Game<'a>> {
+    ///
+    /// SAFETY: Ensure a valid `TtfContext` exists for the
+    /// lifetime of the returned `Game`.
+    pub unsafe fn new<'a>(vid: &Video) -> SdlResult<Game<'a>> {
         let window = WindowBuilder::new()
             .size(Point::new(1280, 720))
             .position(Point::new(Window::POS_CENTERED, Window::POS_CENTERED))
@@ -76,12 +77,11 @@ impl Game<'_> {
             atlas: Atlas::new(),
             renderer,
             window,
-            ttf: ttf.try_clone()?,
         };
 
-        let console = Console::new(&data.renderer, epoch, res_ldr, &ttf)?;
+        let console = unsafe { Console::new(&data.renderer, epoch, res_ldr) }?;
 
-        Ok(Game::<'a> { data, console })
+        Ok(Game { data, console })
     }
 
     /// Starts up the main loop.
