@@ -5,7 +5,7 @@ use std::{
 
 use halcyon::{
     defs::SdlResult,
-    ttf::{Font, Text},
+    ttf::{Font, Text, TtfContext},
 };
 
 /// Returns a `NonNull<c_char>`, for use with `SdlResult`s.
@@ -13,12 +13,16 @@ pub fn error_str(msg: &'static CStr) -> NonNull<c_char> {
     unsafe { NonNull::new_unchecked(msg.as_ptr().cast_mut()) }
 }
 
-pub unsafe fn find_sized_font(rel_path: &CStr, desired_height: f32) -> SdlResult<Font<'_>> {
+pub unsafe fn find_sized_font<'a>(
+    ttf: &'a TtfContext,
+    rel_path: &CStr,
+    desired_height: f32,
+) -> SdlResult<Font<'a>> {
     const INCR: f32 = 1.0;
     let mut curr = 4.0;
 
     while curr < 256. {
-        let f = unsafe { Font::new_unchecked(rel_path, curr) }?;
+        let f = Font::new(ttf, rel_path, curr)?;
 
         curr += INCR;
 

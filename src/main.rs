@@ -16,9 +16,9 @@ mod util;
 fn main() {
     let ctx = unsafe { Context::new() };
     let vid = Video::new(&ctx).expect("Could not initialize Halcyon's video subsystem");
-    let _ttf = TtfContext::new().expect("Should be able to initialize TTF");
+    let ttf = TtfContext::new().expect("Should be able to initialize TTF");
 
-    let mut game = unsafe { Game::new(&vid) }
+    let mut game = unsafe { Game::new(&vid, &ttf) }
         .map_err(|p| unsafe { c_ptr_to_str(p.as_ptr()) })
         .expect("Game initialization failed");
 

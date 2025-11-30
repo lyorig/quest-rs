@@ -32,7 +32,7 @@ struct Data {
 }
 
 /// Resize in accordance with expected required atlas capacity.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct AtlasId(u8);
 
 impl Data {

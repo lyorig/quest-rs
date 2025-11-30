@@ -1,9 +1,9 @@
 use std::str::Split;
 
-use crate::game::GameData;
+use crate::{console::writer::ConsoleWriter, game::GameData};
 
 type ArgsSplit<'a> = Split<'a, char>;
-type CommandFn = fn(&mut GameData, ArgsSplit);
+type CommandFn = fn(&mut GameData, &mut ConsoleWriter, ArgsSplit);
 
 pub struct Command {
     name: &'static str,
@@ -16,38 +16,38 @@ impl Command {
         Self { name, help, func }
     }
 
-    pub fn execute(&self, data: &mut GameData, args: ArgsSplit<'_>) {
-        (self.func)(data, args)
+    pub fn execute(&self, data: &mut GameData, out: &mut ConsoleWriter, args: ArgsSplit<'_>) {
+        (self.func)(data, out, args)
     }
 }
 
-fn cmd_help(_: &mut GameData, mut args: ArgsSplit<'_>) {
+fn cmd_help(_: &mut GameData, out: &mut ConsoleWriter, mut args: ArgsSplit<'_>) {
     let cmd = args.next();
     match cmd {
         Some(cmd) => match find(cmd) {
-            Some(c) => help_exact(c),
-            None => println!("help: unknown command {cmd}"),
+            Some(c) => help_exact(c, out),
+            None => out.write(&format!("help: unknown command {cmd}")),
         },
-        None => help_exact(&COMMANDS[0]),
+        None => help_exact(&COMMANDS[0], out),
     }
 }
 
-fn cmd_exit(g: &mut GameData, _: ArgsSplit<'_>) {
+fn cmd_exit(g: &mut GameData, _: &mut ConsoleWriter, _: ArgsSplit<'_>) {
     g.running = false;
 }
 
-fn cmd_commit(_: &mut GameData, _: ArgsSplit<'_>) {
-    println!("{}", env!("BUILD_COMMIT_HASH"))
+fn cmd_commit(_: &mut GameData, out: &mut ConsoleWriter, _: ArgsSplit<'_>) {
+    out.write(env!("BUILD_COMMIT_HASH"));
 }
 
-fn cmd_test_args(_: &mut GameData, args: ArgsSplit<'_>) {
+fn cmd_test_args(_: &mut GameData, out: &mut ConsoleWriter, args: ArgsSplit<'_>) {
     for (i, arg) in args.enumerate() {
-        println!("{i}: {arg}");
+        out.write(&format!("{i}: {arg}\n"));
     }
 }
 
-fn cmd_get_error(_: &mut GameData, _: ArgsSplit<'_>) {
-    println!("\"{}\"", unsafe { halcyon::error::get_str() })
+fn cmd_get_error(_: &mut GameData, out: &mut ConsoleWriter, _: ArgsSplit<'_>) {
+    out.write(&format!("\"{}\"", unsafe { halcyon::error::get_str() }))
 }
 
 const COMMANDS: [Command; 5] = [
@@ -62,6 +62,6 @@ pub fn find(name: &str) -> Option<&Command> {
     COMMANDS.iter().find(|c| c.name == name)
 }
 
-fn help_exact(cmd: &Command) {
-    println!("help: {} => {}", cmd.name, cmd.help)
+fn help_exact(cmd: &Command, out: &mut ConsoleWriter) {
+    out.write(&format!("help: {} => {}", cmd.name, cmd.help))
 }

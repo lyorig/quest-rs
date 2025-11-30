@@ -10,6 +10,7 @@ use halcyon::{
     resource_loader::ResourceLoader,
     subsystem::Video,
     traits::BlendMode,
+    ttf::TtfContext,
     util::c_ptr_to_str,
     window::{Window, WindowBuilder},
 };
@@ -18,8 +19,7 @@ use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
 
 use crate::{
     atlas::Atlas,
-    command::{self},
-    console::{Console, ConsoleState},
+    console::{Console, state::ConsoleState},
 };
 
 pub struct GameData {
@@ -54,7 +54,7 @@ impl Game<'_> {
     ///
     /// SAFETY: Ensure a valid `TtfContext` exists for the
     /// lifetime of the returned `Game`.
-    pub unsafe fn new<'a>(vid: &Video) -> SdlResult<Game<'a>> {
+    pub unsafe fn new<'a>(vid: &Video, ttf: &'a TtfContext) -> SdlResult<Game<'a>> {
         let window = WindowBuilder::new()
             .size(Point::new(1280, 720))
             .position(Point::new(Window::POS_CENTERED, Window::POS_CENTERED))
@@ -79,7 +79,7 @@ impl Game<'_> {
             window,
         };
 
-        let console = unsafe { Console::new(&data.renderer, epoch, res_ldr) }?;
+        let console = Console::new(ttf, &data.renderer, epoch, res_ldr)?;
 
         Ok(Game { data, console })
     }
@@ -139,15 +139,7 @@ impl Game<'_> {
 
     fn process_command(&mut self) {
         if let ConsoleState::Enabled(ac) = &mut self.console.state {
-            let mut args = ac.field.text.split(' ');
-            if let Some(name) = args.next() {
-                match command::find(name) {
-                    Some(c) => c.execute(&mut self.data, args),
-                    None => println!("unknown command \"{name}\""),
-                }
-
-                ac.clear(&mut self.console.data);
-            }
+            ac.process_command(&mut self.console.data, &mut self.data);
         }
     }
 
