@@ -94,7 +94,7 @@ impl ActiveConsole {
         }
     }
 
-    pub fn draw(&mut self, data: &mut CachedData, atlas: &mut Atlas, rnd: impl Into<RendererRef>) {
+    pub fn draw(&mut self, cd: &mut CachedData, atlas: &mut Atlas, rnd: impl Into<RendererRef>) {
         let rnd: RendererRef = rnd.into();
 
         let dcl = DrawColorGuard::new(rnd, Rgba::new(Rgb::BLACK, 0.5));
@@ -102,36 +102,29 @@ impl ActiveConsole {
 
         let mut curr_draw = TEXT_OFFSET;
 
-        for line in data.history.iter() {
-            for glyph in line.chars() {
-                if !glyph.is_whitespace() {
-                    let id = data.glyph_map.id(glyph);
+        for line in cd.history.iter() {
+            cd.glyph_map
+                .draw(line, rnd, atlas, &mut curr_draw, cd.glyph_size.x);
 
-                    atlas.draw(rnd, id, curr_draw);
-                }
-
-                curr_draw.x += data.glyph_size.x;
-            }
-
-            curr_draw.y += data.glyph_size.y;
+            curr_draw.y += cd.glyph_size.y;
             curr_draw.x = TEXT_OFFSET.x;
         }
 
-        self.draw_prompt(rnd, atlas, data, curr_draw);
+        self.draw_prompt(rnd, atlas, cd, curr_draw);
 
         dcl.set(Rgba::new(Rgb::WHITE, 0.5));
 
         if self.cursor_time.subsec_millis() < 500 {
             curr_draw.x = self.cursor_pos;
-            let _ = rnd.fill_rect(RectF32::new(curr_draw, data.glyph_size));
+            let _ = rnd.fill_rect(RectF32::new(curr_draw, cd.glyph_size));
         }
     }
 
     /// Clear the `Field`, update the cursor,
     /// and signal for a repaint.
-    pub fn clear(&mut self, data: &mut CachedData) {
+    pub fn clear(&mut self, cd: &mut CachedData) {
         self.field.clear();
-        self.update_outline(data);
+        self.update_outline(cd);
     }
 
     fn draw_prompt(
@@ -143,14 +136,8 @@ impl ActiveConsole {
     ) {
         let dcl = ColorModF32Guard::new(**atlas.texture.as_ref().unwrap(), Rgba::GREEN);
 
-        // raine1@Arctic %~
-        for glyph in PREFIX_TEXT.chars() {
-            if !glyph.is_whitespace() {
-                atlas.draw(rnd, cd.glyph_map.id(glyph), origin);
-            }
-
-            origin.x += cd.glyph_size.x;
-        }
+        cd.glyph_map
+            .draw(PREFIX_TEXT, rnd, atlas, &mut origin, cd.glyph_size.x);
 
         origin.x += cd.glyph_size.x;
 
@@ -164,13 +151,7 @@ impl ActiveConsole {
             &self.field.text
         };
 
-        // prompt
-        for glyph in prompt.chars() {
-            if !glyph.is_whitespace() {
-                atlas.draw(rnd, cd.glyph_map.id(glyph), origin);
-            }
-
-            origin.x += cd.glyph_size.x;
-        }
+        cd.glyph_map
+            .draw(prompt, rnd, atlas, &mut origin, cd.glyph_size.x);
     }
 }

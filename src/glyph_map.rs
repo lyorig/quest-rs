@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use halcyon::{color::Rgba, ttf::FontRef};
+use halcyon::{color::Rgba, rect::PointF32, renderer::RendererRef, ttf::FontRef};
 
 use crate::atlas::{Atlas, AtlasId};
 
@@ -72,5 +72,22 @@ impl GlyphMap {
             }
             None => panic!("Cannot remove unused character {glyph}"),
         };
+    }
+
+    pub fn draw(
+        &self,
+        text: &str,
+        rnd: RendererRef,
+        atlas: &Atlas,
+        origin: &mut PointF32,
+        glyph_width: f32,
+    ) {
+        for glyph in text.chars() {
+            if !glyph.is_whitespace() {
+                atlas.draw(rnd, self.id(glyph), *origin);
+            }
+
+            origin.x += glyph_width;
+        }
     }
 }
