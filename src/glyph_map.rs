@@ -1,15 +1,24 @@
 use std::collections::HashMap;
 
-use halcyon::{color::Rgba, rect::PointF32, renderer::RendererRef, ttf::FontRef};
+use halcyon::{color::Rgba, rect::PointF32, ttf::FontRef};
 
-use crate::atlas::{Atlas, AtlasId};
+use crate::{
+    atlas::{Atlas, AtlasId},
+    game::GameData,
+};
 
 struct GlyphData {
-    pub count: usize,
-    pub id: AtlasId,
+    refcount: u32,
+    id: AtlasId,
 }
 
-/// Ref-counted glyphs!
+impl GlyphData {
+    fn new(refcount: u32, id: AtlasId) -> Self {
+        Self { refcount, id }
+    }
+}
+
+/// Manages ref-counts for glyphs contained in an [`Atlas`].
 pub struct GlyphMap {
     usage: HashMap<char, GlyphData>,
 }
@@ -21,70 +30,59 @@ impl GlyphMap {
         }
     }
 
-    /// Add a string of glyphs into the map.
-    /// This automatically filters out whitespace chars.
-    pub fn add(&mut self, atlas: &mut Atlas, font: FontRef, text: &str) {
-        for glyph in text.chars().filter(|c| !c.is_whitespace()) {
-            match self.usage.get_mut(&glyph) {
-                Some(u) => u.count += 1,
-                None => {
-                    let Ok(surf) = font.render_glyph_blended(glyph, Rgba::WHITE) else {
-                        panic!("Failed to render glyph {glyph}");
-                    };
-
-                    self.usage.insert(
-                        glyph,
-                        GlyphData {
-                            count: 1,
-                            id: atlas.push(surf),
-                        },
-                    );
-                }
-            };
-        }
-    }
-
-    pub fn id(&self, glyph: char) -> AtlasId {
-        match self.usage.get(&glyph).map(|f| f.id) {
-            Some(c) => c,
-            None => panic!("Glyph \"{glyph}\" not present"),
-        }
-    }
-
-    pub fn remove_str(&mut self, atlas: &mut Atlas, text: &str) {
-        for glyph in text.chars() {
-            self.remove(atlas, glyph);
-        }
-    }
-
-    pub fn remove(&mut self, atlas: &mut Atlas, glyph: char) {
-        if glyph.is_whitespace() {
-            return;
-        }
-
+    pub fn push(&mut self, atlas: &mut Atlas, font: FontRef, glyph: char) {
         match self.usage.get_mut(&glyph) {
-            Some(u) => {
-                u.count -= 1;
-                if u.count == 0 {
-                    atlas.remove(u.id);
-                    self.usage.remove(&glyph);
-                }
+            Some(k) => {
+                k.refcount += 1;
             }
-            None => panic!("Cannot remove unused character {glyph}"),
-        };
+            None => {
+                let surf = font.render_glyph_blended(glyph, Rgba::WHITE).unwrap();
+                let id = atlas.push(surf);
+
+                self.usage.insert(glyph, GlyphData::new(1, id));
+            }
+        }
     }
 
-    pub fn draw(
-        &self,
-        text: &str,
-        rnd: RendererRef,
-        atlas: &Atlas,
-        origin: &mut PointF32,
-        glyph_width: f32,
-    ) {
+    pub fn push_str(&mut self, atlas: &mut Atlas, font: FontRef, text: &str) {
+        for c in text.chars() {
+            self.push(atlas, font, c);
+        }
+    }
+
+    pub fn pop(&mut self, atlas: &mut Atlas, glyph: char) {
+        let Some(data) = self.usage.get_mut(&glyph) else {
+            panic!("[Atlas] Popping non-existent glyph '{glyph}'");
+        };
+
+        data.refcount -= 1;
+
+        if data.refcount == 0 {
+            atlas.remove(data.id);
+        }
+    }
+
+    pub fn pop_str(&mut self, atlas: &mut Atlas, text: &str) {
+        for c in text.chars() {
+            self.pop(atlas, c);
+        }
+    }
+
+    /// Retrieve an [`AtlasId`] for a glyph.
+    fn id(&self, glyph: char) -> Option<AtlasId> {
+        self.usage.get(&glyph).map(|gd| gd.id)
+    }
+
+    /// Convenience method for drawing a string to the screen.
+    /// Panics if any character in `text` isn't available in glyph form in `atlas`.
+    pub fn draw(&self, text: &str, data: &GameData, origin: &mut PointF32, glyph_width: f32) {
+        let rnd = *data.renderer;
         for glyph in text.chars() {
             if !glyph.is_whitespace() {
-                atlas.draw(rnd, self.id(glyph), *origin);
+                let Some(id) = self.id(glyph) else {
+                    panic!("[Atlas] Cannot draw unavailable glyph '{glyph}'")
+                };
+                data.atlas.draw(rnd, id, *origin);
             }
 
             origin.x += glyph_width;

@@ -13,38 +13,35 @@ use halcyon::{
     renderer::RendererRef,
     resource_loader::ResourceLoader,
     ttf::{Text, TtfContext},
-    window::WindowRef,
 };
 
 use sdl3_sys::keycode::*;
 
 use crate::{
-    atlas::Atlas,
     console::{
         active::{ActiveConsole, TEXT_OFFSET},
         cache::CachedData,
         state::ConsoleState,
     },
     dprint,
-    glyph_map::GlyphMap,
+    game::GameData,
     util::find_sized_font,
 };
 
 const PREFIX_TEXT: &str = "raine1@Arctic~ %";
 
-pub struct Console<'a> {
-    pub data: CachedData<'a>,
+pub struct Console {
+    pub data: CachedData,
     pub state: ConsoleState,
 }
 
-impl Console<'_> {
+impl Console {
     pub fn new<'a>(
         ttf: &'a TtfContext,
-        rnd: impl Into<RendererRef>,
+        rnd: RendererRef,
         epoch: Instant,
         base: ResourceLoader,
-    ) -> SdlResult<Console<'a>> {
-        let rnd: RendererRef = rnd.into();
+    ) -> SdlResult<Console> {
         let rs: PointF32 = rnd.output_size().into();
 
         let font = unsafe {
@@ -66,39 +63,39 @@ impl Console<'_> {
         let padding_crd = rs.x * 0.015;
         let tex_begin_crd =
             TEXT_OFFSET.x + Text::new(&font, PREFIX_TEXT)?.size().x as f32 + padding_crd;
-        let glyph_size = Text::new(&font, " ")?.size().into();
 
-        Ok(Console::<'a> {
-            data: CachedData::<'a> {
+        Ok(Console {
+            data: CachedData {
                 placeholder_index: 0,
-                font,
                 input_x_origin: tex_begin_crd,
-                glyph_size,
-                glyph_map: GlyphMap::new(),
                 history: Vec::new(),
             },
             state: ConsoleState::Disabled,
         })
     }
 
-    pub fn switch(&mut self, atlas: &mut Atlas, wnd: impl Into<WindowRef>) {
+    pub fn switch(&mut self, data: &mut GameData) {
+        let wnd = *data.window;
+
         match &self.state {
             ConsoleState::Disabled => {
                 let _ = halcyon::keyboard::text_input_start(wnd);
 
-                self.data.glyph_map.add(atlas, *self.data.font, PREFIX_TEXT);
+                let np = self.data.next_placeholder();
+                data.font_ubuntu.alloc(np, &mut data.atlas);
+                data.font_ubuntu.alloc(PREFIX_TEXT, &mut data.atlas);
 
-                let plc = self.data.next_placeholder();
-                self.data.glyph_map.add(atlas, *self.data.font, plc);
-
-                self.state = ConsoleState::Enabled(ActiveConsole::new(&self.data));
+                self.state = ConsoleState::Enabled(ActiveConsole::new(&mut self.data));
             }
 
             ConsoleState::Enabled(ac) => {
                 let _ = halcyon::keyboard::text_input_stop(wnd);
 
-                self.data.glyph_map.remove_str(atlas, PREFIX_TEXT);
-                self.data.glyph_map.remove_str(atlas, &ac.field.text);
+                data.font_ubuntu.free(PREFIX_TEXT, &mut data.atlas);
+                if ac.should_free_placeholder() {
+                    data.font_ubuntu
+                        .free(self.data.current_placeholder(), &mut data.atlas);
+                }
 
                 self.state = ConsoleState::Disabled;
             }
@@ -107,25 +104,25 @@ impl Console<'_> {
 
     /// If the console is active, calls `ActiveConsole::process_key()`.
     /// Otherwise, does nothing.
-    pub fn process_key(&mut self, k: SDL_Keycode, atlas: &mut Atlas) {
+    pub fn process_key(&mut self, data: &GameData, k: SDL_Keycode) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
-            ac.process_key(atlas, &mut self.data, k);
+            ac.process_key(&mut self.data, data, k);
         }
     }
 
     /// If the console is active, calls `ActiveConsole::process_str()`.
     /// Otherwise, does nothing.
-    pub fn process_str(&mut self, atlas: &mut Atlas, text: &str) {
+    pub fn process_str(&mut self, data: &GameData, text: &str) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
-            ac.process_str(atlas, &mut self.data, text);
+            ac.process_str(&mut self.data, data, text);
         }
     }
 
     /// If the console is active, calls `ActiveConsole::draw()`.
     /// Otherwise, does nothing.
-    pub fn draw(&mut self, rnd: impl Into<RendererRef>, atlas: &mut Atlas) {
+    pub fn draw(&mut self, data: &GameData) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
-            ac.draw(&mut self.data, atlas, rnd);
+            ac.draw(&mut self.data, data);
         }
     }
 

@@ -20,18 +20,21 @@ use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
 use crate::{
     atlas::Atlas,
     console::{Console, state::ConsoleState},
+    font::Font,
 };
 
-pub struct GameData {
+pub struct GameData<'a> {
     pub running: bool,
 
     pub atlas: Atlas,
 
     pub renderer: Renderer,
     pub window: Window,
+
+    pub font_ubuntu: Font<'a>,
 }
 
-impl GameData {
+impl GameData<'_> {
     pub fn draw_atlas(&self) {
         if let Some(at) = self.atlas.texture.as_ref() {
             let sz = Rect::new(Point::new(300.0, 300.0), at.size());
@@ -45,15 +48,15 @@ impl GameData {
 }
 
 pub struct Game<'a> {
-    pub data: GameData,
-    console: Console<'a>,
+    pub data: GameData<'a>,
+    console: Console,
 }
 
 impl Game<'_> {
     /// Create a new game.
     ///
-    /// SAFETY: Ensure a valid `TtfContext` exists for the
-    /// lifetime of the returned `Game`.
+    /// SAFETY: Ensure a valid [`TtfContext`] exists for the
+    /// lifetime of the returned [`Game`].
     pub unsafe fn new<'a>(vid: &Video, ttf: &'a TtfContext) -> SdlResult<Game<'a>> {
         let window = WindowBuilder::new()
             .size(Point::new(1280, 720))
@@ -71,15 +74,21 @@ impl Game<'_> {
 
         let epoch = Instant::now();
         let res_ldr = ResourceLoader::new();
+        let rs = renderer.output_size();
 
         let data = GameData {
             running: true,
             atlas: Atlas::new(),
             renderer,
             window,
+            font_ubuntu: Font::new(
+                ttf,
+                &res_ldr.resolve("../../bin/assets/UbuntuMono.ttf"),
+                rs.y as f32 * 0.045,
+            ),
         };
 
-        let console = Console::new(ttf, &data.renderer, epoch, res_ldr)?;
+        let console = Console::new(ttf, *data.renderer, epoch, res_ldr)?;
 
         Ok(Game { data, console })
     }
@@ -110,10 +119,10 @@ impl Game<'_> {
             self.update_delta(delta.elapsed());
             delta = Instant::now();
 
-            self.data.atlas.pack(&self.data.renderer);
+            self.data.atlas.pack(*self.data.renderer);
 
             // --- Drawing ---
-            self.console.draw(&self.data.renderer, &mut self.data.atlas);
+            self.console.draw(&self.data);
             self.data.draw_atlas();
 
             let _ = self.data.renderer.present();
@@ -125,13 +134,13 @@ impl Game<'_> {
             match evt {
                 Event::Quit => self.data.running = false,
                 Event::KeyDown(k) => match k.key {
-                    SDLK_F1 => self.console.switch(&mut self.data.atlas, &self.data.window),
+                    SDLK_F1 => self.console.switch(&mut self.data),
                     SDLK_RETURN => self.process_command(),
-                    other => self.console.process_key(other, &mut self.data.atlas),
+                    other => self.console.process_key(&self.data, other),
                 },
                 Event::TextInput(ti) => {
                     self.console
-                        .process_str(&mut self.data.atlas, unsafe { c_ptr_to_str(ti.text) });
+                        .process_str(&self.data, unsafe { c_ptr_to_str(ti.text) });
                 }
                 _ => (),
             }

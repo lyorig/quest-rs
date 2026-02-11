@@ -7,6 +7,7 @@ mod anim;
 mod atlas;
 mod console;
 mod debug;
+mod font;
 mod game;
 mod glyph_map;
 mod util;

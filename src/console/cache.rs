@@ -1,9 +1,5 @@
 use std::rc::Rc;
 
-use halcyon::{rect::PointF32, ttf::Font};
-
-use crate::glyph_map::GlyphMap;
-
 const PLACEHOLDERS: [&str; 41] = [
     "[meow]",
     "[redacted]",
@@ -52,34 +48,29 @@ const PLACEHOLDERS: [&str; 41] = [
 /// (i.e. on every `ActiveConsole::new()`). This struct aims to achieve just
 /// that, while also preventing double-mutable-borrow errors that would otherwise
 /// occur if the calling `Console` passed itself as a parameter.
-pub struct CachedData<'a> {
+pub struct CachedData {
     /// The current index into `PLACEHOLDERS` used for
     /// generating, well, placeholders.
     pub placeholder_index: u8,
-
-    /// The font that is used to render text.
-    pub font: Font<'a>,
 
     /// The X coordinate of the input itself, equal to (placeholder names):
     /// `left_prefix_padding + prefix_length + right_prefix_padding`
     pub input_x_origin: f32,
 
-    /// This is cached because the size component is the size of
-    /// one glyph, and since `Self::font` is cached as well, we don't
-    /// need to re-calculate it on every console activation.
-    pub glyph_size: PointF32,
-    pub glyph_map: GlyphMap,
-
     pub history: Vec<Rc<Box<str>>>,
 }
 
-impl CachedData<'_> {
+impl CachedData {
     pub fn next_placeholder(&mut self) -> &'static str {
-        self.placeholder_index = (self.placeholder_index + 1) % PLACEHOLDERS.len() as u8;
+        self.advance_placeholder();
         self.current_placeholder()
     }
 
     pub fn current_placeholder(&self) -> &'static str {
         PLACEHOLDERS[self.placeholder_index as usize]
+    }
+
+    pub fn advance_placeholder(&mut self) {
+        self.placeholder_index = (self.placeholder_index + 1) % PLACEHOLDERS.len() as u8;
     }
 }

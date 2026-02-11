@@ -164,9 +164,7 @@ impl Atlas {
         self.texture = Some(new_tex);
     }
 
-    pub fn pack(&mut self, rnd: impl Into<RendererRef>) {
-        let rnd: RendererRef = rnd.into();
-
+    pub fn pack(&mut self, rnd: RendererRef) {
         if !self.pack_queued {
             return;
         }
@@ -185,16 +183,14 @@ impl Atlas {
         self.create_texture(rnd, Point::new(size.w as _, size.h as _));
     }
 
-    pub fn draw(&self, rnd: impl Into<RendererRef>, id: AtlasId, dst: PointF32) {
+    pub fn draw(&self, rnd: RendererRef, id: AtlasId, dst: PointF32) {
         if let Some(tex) = &self.texture {
-            let rnd: RendererRef = rnd.into();
             let area = self.data[id.0 as usize].area;
-
             let _ = rnd.draw(tex, Some(&area), Some(&RectF32::new(dst, area.size)));
         }
     }
 
-    pub fn replace(&mut self, id: AtlasId, rnd: impl Into<RendererRef>, surf: Surface) {
+    pub fn replace(&mut self, id: AtlasId, rnd: RendererRef, surf: Surface) {
         let d = &mut self.data[id.0 as usize];
 
         if Into::<PointF32>::into(surf.size()) == d.area.size {
@@ -206,9 +202,8 @@ impl Atlas {
         d.source = Some(surf);
     }
 
-    pub fn replace_exact(&mut self, id: AtlasId, rnd: impl Into<RendererRef>, s: Surface) {
+    pub fn replace_exact(&mut self, id: AtlasId, rnd: RendererRef, s: Surface) {
         if let Some(tex) = &self.texture {
-            let rnd: RendererRef = rnd.into();
             let rep = Texture::from_surface(rnd, &s).unwrap();
             let dst = self.data[id.0 as usize].area;
 

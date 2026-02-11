@@ -1,8 +1,6 @@
 use halcyon::clipboard;
 use sdl3_sys::keycode::*;
 
-use crate::{atlas::Atlas, glyph_map::GlyphMap};
-
 const MAX_CHARS: usize = 32;
 
 /// Represents the `Console`'s text input field.
@@ -45,12 +43,7 @@ impl Field {
     }
 
     /// Returns whether the cursor should be moved.
-    pub fn process_key(
-        &mut self,
-        k: SDL_Keycode,
-        atlas: &mut Atlas,
-        glyph_map: &mut GlyphMap,
-    ) -> bool {
+    pub fn process_key(&mut self, k: SDL_Keycode) -> bool {
         match k {
             SDLK_BACKSPACE => 'a: {
                 if self.text.is_empty() {
@@ -117,8 +110,6 @@ impl Field {
                     begin = self.byte_index(begin);
                     end = self.byte_index(end);
 
-                    glyph_map.remove_str(atlas, &self.text[begin..end]);
-
                     self.text
                         .replace_range(self.byte_index(begin)..self.byte_index(end), "");
 
@@ -128,7 +119,6 @@ impl Field {
                         self.cursor -= 1;
                     }
 
-                    glyph_map.remove(atlas, self.char_at(self.cursor));
                     self.text.remove(self.cursor_byte_index());
 
                     return true;
