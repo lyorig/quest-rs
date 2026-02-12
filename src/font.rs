@@ -48,7 +48,7 @@ impl GlyphMap {
         }
     }
 
-    fn push(&mut self, atlas: &mut Atlas, font: FontRef, glyph: char) {
+    fn retain_glyph(&mut self, atlas: &mut Atlas, font: FontRef, glyph: char) {
         Self::assert_printable(glyph);
 
         let entry = &mut self.usage[Self::char_index(glyph)];
@@ -73,13 +73,13 @@ impl GlyphMap {
         }
     }
 
-    fn push_str(&mut self, atlas: &mut Atlas, font: FontRef, text: &str) {
+    fn retain(&mut self, atlas: &mut Atlas, font: FontRef, text: &str) {
         for c in text.chars().filter(|c| Self::is_printable(*c)) {
-            self.push(atlas, font, c);
+            self.retain_glyph(atlas, font, c);
         }
     }
 
-    fn pop(&mut self, glyph: char) {
+    fn release_glyph(&mut self, glyph: char) {
         let GlyphEntry::Allocated(data) = &mut self.usage[Self::char_index(glyph)] else {
             panic!("[GlyphMap] Popping unallocated glyph '{glyph}'");
         };
@@ -93,9 +93,9 @@ impl GlyphMap {
         data.refcount = unsafe { NonZeroU32::new_unchecked(data.refcount.get() - 1) };
     }
 
-    fn pop_str(&mut self, text: &str) {
+    fn release(&mut self, text: &str) {
         for c in text.chars().filter(|c| Self::is_printable(*c)) {
-            self.pop(c);
+            self.release_glyph(c);
         }
     }
 
@@ -167,6 +167,8 @@ pub struct Font<'a> {
     map: GlyphMap,
 }
 
+/// A wrapper around a Halcyon font with an added glyph map
+/// and convenience methods.
 impl Font<'_> {
     pub fn new<'a>(ttf: &'a TtfContext, font_path: &CStr, size: f32) -> Font<'a> {
         let font = HalFont::new(ttf, font_path, size).expect("Cannot open font");
@@ -177,21 +179,24 @@ impl Font<'_> {
         );
 
         let glyph_size = Text::new(&font, "X").unwrap().size().into();
-        let map = GlyphMap::new();
 
         Font {
             font,
             glyph_size,
-            map,
+            map: GlyphMap::new(),
         }
     }
 
+    /// Calls [`GlyphMap::retain()`] on the contained map; see its
+    /// documentation for more information.
     pub fn alloc(&mut self, text: &str, atlas: &mut Atlas) {
-        self.map.push_str(atlas, *self.font, text);
+        self.map.retain(atlas, *self.font, text);
     }
 
+    /// Calls [`GlyphMap::release()`] on the contained map; see its
+    /// documentation for more information.
     pub fn free(&mut self, text: &str) {
-        self.map.pop_str(text);
+        self.map.release(text);
     }
 
     /// Calls [`GlyphMap::gc()`] on the contained map; see its
