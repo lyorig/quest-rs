@@ -91,11 +91,12 @@ impl Console {
             ConsoleState::Enabled(ac) => {
                 let _ = halcyon::keyboard::text_input_stop(wnd);
 
-                data.font_ubuntu.free(PREFIX_TEXT, &mut data.atlas);
-                if ac.should_free_placeholder() {
-                    data.font_ubuntu
-                        .free(self.data.current_placeholder(), &mut data.atlas);
-                }
+                data.font_ubuntu.free(PREFIX_TEXT);
+                data.font_ubuntu.free(if ac.field.text.is_empty() {
+                    self.data.current_placeholder()
+                } else {
+                    &ac.field.text
+                });
 
                 self.state = ConsoleState::Disabled;
             }

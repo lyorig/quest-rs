@@ -215,4 +215,22 @@ impl Atlas {
             let _ = rnd.draw(&rep, None, Some(&dst));
         }
     }
+
+    pub fn debug_draw(&self, rnd: RendererRef, origin: PointF32) {
+        fn offset(mut r: RectF32, o: PointF32) -> RectF32 {
+            r.pos.x += o.x;
+            r.pos.y += o.y;
+            r
+        }
+
+        let vec = self
+            .data
+            .iter()
+            .filter(|d| d.is_valid())
+            .map(|d| offset(d.area, origin))
+            .collect::<Vec<_>>();
+
+        let _dcl = DrawColorGuard::new(rnd, Rgba::RED);
+        let _ = rnd.draw_rects(&vec);
+    }
 }

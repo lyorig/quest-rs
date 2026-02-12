@@ -37,12 +37,15 @@ pub struct GameData<'a> {
 impl GameData<'_> {
     pub fn draw_atlas(&self) {
         if let Some(at) = self.atlas.texture.as_ref() {
-            let sz = Rect::new(Point::new(300.0, 300.0), at.size());
+            let origin = Point::new(300.0, 300.0);
+            let sz = Rect::new(origin, at.size());
 
             let _dcl = DrawColorGuard::new(&self.renderer, Rgba::BLACK);
 
             let _ = self.renderer.draw_rect(sz);
             let _ = self.renderer.draw(at, None, Some(&sz));
+
+            self.atlas.debug_draw(*self.renderer, origin);
         }
     }
 }

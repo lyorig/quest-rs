@@ -110,10 +110,6 @@ impl ActiveConsole {
         self.update_outline(cd, data);
     }
 
-    pub fn should_free_placeholder(&self) -> bool {
-        self.field.text.is_empty()
-    }
-
     fn draw_prompt(&self, cd: &CachedData, data: &GameData, mut origin: PointF32) {
         let dcl = ColorModF32Guard::new(**data.atlas.texture.as_ref().unwrap(), Rgba::GREEN);
 
