@@ -20,7 +20,7 @@ use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
 use crate::{
     atlas::Atlas,
     console::{Console, state::ConsoleState},
-    font::store::{FontId, Fonts},
+    font::store::{FontId, FontStore},
 };
 
 pub struct GameData<'a> {
@@ -31,7 +31,7 @@ pub struct GameData<'a> {
     pub renderer: Renderer,
     pub window: Window,
 
-    pub fonts: Fonts<'a>,
+    pub fonts: FontStore<'a>,
 }
 
 impl GameData<'_> {
@@ -105,7 +105,7 @@ impl Game<'_> {
             atlas: Atlas::new(),
             renderer,
             window,
-            fonts: Fonts::new(ttf, res_ldr),
+            fonts: FontStore::new(ttf, res_ldr),
         };
 
         let console = Console::new(*data.renderer)?;

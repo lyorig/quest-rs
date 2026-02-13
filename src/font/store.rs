@@ -10,15 +10,15 @@ impl FontId {
     pub const UBUNTU_MONO: Self = Self(0);
 }
 
-pub struct Fonts<'a> {
+pub struct FontStore<'a> {
     array: [Font<'a>; 1],
 }
 
-impl Fonts<'_> {
-    pub fn new<'a>(ttf: &'a TtfContext, rl: ResourceLoader) -> Fonts<'a> {
+impl FontStore<'_> {
+    pub fn new<'a>(ttf: &'a TtfContext, rl: ResourceLoader) -> FontStore<'a> {
         let ubuntu = Font::new(ttf, &rl.resolve("../../bin/assets/UbuntuMono.ttf"), 32.0);
 
-        Fonts { array: [ubuntu] }
+        FontStore { array: [ubuntu] }
     }
 
     pub fn alloc(&mut self, id: FontId, text: &str, atlas: &mut Atlas) {
