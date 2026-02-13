@@ -1,6 +1,6 @@
 use std::str::Split;
 
-use crate::{console::writer::ConsoleWriter, game::GameData};
+use crate::{console::writer::ConsoleWriter, game::data::GameData};
 
 type ArgsSplit<'a> = Split<'a, char>;
 type CommandFn = fn(&mut GameData, &mut ConsoleWriter, ArgsSplit);

@@ -18,7 +18,7 @@ use crate::{
         state::ConsoleState,
     },
     font::store::FontId,
-    game::GameData,
+    game::data::GameData,
 };
 
 const PREFIX_TEXT: &str = "raine1@Arctic~ %";

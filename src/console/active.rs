@@ -10,7 +10,7 @@ use sdl3_sys::keycode::SDL_Keycode;
 use crate::{
     console::{PREFIX_TEXT, cache::CachedData, command, field::Field, writer::ConsoleWriter},
     font::store::FontId,
-    game::GameData,
+    game::data::GameData,
 };
 
 pub const TEXT_OFFSET: PointF32 = PointF32::new(10.0, 10.0);

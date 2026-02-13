@@ -3,7 +3,6 @@
 use game::Game;
 use halcyon::{context::Context, subsystem::Video, ttf::TtfContext, util::c_ptr_to_str};
 
-mod anim;
 mod atlas;
 mod console;
 mod debug;

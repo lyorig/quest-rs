@@ -5,8 +5,8 @@ use halcyon::{
     defs::SdlResult,
     event::{Event, EventIter},
     guard::DrawColorGuard,
-    rect::{Point, PointF32, Rect},
-    renderer::{Renderer, RendererBuilder},
+    rect::PointI32,
+    renderer::RendererBuilder,
     resource_loader::ResourceLoader,
     subsystem::Video,
     traits::BlendMode,
@@ -15,63 +15,19 @@ use halcyon::{
     window::{Window, WindowBuilder},
 };
 
-use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
+use sdl3_sys::{
+    blendmode::SDL_BLENDMODE_BLEND,
+    keycode::{SDLK_F1, SDLK_RETURN},
+};
 
 use crate::{
     atlas::Atlas,
     console::{Console, state::ConsoleState},
-    font::store::{FontId, FontStore},
+    font::store::FontStore,
+    game::data::GameData,
 };
 
-pub struct GameData<'a> {
-    pub running: bool,
-
-    pub atlas: Atlas,
-
-    pub renderer: Renderer,
-    pub window: Window,
-
-    pub fonts: FontStore<'a>,
-}
-
-impl GameData<'_> {
-    pub fn draw_atlas(&self) {
-        if let Some(at) = self.atlas.texture.as_ref() {
-            let origin = Point::new(300.0, 300.0);
-            let sz = Rect::new(origin, at.size());
-
-            let _dcl = DrawColorGuard::new(&self.renderer, Rgba::BLACK);
-
-            let _ = self.renderer.draw_rect(sz);
-            let _ = self.renderer.draw(at, None, Some(&sz));
-
-            self.atlas.debug_draw(*self.renderer, origin);
-        }
-    }
-
-    pub fn font_alloc(&mut self, i: FontId, text: &str) {
-        self.fonts.alloc(i, text, &mut self.atlas);
-    }
-
-    /// This function simply forwards to [`Fonts::free()`],
-    /// it's provided purely for completeness.
-    pub fn font_free(&mut self, i: FontId, text: &str) {
-        self.fonts.free(i, text);
-    }
-
-    pub fn font_gc(&mut self, i: FontId) {
-        self.fonts.gc(i, &mut self.atlas);
-    }
-
-    pub fn font_gc_all(&mut self) {
-        self.fonts.gc_all(&mut self.atlas);
-    }
-
-    pub fn font_draw(&self, id: FontId, text: &str, origin: &mut PointF32, glyph_size: PointF32) {
-        self.fonts
-            .draw(id, &self.atlas, *self.renderer, text, origin, glyph_size)
-    }
-}
+pub mod data;
 
 pub struct Game<'a> {
     pub data: GameData<'a>,
@@ -85,8 +41,8 @@ impl Game<'_> {
     /// lifetime of the returned [`Game`].
     pub unsafe fn new<'a>(vid: &Video, ttf: &'a TtfContext) -> SdlResult<Game<'a>> {
         let window = WindowBuilder::new()
-            .size(Point::new(1280, 720))
-            .position(Point::new(Window::POS_CENTERED, Window::POS_CENTERED))
+            .size(PointI32::new(1280, 720))
+            .position(PointI32::new(Window::POS_CENTERED, Window::POS_CENTERED))
             .title(c"HalodaQuest [Euclid]")
             .build(vid)?;
 

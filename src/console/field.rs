@@ -1,7 +1,7 @@
 use halcyon::clipboard;
 use sdl3_sys::keycode::*;
 
-use crate::{font::store::FontId, game::GameData};
+use crate::{font::store::FontId, game::data::GameData};
 
 const MAX_CHARS: usize = 32;
 
