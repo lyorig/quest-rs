@@ -190,6 +190,13 @@ impl Atlas {
         }
     }
 
+    pub fn draw_to(&self, rnd: RendererRef, id: AtlasId, dst: RectF32) {
+        if let Some(tex) = &self.texture {
+            let area = self.data[id.0 as usize].area;
+            let _ = rnd.draw(tex, Some(&area), Some(&dst));
+        }
+    }
+
     pub fn replace(&mut self, id: AtlasId, rnd: RendererRef, surf: Surface) {
         let d = &mut self.data[id.0 as usize];
 

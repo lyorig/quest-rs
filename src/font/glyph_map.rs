@@ -1,14 +1,10 @@
-use std::{
-    ffi::CStr,
-    num::{NonZero, NonZeroU32},
-};
+use std::num::NonZeroU32;
 
 use halcyon::{
     color::Rgba,
-    rect::PointF32,
+    rect::{PointF32, RectF32},
     renderer::RendererRef,
-    resource_loader::ResourceLoader,
-    ttf::{Font as HalFont, FontRef, Text, TtfContext},
+    ttf::FontRef,
 };
 
 use crate::atlas::{Atlas, AtlasId};
@@ -35,13 +31,13 @@ enum GlyphEntry {
 const NUM_GRAPHIC_ASCII_CHARS: usize = 94;
 
 /// Manages ref-counts for glyphs contained in an [`Atlas`].
-struct GlyphMap {
+pub(crate) struct GlyphMap {
     /// Graphical ASCII characters, minus space (0x20) and delete (0x7F).
     usage: [GlyphEntry; NUM_GRAPHIC_ASCII_CHARS],
 }
 
 impl GlyphMap {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             usage: [GlyphEntry::Free; NUM_GRAPHIC_ASCII_CHARS],
         }
@@ -65,14 +61,14 @@ impl GlyphMap {
                     // NOTE: NonZeroU32::MIN is used as a sentinel value, noting that this glyph
                     // is available for deallocation. This is a somewhat hacky way to go about it,
                     // but it leads a smaller struct size (8 vs. 12 bytes).
-                    refcount: unsafe { NonZero::new_unchecked(NonZeroU32::MIN.get() + 1) },
+                    refcount: unsafe { NonZeroU32::new_unchecked(NonZeroU32::MIN.get() + 1) },
                     id: atlas.push(surf),
                 });
             }
         }
     }
 
-    fn retain(&mut self, atlas: &mut Atlas, font: FontRef, text: &str) {
+    pub fn retain(&mut self, atlas: &mut Atlas, font: FontRef, text: &str) {
         for c in text.chars().filter(|c| Self::is_printable(*c)) {
             self.retain_glyph(atlas, font, c);
         }
@@ -92,7 +88,7 @@ impl GlyphMap {
         data.refcount = unsafe { NonZeroU32::new_unchecked(data.refcount.get() - 1) };
     }
 
-    fn release(&mut self, text: &str) {
+    pub fn release(&mut self, text: &str) {
         for c in text.chars().filter(|c| Self::is_printable(*c)) {
             self.release_glyph(c);
         }
@@ -103,7 +99,7 @@ impl GlyphMap {
     /// unreferenced, which is basically free. If this method is instead called
     /// beforehand, it's removed from the [`Atlas`] and all the work required
     /// for re-insertion must be performed.
-    fn gc(&mut self, atlas: &mut Atlas) {
+    pub fn gc(&mut self, atlas: &mut Atlas) {
         for data in &mut self.usage {
             if let GlyphEntry::Allocated(gd) = data
                 && gd.can_delete()
@@ -125,13 +121,13 @@ impl GlyphMap {
 
     /// Convenience method for drawing a string to the screen.
     /// Panics if any character in `text` isn't available in glyph form in `atlas`.
-    fn draw(
+    pub fn draw(
         &self,
         text: &str,
         atlas: &Atlas,
         rnd: RendererRef,
         origin: &mut PointF32,
-        glyph_width: f32,
+        glyph_size: PointF32,
     ) {
         for glyph in text.chars() {
             if !glyph.is_whitespace() {
@@ -139,10 +135,10 @@ impl GlyphMap {
                     panic!("[GlyphMap] Cannot draw unavailable glyph '{glyph}'")
                 };
 
-                atlas.draw(rnd, id, *origin);
+                atlas.draw_to(rnd, id, RectF32::new(*origin, glyph_size));
             }
 
-            origin.x += glyph_width;
+            origin.x += glyph_size.x;
         }
     }
 
@@ -155,7 +151,7 @@ impl GlyphMap {
     fn assert_printable(c: char) {
         assert!(
             Self::is_printable(c),
-            "[GlyphMap] Pushing non-printable value (ASCII 0x{:x})",
+            "[GlyphMap] Pushing unsupported value (ASCII 0x{:x})",
             c as u32
         );
     }
@@ -163,104 +159,5 @@ impl GlyphMap {
     fn is_printable(c: char) -> bool {
         let repr = c as u32;
         repr >= 33 && repr <= 126
-    }
-}
-
-pub struct Font<'a> {
-    font: HalFont<'a>,
-    pub glyph_size: PointF32,
-    map: GlyphMap,
-}
-
-/// A wrapper around a Halcyon font with an added glyph map
-/// and convenience methods.
-impl Font<'_> {
-    pub fn new<'a>(ttf: &'a TtfContext, font_path: &CStr, size: f32) -> Font<'a> {
-        let font = HalFont::new(ttf, font_path, size).expect("Cannot open font");
-        assert!(
-            font.is_mono(),
-            "Font \"{}\" isn't fixed width",
-            font.family()
-        );
-
-        let glyph_size = Text::new(&font, "X").unwrap().size().into();
-
-        Font {
-            font,
-            glyph_size,
-            map: GlyphMap::new(),
-        }
-    }
-
-    /// Calls [`GlyphMap::retain()`] on the contained map; see its
-    /// documentation for more information.
-    pub fn alloc(&mut self, text: &str, atlas: &mut Atlas) {
-        self.map.retain(atlas, *self.font, text);
-    }
-
-    /// Calls [`GlyphMap::release()`] on the contained map; see its
-    /// documentation for more information.
-    pub fn free(&mut self, text: &str) {
-        self.map.release(text);
-    }
-
-    /// Calls [`GlyphMap::gc()`] on the contained map; see its
-    /// documentation for more information.
-    pub fn gc(&mut self, atlas: &mut Atlas) {
-        self.map.gc(atlas);
-    }
-
-    pub fn draw(&self, text: &str, atlas: &Atlas, renderer: RendererRef, origin: &mut PointF32) {
-        self.map
-            .draw(text, atlas, renderer, origin, self.glyph_size.x);
-    }
-}
-
-pub struct FontId(usize);
-
-impl FontId {
-    pub const UBUNTU_MONO: Self = Self(0);
-}
-
-pub struct Fonts<'a> {
-    array: [Font<'a>; 1],
-}
-
-impl Fonts<'_> {
-    pub fn new<'t>(ttf: &'t TtfContext, rl: ResourceLoader) -> Fonts<'t> {
-        let ubuntu = Font::new(ttf, &rl.resolve("../../bin/assets/UbuntuMono.ttf"), 16.0);
-
-        Fonts { array: [ubuntu] }
-    }
-
-    pub fn alloc(&mut self, i: FontId, text: &str, atlas: &mut Atlas) {
-        self.array[i.0].alloc(text, atlas);
-    }
-
-    pub fn free(&mut self, i: FontId, text: &str) {
-        self.array[i.0].free(text);
-    }
-
-    pub fn gc(&mut self, i: FontId, atlas: &mut Atlas) {
-        self.array[i.0].gc(atlas);
-    }
-
-    pub fn gc_all(&mut self, atlas: &mut Atlas) {
-        self.array.iter_mut().for_each(|f| f.gc(atlas))
-    }
-
-    pub fn draw(
-        &self,
-        id: FontId,
-        atlas: &Atlas,
-        rnd: RendererRef,
-        text: &str,
-        origin: &mut PointF32,
-    ) {
-        self.array[id.0].draw(text, atlas, rnd, origin)
-    }
-
-    pub fn get(&'_ self, i: FontId) -> &'_ Font<'_> {
-        &self.array[i.0]
     }
 }

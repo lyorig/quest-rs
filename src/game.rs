@@ -20,7 +20,7 @@ use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
 use crate::{
     atlas::Atlas,
     console::{Console, state::ConsoleState},
-    font::{FontId, Fonts},
+    font::store::{FontId, Fonts},
 };
 
 pub struct GameData<'a> {
@@ -67,9 +67,9 @@ impl GameData<'_> {
         self.fonts.gc_all(&mut self.atlas);
     }
 
-    pub fn font_draw(&self, id: FontId, text: &str, origin: &mut PointF32) {
+    pub fn font_draw(&self, id: FontId, text: &str, origin: &mut PointF32, glyph_size: PointF32) {
         self.fonts
-            .draw(id, &self.atlas, *self.renderer, text, origin)
+            .draw(id, &self.atlas, *self.renderer, text, origin, glyph_size)
     }
 }
 
@@ -98,7 +98,6 @@ impl Game<'_> {
         let renderer = renderer.build()?;
         renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
 
-        let epoch = Instant::now();
         let res_ldr = ResourceLoader::new();
 
         let data = GameData {
@@ -109,7 +108,7 @@ impl Game<'_> {
             fonts: Fonts::new(ttf, res_ldr),
         };
 
-        let console = Console::new(ttf, *data.renderer, epoch, res_ldr)?;
+        let console = Console::new(*data.renderer)?;
 
         Ok(Game { data, console })
     }
@@ -157,11 +156,11 @@ impl Game<'_> {
                 Event::KeyDown(k) => match k.key {
                     SDLK_F1 => self.console.switch(&mut self.data),
                     SDLK_RETURN => self.process_command(),
-                    other => self.console.process_key(&self.data, other),
+                    other => self.console.process_key(&mut self.data, other),
                 },
                 Event::TextInput(ti) => {
                     self.console
-                        .process_str(&self.data, unsafe { c_ptr_to_str(ti.text) });
+                        .process_str(&mut self.data, unsafe { c_ptr_to_str(ti.text) });
                 }
                 _ => (),
             }

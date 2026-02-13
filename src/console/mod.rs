@@ -5,15 +5,9 @@ mod field;
 pub mod state;
 mod writer;
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
-use halcyon::{
-    defs::SdlResult,
-    rect::PointF32,
-    renderer::RendererRef,
-    resource_loader::ResourceLoader,
-    ttf::{Text, TtfContext},
-};
+use halcyon::{defs::SdlResult, rect::PointF32, renderer::RendererRef};
 
 use sdl3_sys::keycode::*;
 
@@ -23,10 +17,8 @@ use crate::{
         cache::CachedData,
         state::ConsoleState,
     },
-    dprint,
-    font::FontId,
+    font::store::FontId,
     game::GameData,
-    util::find_sized_font,
 };
 
 const PREFIX_TEXT: &str = "raine1@Arctic~ %";
@@ -37,38 +29,15 @@ pub struct Console {
 }
 
 impl Console {
-    pub fn new<'a>(
-        ttf: &'a TtfContext,
-        rnd: RendererRef,
-        epoch: Instant,
-        base: ResourceLoader,
-    ) -> SdlResult<Console> {
-        let rs: PointF32 = rnd.output_size().into();
-
-        let font = unsafe {
-            find_sized_font(
-                ttf,
-                &base.resolve("../../bin/assets/UbuntuMono.ttf"),
-                rs.y * 0.045,
-            )
-        }?;
-
-        if !font.is_mono() {
-            dprint!(
-                epoch,
-                "[INFO] <Console> Font \"{}\", isn't fixed-width",
-                font.family()
-            );
-        }
-
-        let padding_crd = rs.x * 0.015;
-        let tex_begin_crd =
-            TEXT_OFFSET.x + Text::new(&font, PREFIX_TEXT)?.size().x as f32 + padding_crd;
+    pub fn new<'a>(_rnd: RendererRef) -> SdlResult<Console> {
+        // TODO: Use the renderer.
+        let glyph_size = PointF32::new(16.0, 32.0);
 
         Ok(Console {
             data: CachedData {
                 placeholder_index: 0,
-                input_x_origin: tex_begin_crd,
+                input_x_origin: TEXT_OFFSET.x + glyph_size.x * (PREFIX_TEXT.len() + 1) as f32,
+                glyph_size: glyph_size,
                 history: Vec::new(),
             },
             state: ConsoleState::Disabled,
@@ -109,7 +78,7 @@ impl Console {
 
     /// If the console is active, calls `ActiveConsole::process_key()`.
     /// Otherwise, does nothing.
-    pub fn process_key(&mut self, data: &GameData, k: SDL_Keycode) {
+    pub fn process_key(&mut self, data: &mut GameData, k: SDL_Keycode) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
             ac.process_key(&mut self.data, data, k);
         }
@@ -117,7 +86,7 @@ impl Console {
 
     /// If the console is active, calls `ActiveConsole::process_str()`.
     /// Otherwise, does nothing.
-    pub fn process_str(&mut self, data: &GameData, text: &str) {
+    pub fn process_str(&mut self, data: &mut GameData, text: &str) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
             ac.process_str(&mut self.data, data, text);
         }

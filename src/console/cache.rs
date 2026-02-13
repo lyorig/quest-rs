@@ -1,5 +1,7 @@
 use std::rc::Rc;
 
+use halcyon::rect::PointF32;
+
 const PLACEHOLDERS: [&str; 41] = [
     "[meow]",
     "[redacted]",
@@ -56,6 +58,9 @@ pub struct CachedData {
     /// The X coordinate of the input itself, equal to (placeholder names):
     /// `left_prefix_padding + prefix_length + right_prefix_padding`
     pub input_x_origin: f32,
+
+    /// The desired size of a console glyph.
+    pub glyph_size: PointF32,
 
     pub history: Vec<Rc<Box<str>>>,
 }

@@ -1,6 +1,8 @@
 use halcyon::clipboard;
 use sdl3_sys::keycode::*;
 
+use crate::{font::store::FontId, game::GameData};
+
 const MAX_CHARS: usize = 32;
 
 /// Represents the `Console`'s text input field.
@@ -37,13 +39,15 @@ impl Field {
         }
     }
 
-    pub fn process_str(&mut self, inp: &str) {
+    pub fn process_str(&mut self, inp: &str, gd: &mut GameData) {
         self.text.insert_str(self.cursor_byte_index(), inp);
         self.cursor += inp.chars().count();
+
+        gd.font_alloc(FontId::UBUNTU_MONO, inp);
     }
 
     /// Returns whether the cursor should be moved.
-    pub fn process_key(&mut self, k: SDL_Keycode) -> bool {
+    pub fn process_key(&mut self, k: SDL_Keycode, gd: &mut GameData) -> bool {
         match k {
             SDLK_BACKSPACE => 'a: {
                 if self.text.is_empty() {
@@ -150,11 +154,7 @@ impl Field {
 
             SDLK_V => {
                 if halcyon::keyboard::mod_state() & SDL_KMOD_CTRL != 0 && clipboard::has_text() {
-                    let clip = clipboard::text();
-                    let size = clip.len();
-
-                    self.text.insert_str(self.cursor_byte_index(), &clip);
-                    self.cursor += size;
+                    self.process_str(&clipboard::text(), gd);
 
                     return true;
                 }
