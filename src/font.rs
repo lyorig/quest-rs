@@ -6,13 +6,12 @@ use std::{
 use halcyon::{
     color::Rgba,
     rect::PointF32,
+    renderer::RendererRef,
+    resource_loader::ResourceLoader,
     ttf::{Font as HalFont, FontRef, Text, TtfContext},
 };
 
-use crate::{
-    atlas::{Atlas, AtlasId},
-    game::GameData,
-};
+use crate::atlas::{Atlas, AtlasId};
 
 #[derive(Clone, Copy)]
 struct GlyphData {
@@ -32,7 +31,7 @@ enum GlyphEntry {
     Allocated(GlyphData),
 }
 
-/// 33 ('!') 126 ('~')
+/// 33 ('!') - 126 ('~')
 const NUM_GRAPHIC_ASCII_CHARS: usize = 94;
 
 /// Manages ref-counts for glyphs contained in an [`Atlas`].
@@ -126,15 +125,21 @@ impl GlyphMap {
 
     /// Convenience method for drawing a string to the screen.
     /// Panics if any character in `text` isn't available in glyph form in `atlas`.
-    fn draw(&self, text: &str, data: &GameData, origin: &mut PointF32, glyph_width: f32) {
-        let rnd = *data.renderer;
+    fn draw(
+        &self,
+        text: &str,
+        atlas: &Atlas,
+        rnd: RendererRef,
+        origin: &mut PointF32,
+        glyph_width: f32,
+    ) {
         for glyph in text.chars() {
             if !glyph.is_whitespace() {
                 let Some(id) = self.id(glyph) else {
                     panic!("[GlyphMap] Cannot draw unavailable glyph '{glyph}'")
                 };
 
-                data.atlas.draw(rnd, id, *origin);
+                atlas.draw(rnd, id, *origin);
             }
 
             origin.x += glyph_width;
@@ -205,7 +210,57 @@ impl Font<'_> {
         self.map.gc(atlas);
     }
 
-    pub fn draw(&self, text: &str, data: &GameData, origin: &mut PointF32) {
-        self.map.draw(text, data, origin, self.glyph_size.x);
+    pub fn draw(&self, text: &str, atlas: &Atlas, renderer: RendererRef, origin: &mut PointF32) {
+        self.map
+            .draw(text, atlas, renderer, origin, self.glyph_size.x);
+    }
+}
+
+pub struct FontId(usize);
+
+impl FontId {
+    pub const UBUNTU_MONO: Self = Self(0);
+}
+
+pub struct Fonts<'a> {
+    array: [Font<'a>; 1],
+}
+
+impl Fonts<'_> {
+    pub fn new<'t>(ttf: &'t TtfContext, rl: ResourceLoader) -> Fonts<'t> {
+        let ubuntu = Font::new(ttf, &rl.resolve("../../bin/assets/UbuntuMono.ttf"), 16.0);
+
+        Fonts { array: [ubuntu] }
+    }
+
+    pub fn alloc(&mut self, i: FontId, text: &str, atlas: &mut Atlas) {
+        self.array[i.0].alloc(text, atlas);
+    }
+
+    pub fn free(&mut self, i: FontId, text: &str) {
+        self.array[i.0].free(text);
+    }
+
+    pub fn gc(&mut self, i: FontId, atlas: &mut Atlas) {
+        self.array[i.0].gc(atlas);
+    }
+
+    pub fn gc_all(&mut self, atlas: &mut Atlas) {
+        self.array.iter_mut().for_each(|f| f.gc(atlas))
+    }
+
+    pub fn draw(
+        &self,
+        id: FontId,
+        atlas: &Atlas,
+        rnd: RendererRef,
+        text: &str,
+        origin: &mut PointF32,
+    ) {
+        self.array[id.0].draw(text, atlas, rnd, origin)
+    }
+
+    pub fn get(&'_ self, i: FontId) -> &'_ Font<'_> {
+        &self.array[i.0]
     }
 }

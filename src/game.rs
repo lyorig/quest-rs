@@ -5,7 +5,7 @@ use halcyon::{
     defs::SdlResult,
     event::{Event, EventIter},
     guard::DrawColorGuard,
-    rect::{Point, Rect},
+    rect::{Point, PointF32, Rect},
     renderer::{Renderer, RendererBuilder},
     resource_loader::ResourceLoader,
     subsystem::Video,
@@ -20,7 +20,7 @@ use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
 use crate::{
     atlas::Atlas,
     console::{Console, state::ConsoleState},
-    font::Font,
+    font::{FontId, Fonts},
 };
 
 pub struct GameData<'a> {
@@ -31,7 +31,7 @@ pub struct GameData<'a> {
     pub renderer: Renderer,
     pub window: Window,
 
-    pub font_ubuntu: Font<'a>,
+    pub fonts: Fonts<'a>,
 }
 
 impl GameData<'_> {
@@ -47,6 +47,29 @@ impl GameData<'_> {
 
             self.atlas.debug_draw(*self.renderer, origin);
         }
+    }
+
+    pub fn font_alloc(&mut self, i: FontId, text: &str) {
+        self.fonts.alloc(i, text, &mut self.atlas);
+    }
+
+    /// This function simply forwards to [`Fonts::free()`],
+    /// it's provided purely for completeness.
+    pub fn font_free(&mut self, i: FontId, text: &str) {
+        self.fonts.free(i, text);
+    }
+
+    pub fn font_gc(&mut self, i: FontId) {
+        self.fonts.gc(i, &mut self.atlas);
+    }
+
+    pub fn font_gc_all(&mut self) {
+        self.fonts.gc_all(&mut self.atlas);
+    }
+
+    pub fn font_draw(&self, id: FontId, text: &str, origin: &mut PointF32) {
+        self.fonts
+            .draw(id, &self.atlas, *self.renderer, text, origin)
     }
 }
 
@@ -77,18 +100,13 @@ impl Game<'_> {
 
         let epoch = Instant::now();
         let res_ldr = ResourceLoader::new();
-        let rs = renderer.output_size();
 
         let data = GameData {
             running: true,
             atlas: Atlas::new(),
             renderer,
             window,
-            font_ubuntu: Font::new(
-                ttf,
-                &res_ldr.resolve("../../bin/assets/UbuntuMono.ttf"),
-                rs.y as f32 * 0.045,
-            ),
+            fonts: Fonts::new(ttf, res_ldr),
         };
 
         let console = Console::new(ttf, *data.renderer, epoch, res_ldr)?;

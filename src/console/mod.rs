@@ -24,6 +24,7 @@ use crate::{
         state::ConsoleState,
     },
     dprint,
+    font::FontId,
     game::GameData,
     util::find_sized_font,
 };
@@ -82,8 +83,8 @@ impl Console {
                 let _ = halcyon::keyboard::text_input_start(wnd);
 
                 let np = self.data.next_placeholder();
-                data.font_ubuntu.alloc(np, &mut data.atlas);
-                data.font_ubuntu.alloc(PREFIX_TEXT, &mut data.atlas);
+                data.font_alloc(FontId::UBUNTU_MONO, np);
+                data.font_alloc(FontId::UBUNTU_MONO, PREFIX_TEXT);
 
                 self.state = ConsoleState::Enabled(ActiveConsole::new(&mut self.data));
             }
@@ -91,12 +92,15 @@ impl Console {
             ConsoleState::Enabled(ac) => {
                 let _ = halcyon::keyboard::text_input_stop(wnd);
 
-                data.font_ubuntu.free(PREFIX_TEXT);
-                data.font_ubuntu.free(if ac.field.text.is_empty() {
-                    self.data.current_placeholder()
-                } else {
-                    &ac.field.text
-                });
+                data.font_free(FontId::UBUNTU_MONO, PREFIX_TEXT);
+                data.font_free(
+                    FontId::UBUNTU_MONO,
+                    if ac.field.text.is_empty() {
+                        self.data.current_placeholder()
+                    } else {
+                        &ac.field.text
+                    },
+                );
 
                 self.state = ConsoleState::Disabled;
             }

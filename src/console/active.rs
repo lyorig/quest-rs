@@ -9,6 +9,7 @@ use sdl3_sys::keycode::SDL_Keycode;
 
 use crate::{
     console::{PREFIX_TEXT, cache::CachedData, command, field::Field, writer::ConsoleWriter},
+    font::FontId,
     game::GameData,
 };
 
@@ -37,8 +38,8 @@ impl ActiveConsole {
     }
 
     fn update_outline(&mut self, cd: &mut CachedData, data: &GameData) {
-        self.cursor_pos =
-            cd.input_x_origin + self.field.cursor as f32 * data.font_ubuntu.glyph_size.x;
+        self.cursor_pos = cd.input_x_origin
+            + self.field.cursor as f32 * data.fonts.get(FontId::UBUNTU_MONO).glyph_size.x;
         self.cursor_time = Duration::ZERO;
     }
 
@@ -81,15 +82,16 @@ impl ActiveConsole {
 
     pub fn draw(&mut self, cd: &mut CachedData, data: &GameData) {
         let rnd = *data.renderer;
+        let gl = data.fonts.get(FontId::UBUNTU_MONO).glyph_size;
         let dcl = DrawColorGuard::new(rnd, Rgba::new(Rgb::BLACK, 0.5));
         let _ = rnd.fill_target();
 
         let mut curr_draw = TEXT_OFFSET;
 
         for line in cd.history.iter() {
-            data.font_ubuntu.draw(line, data, &mut curr_draw);
+            data.font_draw(FontId::UBUNTU_MONO, line, &mut curr_draw);
 
-            curr_draw.y += data.font_ubuntu.glyph_size.y;
+            curr_draw.y += gl.y;
             curr_draw.x = TEXT_OFFSET.x;
         }
 
@@ -99,7 +101,7 @@ impl ActiveConsole {
 
         if self.cursor_time.subsec_millis() < 500 {
             curr_draw.x = self.cursor_pos;
-            let _ = rnd.fill_rect(RectF32::new(curr_draw, data.font_ubuntu.glyph_size));
+            let _ = rnd.fill_rect(RectF32::new(curr_draw, gl));
         }
     }
 
@@ -112,10 +114,11 @@ impl ActiveConsole {
 
     fn draw_prompt(&self, cd: &CachedData, data: &GameData, mut origin: PointF32) {
         let dcl = ColorModF32Guard::new(**data.atlas.texture.as_ref().unwrap(), Rgba::GREEN);
+        let gs_x = data.fonts.get(FontId::UBUNTU_MONO).glyph_size.x;
 
-        data.font_ubuntu.draw(PREFIX_TEXT, data, &mut origin);
+        data.font_draw(FontId::UBUNTU_MONO, PREFIX_TEXT, &mut origin);
 
-        origin.x += data.font_ubuntu.glyph_size.x;
+        origin.x += gs_x;
 
         let prompt = if self.field.text.is_empty() {
             // placeholder
@@ -127,6 +130,6 @@ impl ActiveConsole {
             &self.field.text
         };
 
-        data.font_ubuntu.draw(prompt, data, &mut origin);
+        data.font_draw(FontId::UBUNTU_MONO, prompt, &mut origin);
     }
 }
