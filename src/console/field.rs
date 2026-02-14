@@ -1,7 +1,7 @@
 use halcyon::clipboard;
 use sdl3_sys::keycode::*;
 
-use crate::{font::store::FontId, game::data::GameData};
+use crate::{font::store::FontId, game::resources::GameResources};
 
 const MAX_CHARS: usize = 32;
 
@@ -39,7 +39,7 @@ impl Field {
         }
     }
 
-    pub fn process_str(&mut self, inp: &str, gd: &mut GameData) {
+    pub fn process_str(&mut self, inp: &str, gd: &mut GameResources) {
         let fil = inp.chars().filter(char::is_ascii).collect::<String>();
 
         self.text.insert_str(self.cursor_byte_index(), &fil);
@@ -49,7 +49,7 @@ impl Field {
     }
 
     /// Returns whether the cursor should be moved.
-    pub fn process_key(&mut self, k: SDL_Keycode, gd: &mut GameData) -> bool {
+    pub fn process_key(&mut self, k: SDL_Keycode, gd: &mut GameResources) -> bool {
         match k {
             SDLK_BACKSPACE => 'a: {
                 if self.text.is_empty() {

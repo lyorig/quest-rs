@@ -24,13 +24,13 @@ use crate::{
     atlas::Atlas,
     console::{Console, state::ConsoleState},
     font::store::FontStore,
-    game::data::GameData,
+    game::resources::GameResources,
 };
 
-pub mod data;
+pub mod resources;
 
 pub struct Game<'a> {
-    pub data: GameData<'a>,
+    pub data: GameResources<'a>,
     console: Console,
 }
 
@@ -56,7 +56,7 @@ impl Game<'_> {
 
         let res_ldr = ResourceLoader::new();
 
-        let data = GameData {
+        let data = GameResources {
             running: true,
             atlas: Atlas::new(),
             renderer,

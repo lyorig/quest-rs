@@ -18,7 +18,7 @@ use crate::{
         state::ConsoleState,
     },
     font::store::FontId,
-    game::data::GameData,
+    game::resources::GameResources,
 };
 
 const PREFIX_TEXT: &str = "raine1@Arctic~ %";
@@ -44,7 +44,7 @@ impl Console {
         })
     }
 
-    pub fn switch(&mut self, data: &mut GameData) {
+    pub fn switch(&mut self, data: &mut GameResources) {
         let wnd = *data.window;
 
         match &self.state {
@@ -80,7 +80,7 @@ impl Console {
 
     /// If the console is active, calls `ActiveConsole::process_key()`.
     /// Otherwise, does nothing.
-    pub fn process_key(&mut self, data: &mut GameData, k: SDL_Keycode) {
+    pub fn process_key(&mut self, data: &mut GameResources, k: SDL_Keycode) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
             ac.process_key(&mut self.data, data, k);
         }
@@ -88,7 +88,7 @@ impl Console {
 
     /// If the console is active, calls `ActiveConsole::process_str()`.
     /// Otherwise, does nothing.
-    pub fn process_str(&mut self, data: &mut GameData, text: &str) {
+    pub fn process_str(&mut self, data: &mut GameResources, text: &str) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
             ac.process_str(&mut self.data, data, text);
         }
@@ -96,7 +96,7 @@ impl Console {
 
     /// If the console is active, calls `ActiveConsole::draw()`.
     /// Otherwise, does nothing.
-    pub fn draw(&mut self, data: &GameData) {
+    pub fn draw(&mut self, data: &GameResources) {
         if let ConsoleState::Enabled(ac) = &mut self.state {
             ac.draw(&mut self.data, data);
         }

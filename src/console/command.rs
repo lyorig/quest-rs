@@ -1,9 +1,9 @@
 use std::str::Split;
 
-use crate::{console::writer::ConsoleWriter, game::data::GameData};
+use crate::{console::writer::ConsoleWriter, game::resources::GameResources};
 
 type ArgsSplit<'a> = Split<'a, char>;
-type CommandFn = fn(&mut GameData, &mut ConsoleWriter, ArgsSplit);
+type CommandFn = fn(&mut GameResources, &mut ConsoleWriter, ArgsSplit);
 
 pub struct Command {
     name: &'static str,
@@ -16,12 +16,12 @@ impl Command {
         Self { name, help, func }
     }
 
-    pub fn execute(&self, data: &mut GameData, out: &mut ConsoleWriter, args: ArgsSplit<'_>) {
+    pub fn execute(&self, data: &mut GameResources, out: &mut ConsoleWriter, args: ArgsSplit<'_>) {
         (self.func)(data, out, args)
     }
 }
 
-fn cmd_help(_: &mut GameData, out: &mut ConsoleWriter, mut args: ArgsSplit<'_>) {
+fn cmd_help(_: &mut GameResources, out: &mut ConsoleWriter, mut args: ArgsSplit<'_>) {
     let cmd = args.next();
     match cmd {
         Some(cmd) => match find(cmd) {
@@ -32,21 +32,21 @@ fn cmd_help(_: &mut GameData, out: &mut ConsoleWriter, mut args: ArgsSplit<'_>) 
     }
 }
 
-fn cmd_exit(g: &mut GameData, _: &mut ConsoleWriter, _: ArgsSplit<'_>) {
+fn cmd_exit(g: &mut GameResources, _: &mut ConsoleWriter, _: ArgsSplit<'_>) {
     g.running = false;
 }
 
-fn cmd_commit(_: &mut GameData, out: &mut ConsoleWriter, _: ArgsSplit<'_>) {
+fn cmd_commit(_: &mut GameResources, out: &mut ConsoleWriter, _: ArgsSplit<'_>) {
     out.write(env!("BUILD_COMMIT_HASH"));
 }
 
-fn cmd_test_args(_: &mut GameData, out: &mut ConsoleWriter, args: ArgsSplit<'_>) {
+fn cmd_test_args(_: &mut GameResources, out: &mut ConsoleWriter, args: ArgsSplit<'_>) {
     for (i, arg) in args.enumerate() {
         out.write(&format!("{i}: {arg}\n"));
     }
 }
 
-fn cmd_get_error(_: &mut GameData, out: &mut ConsoleWriter, _: ArgsSplit<'_>) {
+fn cmd_get_error(_: &mut GameResources, out: &mut ConsoleWriter, _: ArgsSplit<'_>) {
     out.write(&format!("\"{}\"", unsafe { halcyon::error::get_str() }))
 }
 

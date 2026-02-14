@@ -11,7 +11,7 @@ use crate::{
     font::store::{FontId, FontStore},
 };
 
-pub struct GameData<'a> {
+pub struct GameResources<'a> {
     pub running: bool,
 
     pub atlas: Atlas,
@@ -22,7 +22,7 @@ pub struct GameData<'a> {
     pub fonts: FontStore<'a>,
 }
 
-impl GameData<'_> {
+impl GameResources<'_> {
     pub fn draw_atlas(&self) {
         if let Some(at) = self.atlas.texture.as_ref() {
             let origin = PointF32::new(300.0, 300.0);

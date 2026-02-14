@@ -10,7 +10,7 @@ use sdl3_sys::keycode::SDL_Keycode;
 use crate::{
     console::{PREFIX_TEXT, cache::CachedData, command, field::Field, writer::ConsoleWriter},
     font::store::FontId,
-    game::data::GameData,
+    game::resources::GameResources,
 };
 
 pub const TEXT_OFFSET: PointF32 = PointF32::new(10.0, 10.0);
@@ -47,7 +47,7 @@ impl ActiveConsole {
     }
 
     /// This is the only way that text gets added do the [`Field`].
-    pub fn process_str(&mut self, cd: &mut CachedData, data: &mut GameData, input: &str) {
+    pub fn process_str(&mut self, cd: &mut CachedData, data: &mut GameResources, input: &str) {
         self.field.process_str(input, data);
         self.field.trim_check();
 
@@ -55,7 +55,7 @@ impl ActiveConsole {
     }
 
     /// Hands over a pressed key to this console's [`Field`], which decides what to do next.
-    pub fn process_key(&mut self, cd: &mut CachedData, data: &mut GameData, k: SDL_Keycode) {
+    pub fn process_key(&mut self, cd: &mut CachedData, data: &mut GameResources, k: SDL_Keycode) {
         let op = self.field.process_key(k, data);
 
         self.field.trim_check();
@@ -65,7 +65,7 @@ impl ActiveConsole {
         }
     }
 
-    pub fn process_command(&mut self, cd: &mut CachedData, gd: &mut GameData) {
+    pub fn process_command(&mut self, cd: &mut CachedData, gd: &mut GameResources) {
         self.writer.clear();
 
         let mut args = self.field.text.split(' ');
@@ -79,7 +79,7 @@ impl ActiveConsole {
         }
     }
 
-    pub fn draw(&mut self, cd: &mut CachedData, data: &GameData) {
+    pub fn draw(&mut self, cd: &mut CachedData, data: &GameResources) {
         let rnd = *data.renderer;
         let dcl = DrawColorGuard::new(rnd, Rgba::new(Rgb::BLACK, 0.5));
         let _ = rnd.fill_target();
@@ -110,7 +110,7 @@ impl ActiveConsole {
         self.update_outline(cd);
     }
 
-    fn draw_prompt(&self, cd: &CachedData, data: &GameData, mut origin: PointF32) {
+    fn draw_prompt(&self, cd: &CachedData, data: &GameResources, mut origin: PointF32) {
         let dcl = ColorModF32Guard::new(**data.atlas.texture.as_ref().unwrap(), Rgba::GREEN);
 
         data.font_draw(FontId::UBUNTU_MONO, PREFIX_TEXT, &mut origin, cd.glyph_size);
