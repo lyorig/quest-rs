@@ -1,6 +1,6 @@
-use std::rc::Rc;
-
 use halcyon::rect::PointF32;
+
+use crate::console::{PREFIX_TEXT, active::TEXT_OFFSET, writer::ConsoleWriter};
 
 const PLACEHOLDERS: [&str; 41] = [
     "[meow]",
@@ -46,7 +46,7 @@ const PLACEHOLDERS: [&str; 41] = [
     "[MSVC is the real final boss]",
 ];
 
-/// Not all data needs to be recreated every time the console is activated
+/// Not all data needs to/should be recreated every time the console is activated
 /// (i.e. on every `ActiveConsole::new()`). This struct aims to achieve just
 /// that, while also preventing double-mutable-borrow errors that would otherwise
 /// occur if the calling `Console` passed itself as a parameter.
@@ -55,17 +55,25 @@ pub struct CachedData {
     /// generating, well, placeholders.
     pub placeholder_index: u8,
 
-    /// The X coordinate of the input itself, equal to (placeholder names):
-    /// `left_prefix_padding + prefix_length + right_prefix_padding`
+    /// The X coordinate of the input itself.
     pub input_x_origin: f32,
 
     /// The desired size of a console glyph.
     pub glyph_size: PointF32,
 
-    pub history: Vec<Rc<Box<str>>>,
+    pub writer: ConsoleWriter,
 }
 
 impl CachedData {
+    pub fn new(glyph_size: PointF32) -> Self {
+        Self {
+            placeholder_index: 0,
+            input_x_origin: TEXT_OFFSET.x + glyph_size.x * (PREFIX_TEXT.len() + 1) as f32,
+            glyph_size: glyph_size,
+            writer: ConsoleWriter::new(),
+        }
+    }
+
     pub fn next_placeholder(&mut self) -> &'static str {
         self.advance_placeholder();
         self.current_placeholder()

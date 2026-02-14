@@ -50,12 +50,17 @@ fn cmd_get_error(_: &mut GameResources, out: &mut ConsoleWriter, _: ArgsSplit<'_
     out.write(&format!("\"{}\"", unsafe { halcyon::error::get_str() }))
 }
 
-const COMMANDS: [Command; 5] = [
+fn cmd_font_gc(game: &mut GameResources, _: &mut ConsoleWriter, _: ArgsSplit<'_>) {
+    game.font_gc_all();
+}
+
+const COMMANDS: [Command; 6] = [
     Command::new("help", "Print a command's provided help text.", cmd_help),
     Command::new("exit", "Exit the game.", cmd_exit),
     Command::new("commit", "Print the commit hash.", cmd_commit),
     Command::new("test-args", "Print all arguments.", cmd_test_args),
     Command::new("get-error", "Print SDL_GetError().", cmd_get_error),
+    Command::new("font-gc", "Perform GC on all game fonts.", cmd_font_gc),
 ];
 
 pub fn find(name: &str) -> Option<&Command> {

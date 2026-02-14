@@ -36,10 +36,7 @@ pub struct Game<'a> {
 
 impl Game<'_> {
     /// Create a new game.
-    ///
-    /// SAFETY: Ensure a valid [`TtfContext`] exists for the
-    /// lifetime of the returned [`Game`].
-    pub unsafe fn new<'a>(vid: &Video, ttf: &'a TtfContext) -> SdlResult<Game<'a>> {
+    pub fn new<'a>(vid: &Video, ttf: &'a TtfContext) -> SdlResult<Game<'a>> {
         let window = WindowBuilder::new()
             .size(PointI32::new(1280, 720))
             .position(PointI32::new(Window::POS_CENTERED, Window::POS_CENTERED))

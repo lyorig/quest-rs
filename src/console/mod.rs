@@ -12,11 +12,7 @@ use halcyon::{defs::SdlResult, rect::PointF32, renderer::RendererRef};
 use sdl3_sys::keycode::*;
 
 use crate::{
-    console::{
-        active::{ActiveConsole, TEXT_OFFSET},
-        cache::CachedData,
-        state::ConsoleState,
-    },
+    console::{active::ActiveConsole, cache::CachedData, state::ConsoleState},
     font::store::FontId,
     game::resources::GameResources,
 };
@@ -34,12 +30,7 @@ impl Console {
         let glyph_size = PointF32::new(16.0, 32.0);
 
         Ok(Console {
-            data: CachedData {
-                placeholder_index: 0,
-                input_x_origin: TEXT_OFFSET.x + glyph_size.x * (PREFIX_TEXT.len() + 1) as f32,
-                glyph_size: glyph_size,
-                history: Vec::new(),
-            },
+            data: CachedData::new(glyph_size),
             state: ConsoleState::Disabled,
         })
     }
@@ -54,6 +45,7 @@ impl Console {
                 let np = self.data.next_placeholder();
                 data.font_alloc(FontId::UBUNTU_MONO, np);
                 data.font_alloc(FontId::UBUNTU_MONO, PREFIX_TEXT);
+                data.font_alloc(FontId::UBUNTU_MONO, self.data.writer.data());
 
                 self.state = ConsoleState::Enabled(ActiveConsole::new(&mut self.data));
             }
@@ -61,6 +53,7 @@ impl Console {
             ConsoleState::Enabled(ac) => {
                 let _ = halcyon::keyboard::text_input_stop(wnd);
 
+                data.font_free(FontId::UBUNTU_MONO, self.data.writer.data());
                 data.font_free(FontId::UBUNTU_MONO, PREFIX_TEXT);
                 data.font_free(
                     FontId::UBUNTU_MONO,
@@ -71,6 +64,7 @@ impl Console {
                     },
                 );
 
+                // NOTE: Only for debug purposes.
                 data.font_gc(FontId::UBUNTU_MONO);
 
                 self.state = ConsoleState::Disabled;

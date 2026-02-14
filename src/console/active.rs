@@ -8,7 +8,7 @@ use halcyon::{
 use sdl3_sys::keycode::SDL_Keycode;
 
 use crate::{
-    console::{PREFIX_TEXT, cache::CachedData, command, field::Field, writer::ConsoleWriter},
+    console::{PREFIX_TEXT, cache::CachedData, command, field::Field},
     font::store::FontId,
     game::resources::GameResources,
 };
@@ -19,12 +19,10 @@ pub struct ActiveConsole {
     pub field: Field,
 
     /// Where the cursor is currently being drawn to.
-    /// Only updated when `self.update_outline()` is called,
+    /// Only updated when [`ActiveConsole::update_outline()`] is called,
     /// which sets its location to correspond to the [`Field`] cursor.
     cursor_pos: f32,
     cursor_time: Duration,
-
-    writer: ConsoleWriter,
 }
 
 impl ActiveConsole {
@@ -33,7 +31,6 @@ impl ActiveConsole {
             field: Field::new(),
             cursor_pos: data.input_x_origin,
             cursor_time: Duration::ZERO,
-            writer: ConsoleWriter::new(),
         }
     }
 
@@ -66,16 +63,18 @@ impl ActiveConsole {
     }
 
     pub fn process_command(&mut self, cd: &mut CachedData, gd: &mut GameResources) {
-        self.writer.clear();
-
         let mut args = self.field.text.split(' ');
         if let Some(name) = args.next() {
+            gd.font_free(FontId::UBUNTU_MONO, cd.writer.data());
+
             match command::find(name) {
-                Some(c) => c.execute(gd, &mut self.writer, args),
-                None => self.writer.write(&format!("unknown command \"{name}\"")),
+                Some(c) => c.execute(gd, &mut cd.writer, args),
+                None => cd.writer.write(&format!("unknown command \"{name}\"")),
             }
 
-            self.clear(cd);
+            gd.font_alloc(FontId::UBUNTU_MONO, cd.writer.data());
+
+            self.clear(cd, gd);
         }
     }
 
@@ -86,7 +85,7 @@ impl ActiveConsole {
 
         let mut curr_draw = TEXT_OFFSET;
 
-        for line in &cd.history {
+        for line in cd.writer.lines() {
             data.font_draw(FontId::UBUNTU_MONO, line, &mut curr_draw, cd.glyph_size);
 
             curr_draw.y += cd.glyph_size.y;
@@ -103,9 +102,10 @@ impl ActiveConsole {
         }
     }
 
-    /// Clear the `Field`, update the cursor,
+    /// Clear the [`Field`], update the cursor,
     /// and signal for a repaint.
-    pub fn clear(&mut self, cd: &mut CachedData) {
+    pub fn clear(&mut self, cd: &mut CachedData, res: &mut GameResources) {
+        res.font_free(FontId::UBUNTU_MONO, &self.field.text);
         self.field.clear();
         self.update_outline(cd);
     }
