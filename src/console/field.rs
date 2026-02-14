@@ -40,10 +40,12 @@ impl Field {
     }
 
     pub fn process_str(&mut self, inp: &str, gd: &mut GameData) {
-        self.text.insert_str(self.cursor_byte_index(), inp);
-        self.cursor += inp.chars().count();
+        let fil = inp.chars().filter(char::is_ascii).collect::<String>();
 
-        gd.font_alloc(FontId::UBUNTU_MONO, inp);
+        self.text.insert_str(self.cursor_byte_index(), &fil);
+        self.cursor += fil.chars().count();
+
+        gd.font_alloc(FontId::UBUNTU_MONO, &fil);
     }
 
     /// Returns whether the cursor should be moved.

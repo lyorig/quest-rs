@@ -71,6 +71,8 @@ impl Console {
                     },
                 );
 
+                data.font_gc(FontId::UBUNTU_MONO);
+
                 self.state = ConsoleState::Disabled;
             }
         }

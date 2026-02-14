@@ -69,7 +69,7 @@ impl GlyphMap {
     }
 
     pub fn retain(&mut self, atlas: &mut Atlas, font: FontRef, text: &str) {
-        for c in text.chars().filter(|c| Self::is_printable(*c)) {
+        for c in text.chars().filter(char::is_ascii_graphic) {
             self.retain_glyph(atlas, font, c);
         }
     }
@@ -89,7 +89,7 @@ impl GlyphMap {
     }
 
     pub fn release(&mut self, text: &str) {
-        for c in text.chars().filter(|c| Self::is_printable(*c)) {
+        for c in text.chars().filter(char::is_ascii_graphic) {
             self.release_glyph(c);
         }
     }
@@ -150,14 +150,9 @@ impl GlyphMap {
 
     fn assert_printable(c: char) {
         assert!(
-            Self::is_printable(c),
+            c.is_ascii_graphic(),
             "[GlyphMap] Pushing unsupported value (ASCII 0x{:x})",
             c as u32
         );
-    }
-
-    fn is_printable(c: char) -> bool {
-        let repr = c as u32;
-        repr >= 33 && repr <= 126
     }
 }
