@@ -69,7 +69,7 @@ impl CachedData {
         Self {
             placeholder_index: 0,
             input_x_origin: TEXT_OFFSET.x + glyph_size.x * (PREFIX_TEXT.len() + 1) as f32,
-            glyph_size: glyph_size,
+            glyph_size,
             writer: ConsoleWriter::new(),
         }
     }

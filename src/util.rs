@@ -26,7 +26,7 @@ pub unsafe fn find_sized_font<'a>(
 
         curr += INCR;
 
-        if (Text::new(&f, "X")?.size().y as f32) >= desired_height {
+        if (Text::new(*f, "X")?.size().y as f32) >= desired_height {
             return Ok(f);
         }
     }

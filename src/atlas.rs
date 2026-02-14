@@ -126,7 +126,7 @@ impl Atlas {
         // which is absolutely sufficient for our case.
         new_tex.set_blend_mode(SDL_BLENDMODE_NONE);
 
-        let _tgt = RenderTargetGuard::new(rnd, &new_tex);
+        let _tgt = RenderTargetGuard::new(rnd, *new_tex);
         let _dcl = DrawColorGuard::new(rnd, Rgba::TRANSPARENT);
 
         let _ = rnd.clear();
@@ -141,8 +141,8 @@ impl Atlas {
             match &d.source {
                 Some(surf) => {
                     // Newly staged, just draw to the new texture.
-                    let tex = Texture::from_surface(rnd, surf).unwrap();
-                    let _ = rnd.draw(&tex, None, Some(&new_area));
+                    let tex = Texture::from_surface(rnd, **surf).unwrap();
+                    let _ = rnd.draw(*tex, None, Some(&new_area));
 
                     d.source = None;
                 }
@@ -150,7 +150,7 @@ impl Atlas {
                     // Old, draw from previous rect to new one.
                     let _ = rnd.draw(
                         // SAFETY: If a Surface has been consumed, it's guaranteed to be residing on a Texture.
-                        unsafe { self.texture.as_ref().unwrap_unchecked() },
+                        unsafe { **self.texture.as_ref().unwrap_unchecked() },
                         Some(&d.area),
                         Some(&new_area),
                     );
@@ -186,14 +186,14 @@ impl Atlas {
     pub fn draw(&self, rnd: RendererRef, id: AtlasId, dst: PointF32) {
         if let Some(tex) = &self.texture {
             let area = self.data[id.0 as usize].area;
-            let _ = rnd.draw(tex, Some(&area), Some(&RectF32::new(dst, area.size)));
+            let _ = rnd.draw(**tex, Some(&area), Some(&RectF32::new(dst, area.size)));
         }
     }
 
     pub fn draw_to(&self, rnd: RendererRef, id: AtlasId, dst: RectF32) {
         if let Some(tex) = &self.texture {
             let area = self.data[id.0 as usize].area;
-            let _ = rnd.draw(tex, Some(&area), Some(&dst));
+            let _ = rnd.draw(**tex, Some(&area), Some(&dst));
         }
     }
 
@@ -211,15 +211,15 @@ impl Atlas {
 
     pub fn replace_exact(&mut self, id: AtlasId, rnd: RendererRef, s: Surface) {
         if let Some(tex) = &self.texture {
-            let rep = Texture::from_surface(rnd, &s).unwrap();
+            let rep = Texture::from_surface(rnd, *s).unwrap();
             let dst = self.data[id.0 as usize].area;
 
             let _blend = BlendModeGuard::new(rnd, SDL_BLENDMODE_NONE);
-            let _tgt = RenderTargetGuard::new(rnd, tex);
+            let _tgt = RenderTargetGuard::new(rnd, **tex);
             let _col = DrawColorGuard::new(rnd, Rgba::TRANSPARENT);
 
             let _ = rnd.fill_rect(dst);
-            let _ = rnd.draw(&rep, None, Some(&dst));
+            let _ = rnd.draw(*rep, None, Some(&dst));
         }
     }
 

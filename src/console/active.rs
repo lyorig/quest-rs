@@ -8,8 +8,7 @@ use halcyon::{
 use sdl3_sys::keycode::SDL_Keycode;
 
 use crate::{
-    console::{PREFIX_TEXT, cache::CachedData, command, field::Field},
-    font::store::FontId,
+    console::{CONSOLE_FONT, PREFIX_TEXT, cache::CachedData, command, field::Field},
     game::resources::GameResources,
 };
 
@@ -65,14 +64,12 @@ impl ActiveConsole {
     pub fn process_command(&mut self, cd: &mut CachedData, gd: &mut GameResources) {
         let mut args = self.field.text.split(' ');
         if let Some(name) = args.next() {
-            gd.font_free(FontId::UBUNTU_MONO, cd.writer.data());
-
             match command::find(name) {
                 Some(c) => c.execute(gd, &mut cd.writer, args),
                 None => cd.writer.write(&format!("unknown command \"{name}\"")),
             }
 
-            gd.font_alloc(FontId::UBUNTU_MONO, cd.writer.data());
+            gd.font_alloc(CONSOLE_FONT, cd.writer.added_since_last_check());
 
             self.clear(cd, gd);
         }
@@ -86,7 +83,7 @@ impl ActiveConsole {
         let mut curr_draw = TEXT_OFFSET;
 
         for line in cd.writer.lines() {
-            data.font_draw(FontId::UBUNTU_MONO, line, &mut curr_draw, cd.glyph_size);
+            data.font_draw(CONSOLE_FONT, line, &mut curr_draw, cd.glyph_size);
 
             curr_draw.y += cd.glyph_size.y;
             curr_draw.x = TEXT_OFFSET.x;
@@ -105,7 +102,7 @@ impl ActiveConsole {
     /// Clear the [`Field`], update the cursor,
     /// and signal for a repaint.
     pub fn clear(&mut self, cd: &mut CachedData, res: &mut GameResources) {
-        res.font_free(FontId::UBUNTU_MONO, &self.field.text);
+        res.font_free(CONSOLE_FONT, &self.field.text);
         self.field.clear();
         self.update_outline(cd);
     }
@@ -113,7 +110,7 @@ impl ActiveConsole {
     fn draw_prompt(&self, cd: &CachedData, data: &GameResources, mut origin: PointF32) {
         let dcl = ColorModF32Guard::new(**data.atlas.texture.as_ref().unwrap(), Rgba::GREEN);
 
-        data.font_draw(FontId::UBUNTU_MONO, PREFIX_TEXT, &mut origin, cd.glyph_size);
+        data.font_draw(CONSOLE_FONT, PREFIX_TEXT, &mut origin, cd.glyph_size);
 
         origin.x = cd.input_x_origin;
 
@@ -127,6 +124,6 @@ impl ActiveConsole {
             &self.field.text
         };
 
-        data.font_draw(FontId::UBUNTU_MONO, prompt, &mut origin, cd.glyph_size);
+        data.font_draw(CONSOLE_FONT, prompt, &mut origin, cd.glyph_size);
     }
 }

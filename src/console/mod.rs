@@ -18,6 +18,7 @@ use crate::{
 };
 
 const PREFIX_TEXT: &str = "raine1@Arctic~ %";
+const CONSOLE_FONT: FontId = FontId::UBUNTU_MONO;
 
 pub struct Console {
     pub data: CachedData,
@@ -25,7 +26,7 @@ pub struct Console {
 }
 
 impl Console {
-    pub fn new<'a>(_rnd: RendererRef) -> SdlResult<Console> {
+    pub fn new(_rnd: RendererRef) -> SdlResult<Console> {
         // TODO: Use the renderer.
         let glyph_size = PointF32::new(16.0, 32.0);
 
@@ -43,9 +44,9 @@ impl Console {
                 let _ = halcyon::keyboard::text_input_start(wnd);
 
                 let np = self.data.next_placeholder();
-                data.font_alloc(FontId::UBUNTU_MONO, np);
-                data.font_alloc(FontId::UBUNTU_MONO, PREFIX_TEXT);
-                data.font_alloc(FontId::UBUNTU_MONO, self.data.writer.data());
+                data.font_alloc(CONSOLE_FONT, np);
+                data.font_alloc(CONSOLE_FONT, PREFIX_TEXT);
+                data.font_alloc(CONSOLE_FONT, self.data.writer.data());
 
                 self.state = ConsoleState::Enabled(ActiveConsole::new(&mut self.data));
             }
@@ -53,10 +54,10 @@ impl Console {
             ConsoleState::Enabled(ac) => {
                 let _ = halcyon::keyboard::text_input_stop(wnd);
 
-                data.font_free(FontId::UBUNTU_MONO, self.data.writer.data());
-                data.font_free(FontId::UBUNTU_MONO, PREFIX_TEXT);
+                data.font_free(CONSOLE_FONT, self.data.writer.data());
+                data.font_free(CONSOLE_FONT, PREFIX_TEXT);
                 data.font_free(
-                    FontId::UBUNTU_MONO,
+                    CONSOLE_FONT,
                     if ac.field.text.is_empty() {
                         self.data.current_placeholder()
                     } else {

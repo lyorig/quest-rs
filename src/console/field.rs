@@ -43,7 +43,7 @@ impl Field {
         let fil = inp.chars().filter(char::is_ascii).collect::<String>();
 
         self.text.insert_str(self.cursor_byte_index(), &fil);
-        self.cursor += fil.chars().count();
+        self.cursor += fil.len();
 
         gd.font_alloc(FontId::UBUNTU_MONO, &fil);
     }
@@ -64,7 +64,7 @@ impl Field {
                         (begin, end) = (0, 0);
 
                         let curr = self.char_at(begin);
-                        let chars = self.text.chars().count();
+                        let chars = self.text.len();
 
                         if curr.is_whitespace() {
                             while end != chars && self.char_at(end).is_whitespace() {
@@ -168,7 +168,7 @@ impl Field {
     }
 
     pub fn trim_check(&mut self) {
-        let c = self.text.chars().count();
+        let c = self.text.len();
         if c > MAX_CHARS {
             self.text
                 .replace_range(self.text.char_indices().nth(MAX_CHARS).unwrap().0.., "");
@@ -182,15 +182,13 @@ impl Field {
     }
 
     fn char_at(&self, i: usize) -> char {
-        self.text.chars().nth(i).unwrap()
+        self.text.as_bytes()[i] as char
     }
 
     fn byte_index(&self, i: usize) -> usize {
-        self.text
-            .char_indices()
-            .nth(i)
-            .map(|f| f.0)
-            .unwrap_or(self.text.len())
+        // PERF: We only operate on ASCII chars,
+        // so we don't need to go through UTF-8 calculations.
+        i
     }
 
     fn cursor_byte_index(&self) -> usize {

@@ -28,7 +28,7 @@ impl Font<'_> {
             font.family()
         );
 
-        let glyph_size = Text::new(&font, "X").unwrap().size().into();
+        let glyph_size = Text::new(*font, "X").unwrap().size().into();
 
         Font {
             font,

@@ -43,7 +43,7 @@ impl Game<'_> {
             .title(c"HalodaQuest [Euclid]")
             .build(vid)?;
 
-        let mut renderer = RendererBuilder::new(&window);
+        let mut renderer = RendererBuilder::new(*window);
         if !std::env::args().any(|x| x == "--no-vsync") {
             renderer.vsync(1);
         }
@@ -82,7 +82,7 @@ impl Game<'_> {
         // lot of extra flexibility, so I don't particularly mind implementing
         // things this way.
         while self.data.running {
-            let _col = DrawColorGuard::new(&self.data.renderer, Rgba::rgb(0.0, 0.0, 0.75));
+            let _col = DrawColorGuard::new(*self.data.renderer, Rgba::rgb(0.0, 0.0, 0.75));
             let _ = self.data.renderer.clear();
 
             // --- Processing ---

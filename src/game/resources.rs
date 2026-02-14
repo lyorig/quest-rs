@@ -28,10 +28,10 @@ impl GameResources<'_> {
             let origin = PointF32::new(300.0, 300.0);
             let sz = RectF32::new(origin, at.size());
 
-            let _dcl = DrawColorGuard::new(&self.renderer, Rgba::BLACK);
+            let _dcl = DrawColorGuard::new(*self.renderer, Rgba::BLACK);
 
             let _ = self.renderer.draw_rect(sz);
-            let _ = self.renderer.draw(at, None, Some(&sz));
+            let _ = self.renderer.draw(**at, None, Some(&sz));
 
             self.atlas.debug_draw(*self.renderer, origin);
         }
