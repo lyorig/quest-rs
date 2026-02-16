@@ -7,7 +7,7 @@ mod writer;
 
 use std::time::Duration;
 
-use halcyon::{defs::SdlResult, rect::PointF32, renderer::RendererRef};
+use halcyon::{defs::SdlResult, renderer::RendererRef};
 
 use sdl3_sys::keycode::*;
 
@@ -26,12 +26,9 @@ pub struct Console {
 }
 
 impl Console {
-    pub fn new(_rnd: RendererRef) -> SdlResult<Console> {
-        // TODO: Use the renderer.
-        let glyph_size = PointF32::new(16.0, 32.0);
-
+    pub fn new(rnd: RendererRef) -> SdlResult<Console> {
         Ok(Console {
-            data: CachedData::new(glyph_size),
+            data: CachedData::new(rnd),
             state: ConsoleState::Disabled,
         })
     }

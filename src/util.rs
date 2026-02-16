@@ -8,7 +8,7 @@ use halcyon::{
     ttf::{Font, Text, TtfContext},
 };
 
-/// Returns a `NonNull<c_char>`, for use with `SdlResult`s.
+/// Returns a [`NonNull<c_char>`], for use with [`SdlResult`].
 pub fn error_str(msg: &'static CStr) -> NonNull<c_char> {
     unsafe { NonNull::new_unchecked(msg.as_ptr().cast_mut()) }
 }

@@ -32,17 +32,19 @@ impl ConsoleWriter {
         &self.data
     }
 
+    /// Returns a string slice containing all text that has been
+    /// added since the last call to this method.
     pub fn added_since_last_check(&mut self) -> &str {
-        if self.last_added < self.data.len() {
-            let slice = &self.data[self.last_added..];
-            self.last_added = self.data.len() + 1; // Compensate for \n.
-
-            slice
-        } else {
+        if self.last_added >= self.data.len() {
             // NOTE: This fixes a situation when the last command provided no output.
             // The `last_added` field is offset by 1 to skip over newlines,
             // which isn't present in this case.
             ""
+        } else {
+            let slice = &self.data[self.last_added..];
+            self.last_added = self.data.len() + 1; // Compensate for \n.
+
+            slice
         }
     }
 }
