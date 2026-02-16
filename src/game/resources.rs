@@ -56,7 +56,6 @@ impl GameResources<'_> {
     }
 
     pub fn font_draw(&self, id: FontId, text: &str, origin: &mut PointF32, glyph_size: PointF32) {
-        self.fonts
-            .draw(id, &self.atlas, *self.renderer, text, origin, glyph_size)
+        self.fonts.draw(id, self, text, origin, glyph_size)
     }
 }
