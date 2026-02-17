@@ -2,11 +2,10 @@ use std::ffi::CStr;
 
 use halcyon::{
     rect::PointF32,
-    renderer::RendererRef,
     ttf::{Font as HalFont, Text, TtfContext},
 };
 
-use crate::{atlas::Atlas, font::glyph_map::GlyphMap};
+use crate::{atlas::Atlas, font::glyph_map::GlyphMap, game::resources::GameResources};
 
 pub mod glyph_map;
 pub mod store;
@@ -58,11 +57,10 @@ impl Font<'_> {
     pub fn draw(
         &self,
         text: &str,
-        atlas: &Atlas,
-        renderer: RendererRef,
+        res: &GameResources,
         origin: &mut PointF32,
         glyph_size: PointF32,
     ) {
-        self.map.draw(text, atlas, renderer, origin, glyph_size);
+        self.map.draw(text, res, origin, glyph_size);
     }
 }

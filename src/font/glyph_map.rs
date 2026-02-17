@@ -3,11 +3,13 @@ use std::num::NonZeroU32;
 use halcyon::{
     color::Rgba,
     rect::{PointF32, RectF32},
-    renderer::RendererRef,
     ttf::FontRef,
 };
 
-use crate::atlas::{Atlas, AtlasId};
+use crate::{
+    atlas::{Atlas, AtlasId},
+    game::resources::GameResources,
+};
 
 #[derive(Clone, Copy)]
 struct GlyphData {
@@ -124,8 +126,7 @@ impl GlyphMap {
     pub fn draw(
         &self,
         text: &str,
-        atlas: &Atlas,
-        rnd: RendererRef,
+        res: &GameResources,
         origin: &mut PointF32,
         glyph_size: PointF32,
     ) {
@@ -135,7 +136,8 @@ impl GlyphMap {
                     panic!("[GlyphMap] Cannot draw unavailable glyph '{glyph}'")
                 };
 
-                atlas.draw_to(rnd, id, RectF32::new(*origin, glyph_size));
+                res.atlas
+                    .draw_to(*res.renderer, id, RectF32::new(*origin, glyph_size));
             }
 
             origin.x += glyph_size.x;
