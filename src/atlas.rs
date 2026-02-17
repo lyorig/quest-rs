@@ -55,14 +55,14 @@ impl Data {
     }
 }
 
-impl<'a> From<&'a Data> for &'a RectXYWH {
-    fn from(value: &'a Data) -> Self {
+impl<'a> From<&'a &Data> for &'a RectXYWH {
+    fn from(value: &'a &Data) -> Self {
         &value.staged
     }
 }
 
-impl<'a> From<&'a mut Data> for &'a mut RectXYWH {
-    fn from(value: &'a mut Data) -> Self {
+impl<'a> From<&'a mut &mut Data> for &'a mut RectXYWH {
+    fn from(value: &'a mut &mut Data) -> Self {
         &mut value.staged
     }
 }
@@ -74,7 +74,7 @@ pub struct Atlas {
     /// Necessary for `find_best_packing`.
     empty_spaces: EmptySpaces<DefaultEmptySpaces>,
 
-    /// If `false`, `Atlas::pack()` is a no-op.
+    /// If `false`, [`Atlas::pack()`] is a no-op.
     /// This enables the caller to call said function in a loop without
     /// caring about anything else, while the atlas internally ensures
     /// it only executes when there's something to be done.
@@ -131,6 +131,11 @@ impl Atlas {
 
         let _ = rnd.clear();
 
+        println!(
+            "[Atlas] Creating texture with {} staged textures",
+            self.data.iter().filter(|x| x.is_valid()).count()
+        );
+
         for d in &mut self.data {
             if !d.is_valid() {
                 continue;
@@ -150,7 +155,7 @@ impl Atlas {
                     // Old, draw from previous rect to new one.
                     let _ = rnd.draw(
                         // SAFETY: If a Surface has been consumed, it's guaranteed to be residing on a Texture.
-                        unsafe { **self.texture.as_ref().unwrap_unchecked() },
+                        **self.texture.as_ref().unwrap(),
                         Some(&d.area),
                         Some(&new_area),
                     );
@@ -178,7 +183,14 @@ impl Atlas {
             handle_unsuccessful_insertion: |_| CallbackResult::AbortPacking,
         };
 
-        let size = find_best_packing(&mut self.empty_spaces, &mut self.data, &input);
+        // Only take into account valid entries.
+        let mut col = self
+            .data
+            .iter_mut()
+            .filter(|x| x.is_valid())
+            .collect::<Box<_>>();
+
+        let size = find_best_packing(&mut self.empty_spaces, &mut col, &input);
 
         self.create_texture(rnd, Point::new(size.w as _, size.h as _));
     }
