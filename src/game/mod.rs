@@ -4,7 +4,6 @@ use halcyon::{
     color::Rgba,
     defs::SdlResult,
     event::{Event, EventIter},
-    guard::DrawColorGuard,
     rect::PointI32,
     renderer::RendererBuilder,
     resource_loader::ResourceLoader,
@@ -43,7 +42,7 @@ impl Game<'_> {
             .title(c"HalodaQuest [Euclid]")
             .build(vid)?;
 
-        let mut renderer = RendererBuilder::new(*window);
+        let mut renderer = RendererBuilder::new(window.as_ref());
         if !std::env::args().any(|x| x == "--no-vsync") {
             renderer.vsync(1);
         }
@@ -61,7 +60,7 @@ impl Game<'_> {
             fonts: FontStore::new(ttf, res_ldr),
         };
 
-        let console = Console::new(*data.renderer)?;
+        let console = Console::new(data.renderer.as_ref())?;
 
         Ok(Game { data, console })
     }
@@ -82,7 +81,11 @@ impl Game<'_> {
         // lot of extra flexibility, so I don't particularly mind implementing
         // things this way.
         while self.data.running {
-            let _col = DrawColorGuard::new(*self.data.renderer, Rgba::rgb(0.0, 0.0, 0.75));
+            let old = self.data.renderer.draw_color_f32();
+            self.data
+                .renderer
+                .set_draw_color_f32(Rgba::rgb(0.0, 0.0, 0.75));
+
             let _ = self.data.renderer.clear();
 
             // --- Processing ---
@@ -92,13 +95,15 @@ impl Game<'_> {
             self.update_delta(delta.elapsed());
             delta = Instant::now();
 
-            self.data.atlas.pack(*self.data.renderer);
+            self.data.atlas.pack(self.data.renderer.as_ref());
 
             // --- Drawing ---
             self.console.draw(&self.data);
             self.data.draw_atlas();
 
             let _ = self.data.renderer.present();
+
+            self.data.renderer.set_draw_color_f32(old);
         }
     }
 

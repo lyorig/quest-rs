@@ -137,7 +137,7 @@ impl GlyphMap {
                 };
 
                 res.atlas
-                    .draw_to(*res.renderer, id, RectF32::new(*origin, glyph_size));
+                    .draw_to(res.renderer.as_ref(), id, RectF32::new(*origin, glyph_size));
             }
 
             origin.x += glyph_size.x;

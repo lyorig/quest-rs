@@ -42,9 +42,9 @@ enum Data {
 }
 
 impl Data {
-    fn staged(s: Surface) -> Self {
+    fn staged(s: Surface) -> Data {
         let sz = s.size();
-        Self::Staged(StagedEntry {
+        Data::Staged(StagedEntry {
             surface: s,
             area: RectXYWH::from_wh(sz.x, sz.y),
         })
@@ -136,7 +136,7 @@ impl Atlas {
         // which is absolutely sufficient for our case.
         new_tex.set_blend_mode(SDL_BLENDMODE_NONE);
 
-        let _tgt = RenderTargetGuard::new(rnd, *new_tex);
+        let _tgt = RenderTargetGuard::new(rnd, new_tex.as_ref());
         let _dcl = DrawColorGuard::new(rnd, Rgba::TRANSPARENT);
 
         let _ = rnd.clear();
@@ -148,8 +148,8 @@ impl Atlas {
                     let new_area = to_frect(s.area);
 
                     // Newly staged, just draw to the new texture.
-                    let tex = Texture::from_surface(rnd, *s.surface).unwrap();
-                    let _ = rnd.draw(*tex, None, Some(&new_area));
+                    let tex = Texture::from_surface(rnd, s.surface.as_ref()).unwrap();
+                    let _ = rnd.draw(tex.as_ref(), None, Some(&new_area));
 
                     *d = Data::Active(ActiveEntry {
                         current: new_area,
@@ -161,7 +161,7 @@ impl Atlas {
 
                     // Old, draw from previous rect to new one.
                     let _ = rnd.draw(
-                        **self.texture.as_ref().unwrap(),
+                        self.texture.as_ref().unwrap().as_ref(),
                         Some(&a.current),
                         Some(&new_area),
                     );
@@ -189,18 +189,19 @@ impl Atlas {
             handle_unsuccessful_insertion: |_| CallbackResult::AbortPacking,
         };
 
-        fn filter<'a>(data: &'a mut Data) -> Option<RectWrapper<'a>> {
+        fn fm<'d>(data: &'d mut Data) -> Option<&'d mut RectXYWH> {
             match data {
                 Data::Unused => None,
-                Data::Staged(s) => Some(RectWrapper(&mut s.area)),
-                Data::Active(a) => Some(RectWrapper(&mut a.staged)),
+                Data::Staged(s) => Some(&mut s.area),
+                Data::Active(a) => Some(&mut a.staged),
             }
         }
 
-        // Only take into account valid entries.
-        let mut col = self.data.iter_mut().filter_map(filter).collect::<Box<_>>();
-
-        let size = find_best_packing(&mut self.empty_spaces, &mut col, &input);
+        let size = find_best_packing(
+            &mut self.empty_spaces,
+            self.data.iter_mut().filter_map(fm),
+            &input,
+        );
 
         self.create_texture(rnd, Point::new(size.w as _, size.h as _));
     }
@@ -215,14 +216,18 @@ impl Atlas {
     pub fn draw(&self, rnd: RendererRef, id: AtlasId, dst: PointF32) {
         if let Some(tex) = &self.texture {
             let area = self.extract_area(id);
-            let _ = rnd.draw(**tex, Some(&area), Some(&RectF32::new(dst, area.size)));
+            let _ = rnd.draw(
+                tex.as_ref(),
+                Some(&area),
+                Some(&RectF32::new(dst, area.size)),
+            );
         }
     }
 
     pub fn draw_to(&self, rnd: RendererRef, id: AtlasId, dst: RectF32) {
         if let Some(tex) = &self.texture {
             let area = self.extract_area(id);
-            let _ = rnd.draw(**tex, Some(&area), Some(&dst));
+            let _ = rnd.draw(tex.as_ref(), Some(&area), Some(&dst));
         }
     }
 
@@ -233,7 +238,7 @@ impl Atlas {
                 let sz = surf.size();
                 if sz.as_f32() == a.current.size {
                     // SAFETY: If a valid entry exists, the texture must exist as well.
-                    let tex = **self.texture.as_ref().unwrap();
+                    let tex = self.texture.as_ref().unwrap().as_ref();
                     return Self::replace_exact_known(tex, a, rnd, surf);
                 }
 
@@ -251,7 +256,7 @@ impl Atlas {
         match &self.data[id.0 as usize] {
             Data::Active(a) => {
                 // SAFETY: If a valid entry exists, the texture must exist as well.
-                let tex = **self.texture.as_ref().unwrap();
+                let tex = self.texture.as_ref().unwrap().as_ref();
                 Self::replace_exact_known(tex, a, rnd, s)
             }
             _ => panic!("[Atlas] Trying to replace-exact invalid ID {}", id.0),
@@ -259,15 +264,15 @@ impl Atlas {
     }
 
     fn replace_exact_known(tex: TextureRef, a: &ActiveEntry, rnd: RendererRef, s: Surface) {
-        let rep = Texture::from_surface(rnd, *s).unwrap();
+        let rep = Texture::from_surface(rnd, s.as_ref()).unwrap();
         let dst = a.current;
 
-        let _blend = BlendModeGuard::new(rnd, SDL_BLENDMODE_NONE);
+        let _blend = BlendModeGuard::new(*rnd, SDL_BLENDMODE_NONE);
         let _tgt = RenderTargetGuard::new(rnd, tex);
         let _col = DrawColorGuard::new(rnd, Rgba::TRANSPARENT);
 
         let _ = rnd.fill_rect(dst);
-        let _ = rnd.draw(*rep, None, Some(&dst));
+        let _ = rnd.draw(rep.as_ref(), None, Some(&dst));
     }
 
     pub fn debug_draw(&self, rnd: RendererRef, origin: PointF32) {
@@ -277,7 +282,7 @@ impl Atlas {
             r
         }
 
-        fn filter_map(d: &Data, origin: PointF32) -> Option<RectF32> {
+        fn fm(d: &Data, origin: PointF32) -> Option<RectF32> {
             match d {
                 Data::Active(a) => Some(offset(a.current, origin)),
                 _ => None,
@@ -287,7 +292,7 @@ impl Atlas {
         let vec = self
             .data
             .iter()
-            .filter_map(|d| filter_map(d, origin))
+            .filter_map(|d| fm(d, origin))
             .collect::<Vec<_>>();
 
         let _dcl = DrawColorGuard::new(rnd, Rgba::RED);

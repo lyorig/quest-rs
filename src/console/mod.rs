@@ -34,7 +34,7 @@ impl Console {
     }
 
     pub fn switch(&mut self, data: &mut GameResources) {
-        let wnd = *data.window;
+        let wnd = data.window.as_ref();
 
         match &self.state {
             ConsoleState::Disabled => {
@@ -53,17 +53,11 @@ impl Console {
 
                 data.font_free(CONSOLE_FONT, self.data.writer.data());
                 data.font_free(CONSOLE_FONT, PREFIX_TEXT);
-                data.font_free(
-                    CONSOLE_FONT,
-                    if ac.field.text.is_empty() {
-                        self.data.current_placeholder()
-                    } else {
-                        &ac.field.text
-                    },
-                );
+                data.font_free(CONSOLE_FONT, self.data.current_placeholder());
+                data.font_free(CONSOLE_FONT, &ac.field.text);
 
                 // NOTE: Only for debug purposes.
-                data.font_gc(FontId::UBUNTU_MONO);
+                data.font_gc(CONSOLE_FONT);
 
                 self.state = ConsoleState::Disabled;
             }

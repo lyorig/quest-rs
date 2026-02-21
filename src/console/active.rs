@@ -76,7 +76,7 @@ impl ActiveConsole {
     }
 
     pub fn draw(&mut self, cd: &mut CachedData, data: &GameResources) {
-        let rnd = *data.renderer;
+        let rnd = data.renderer.as_ref();
         let dcl = DrawColorGuard::new(rnd, Rgba::new(Rgb::BLACK, 0.5));
         let _ = rnd.fill_target();
 
