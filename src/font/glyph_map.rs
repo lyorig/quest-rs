@@ -58,7 +58,10 @@ impl GlyphMap {
                     .expect("[GlyphMap] Entry refcount overflow")
             }
             GlyphEntry::Free => {
-                let surf = font.render_glyph_blended(glyph, Rgba::WHITE).unwrap();
+                let surf = font
+                    .render_glyph_shaded(glyph, Rgba::WHITE, Rgba::BLACK)
+                    .unwrap();
+
                 *entry = GlyphEntry::Allocated(GlyphData {
                     // NOTE: NonZeroU32::MIN is used as a sentinel value, noting that this glyph
                     // is available for deallocation. This is a somewhat hacky way to go about it,
