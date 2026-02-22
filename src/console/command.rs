@@ -42,7 +42,7 @@ fn cmd_commit(_: &mut GameResources, out: &mut ConsoleWriter, _: ArgsSplit) {
 
 fn cmd_test_args(_: &mut GameResources, out: &mut ConsoleWriter, args: ArgsSplit) {
     for (i, arg) in args.enumerate() {
-        out.write(&format!("{i}: {arg}\n"));
+        out.write(&format!("{i}: {arg}"));
     }
 }
 
