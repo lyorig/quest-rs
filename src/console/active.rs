@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use halcyon::{
-    color::{Rgb, Rgba},
+    color::Rgb,
     rect::{PointF32, RectF32},
     traits::ColorModF32,
 };
@@ -77,7 +77,7 @@ impl ActiveConsole {
 
     pub fn draw(&mut self, cd: &mut CachedData, data: &GameResources) {
         let rnd = data.renderer.as_ref();
-        let old = rnd.xchg_draw_color_f32(Rgba::new(Rgb::BLACK, 0.5));
+        let old = rnd.xchg_draw_color_f32(Rgb::BLACK.with_alpha(0.5));
         let _ = rnd.fill_target();
 
         let mut curr_draw = TEXT_OFFSET;
@@ -91,7 +91,7 @@ impl ActiveConsole {
 
         self.draw_prompt(cd, data, curr_draw);
 
-        rnd.set_draw_color_f32(Rgba::new(Rgb::WHITE, 0.5));
+        rnd.set_draw_color_f32(Rgb::WHITE.with_alpha(0.5));
 
         if self.cursor_time.subsec_millis() < 500 {
             curr_draw.x = self.cursor_pos;
