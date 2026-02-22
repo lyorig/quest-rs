@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use halcyon::{
     color::{Rgb, Rgba},
-    guard::{ColorModF32Guard, DrawColorGuard},
     rect::{PointF32, RectF32},
+    traits::ColorModF32,
 };
 use sdl3_sys::keycode::SDL_Keycode;
 
@@ -77,7 +77,7 @@ impl ActiveConsole {
 
     pub fn draw(&mut self, cd: &mut CachedData, data: &GameResources) {
         let rnd = data.renderer.as_ref();
-        let dcl = DrawColorGuard::new(rnd, Rgba::new(Rgb::BLACK, 0.5));
+        let old = rnd.xchg_draw_color_f32(Rgba::new(Rgb::BLACK, 0.5));
         let _ = rnd.fill_target();
 
         let mut curr_draw = TEXT_OFFSET;
@@ -91,12 +91,14 @@ impl ActiveConsole {
 
         self.draw_prompt(cd, data, curr_draw);
 
-        dcl.set(Rgba::new(Rgb::WHITE, 0.5));
+        rnd.set_draw_color_f32(Rgba::new(Rgb::WHITE, 0.5));
 
         if self.cursor_time.subsec_millis() < 500 {
             curr_draw.x = self.cursor_pos;
             let _ = rnd.fill_rect(RectF32::new(curr_draw, cd.glyph_size));
         }
+
+        rnd.set_draw_color_f32(old);
     }
 
     /// Clear the [`Field`], update the cursor,
@@ -108,7 +110,8 @@ impl ActiveConsole {
     }
 
     fn draw_prompt(&self, cd: &CachedData, data: &GameResources, mut origin: PointF32) {
-        let dcl = ColorModF32Guard::new(**data.atlas.texture.as_ref().unwrap(), Rgba::GREEN);
+        let tex = data.atlas.texture.as_ref().unwrap().as_ref();
+        let old = tex.xchg_rgb_mod_f32(Rgb::GREEN);
 
         data.font_draw(CONSOLE_FONT, PREFIX_TEXT, &mut origin, cd.glyph_size);
 
@@ -116,14 +119,16 @@ impl ActiveConsole {
 
         let prompt = if self.field.text.is_empty() {
             // placeholder
-            dcl.set(Rgba::rgb(0.5, 0.5, 0.5));
+            tex.set_rgb_mod_f32(Rgb::new(0.5, 0.5, 0.5));
             cd.current_placeholder()
         } else {
             // actual prompt
-            dcl.set(Rgba::WHITE);
+            tex.set_rgb_mod_f32(Rgb::WHITE);
             &self.field.text
         };
 
         data.font_draw(CONSOLE_FONT, prompt, &mut origin, cd.glyph_size);
+
+        tex.set_rgb_mod_f32(old);
     }
 }

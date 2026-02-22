@@ -1,10 +1,10 @@
 use halcyon::{
     color::Rgba,
-    guard::{BlendModeGuard, DrawColorGuard, RenderTargetGuard},
     rect::{Point, PointF32, PointI32, RectF32},
     renderer::RendererRef,
     surface::Surface,
     texture::{Texture, TextureRef},
+    traits::BlendMode,
 };
 
 use rectpack2d_rs::{
@@ -129,15 +129,15 @@ impl Atlas {
     }
 
     fn create_texture(&mut self, rnd: RendererRef, size: PointI32) {
-        let mut new_tex =
+        let new_tex =
             Texture::new(rnd, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, size).unwrap();
 
         // PERF: This means "just copy the textures without doing any calculations"
         // which is absolutely sufficient for our case.
         new_tex.set_blend_mode(SDL_BLENDMODE_NONE);
 
-        let _tgt = RenderTargetGuard::new(rnd, new_tex.as_ref());
-        let _dcl = DrawColorGuard::new(rnd, Rgba::TRANSPARENT);
+        let old_tgt = unsafe { rnd.xchg_target(new_tex.as_ref()) }.unwrap();
+        let old_col = rnd.xchg_draw_color_f32(Rgba::TRANSPARENT);
 
         let _ = rnd.clear();
 
@@ -173,6 +173,9 @@ impl Atlas {
 
         new_tex.set_blend_mode(SDL_BLENDMODE_ADD_PREMULTIPLIED);
         self.texture = Some(new_tex);
+
+        rnd.set_draw_color_f32(old_col);
+        let _ = unsafe { rnd.set_target_opt(old_tgt) };
     }
 
     pub fn pack(&mut self, rnd: RendererRef) {
@@ -267,12 +270,16 @@ impl Atlas {
         let rep = Texture::from_surface(rnd, s.as_ref()).unwrap();
         let dst = a.current;
 
-        let _blend = BlendModeGuard::new(*rnd, SDL_BLENDMODE_NONE);
-        let _tgt = RenderTargetGuard::new(rnd, tex);
-        let _col = DrawColorGuard::new(rnd, Rgba::TRANSPARENT);
+        let old_blend = rnd.xchg_blend_mode(SDL_BLENDMODE_NONE);
+        let old_tgt = unsafe { rnd.xchg_target(tex) }.unwrap();
+        let old_draw = rnd.xchg_draw_color_f32(Rgba::TRANSPARENT);
 
         let _ = rnd.fill_rect(dst);
         let _ = rnd.draw(rep.as_ref(), None, Some(&dst));
+
+        rnd.set_draw_color_f32(old_draw);
+        let _ = unsafe { rnd.set_target_opt(old_tgt) };
+        rnd.set_blend_mode(old_blend);
     }
 
     pub fn debug_draw(&self, rnd: RendererRef, origin: PointF32) {
@@ -295,7 +302,8 @@ impl Atlas {
             .filter_map(|d| fm(d, origin))
             .collect::<Vec<_>>();
 
-        let _dcl = DrawColorGuard::new(rnd, Rgba::RED);
+        let old_col = rnd.xchg_draw_color_f32(Rgba::RED);
         let _ = rnd.draw_rects(&vec);
+        rnd.set_draw_color_f32(old_col);
     }
 }

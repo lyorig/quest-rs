@@ -1,6 +1,5 @@
 use halcyon::{
     color::Rgba,
-    guard::DrawColorGuard,
     rect::{PointF32, RectF32},
     renderer::Renderer,
     window::Window,
@@ -28,12 +27,14 @@ impl GameResources<'_> {
             let origin = PointF32::new(300.0, 300.0);
             let sz = RectF32::new(origin, at.size());
 
-            let _dcl = DrawColorGuard::new(self.renderer.as_ref(), Rgba::BLACK);
+            let old_col = self.renderer.xchg_draw_color_f32(Rgba::BLACK);
 
             let _ = self.renderer.draw_rect(sz);
             let _ = self.renderer.draw(at.as_ref(), None, Some(&sz));
 
             self.atlas.debug_draw(self.renderer.as_ref(), origin);
+
+            self.renderer.set_draw_color_f32(old_col);
         }
     }
 
