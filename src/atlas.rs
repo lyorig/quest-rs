@@ -192,7 +192,7 @@ impl Atlas {
             handle_unsuccessful_insertion: |_| CallbackResult::AbortPacking,
         };
 
-        fn fm<'d>(data: &'d mut Data) -> Option<&'d mut RectXYWH> {
+        fn fm(data: &mut Data) -> Option<&mut RectXYWH> {
             match data {
                 Data::Unused => None,
                 Data::Staged(s) => Some(&mut s.area),
