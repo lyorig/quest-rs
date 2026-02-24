@@ -1,4 +1,4 @@
-use halcyon::{rect::PointF32, resource_loader::ResourceLoader, ttf::TtfContext};
+use halcyon::{rect::PointF32, resource_loader::ResourceLoader};
 
 use crate::{atlas::Atlas, font::Font, game::resources::GameResources};
 
@@ -8,13 +8,13 @@ impl FontId {
     pub const UBUNTU_MONO: Self = Self(0);
 }
 
-pub struct FontStore<'a> {
-    array: [Font<'a>; 1],
+pub struct FontStore {
+    array: [Font; 1],
 }
 
-impl FontStore<'_> {
-    pub fn new<'a>(ttf: &'a TtfContext, rl: ResourceLoader) -> FontStore<'a> {
-        let ubuntu = Font::new(ttf, &rl.resolve("../../bin/assets/UbuntuMono.ttf"), 32.0);
+impl FontStore {
+    pub unsafe fn new(rl: ResourceLoader) -> FontStore {
+        let ubuntu = unsafe { Font::new(&rl.resolve("../../bin/assets/UbuntuMono.ttf"), 32.0) };
 
         FontStore { array: [ubuntu] }
     }
@@ -46,7 +46,7 @@ impl FontStore<'_> {
         self.array[id.0].draw(text, res, origin, glyph_size)
     }
 
-    pub fn get(&self, id: FontId) -> &Font<'_> {
+    pub fn get(&self, id: FontId) -> &Font {
         &self.array[id.0]
     }
 }

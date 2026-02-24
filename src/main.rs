@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use game::Game;
-use halcyon::{context::Context, subsystem::Video, ttf::TtfContext, util::c_ptr_to_str};
+use halcyon::{context::Context, subsystem::Video, util::c_ptr_to_str};
 
 mod atlas;
 mod console;
@@ -13,9 +13,8 @@ mod util;
 fn main() {
     let ctx = unsafe { Context::new() };
     let vid = Video::new(&ctx).expect("Could not initialize Halcyon's video subsystem");
-    let ttf = TtfContext::new().expect("Should be able to initialize TTF");
 
-    let mut game = Game::new(&vid, &ttf)
+    let mut game = Game::new(&vid)
         .map_err(|p| unsafe { c_ptr_to_str(p.as_ptr()) })
         .expect("Game initialization failed");
 

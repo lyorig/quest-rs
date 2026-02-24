@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use halcyon::{
     rect::PointF32,
-    ttf::{Font as HalFont, Text, TtfContext},
+    ttf::{Font as HalFont, Text},
 };
 
 use crate::{atlas::Atlas, font::glyph_map::GlyphMap, game::resources::GameResources};
@@ -10,17 +10,17 @@ use crate::{atlas::Atlas, font::glyph_map::GlyphMap, game::resources::GameResour
 pub mod glyph_map;
 pub mod store;
 
-pub struct Font<'a> {
-    font: HalFont<'a>,
+pub struct Font {
+    font: HalFont,
     pub glyph_size: PointF32,
     map: GlyphMap,
 }
 
 /// A wrapper around a Halcyon font with an added glyph map
 /// and convenience methods.
-impl Font<'_> {
-    pub fn new<'a>(ttf: &'a TtfContext, font_path: &CStr, size: f32) -> Font<'a> {
-        let font = HalFont::new(ttf, font_path, size).expect("Cannot open font");
+impl Font {
+    pub unsafe fn new(font_path: &CStr, size: f32) -> Font {
+        let font = unsafe { HalFont::new(font_path, size) }.expect("Cannot open font");
         assert!(
             font.is_mono(),
             "Font \"{}\" isn't fixed-width",
@@ -39,7 +39,7 @@ impl Font<'_> {
     /// Calls [`GlyphMap::retain()`] on the contained map; see its
     /// documentation for more information.
     pub fn alloc(&mut self, text: &str, atlas: &mut Atlas) {
-        self.map.retain(atlas, *self.font, text);
+        self.map.retain(atlas, self.font.as_ref(), text);
     }
 
     /// Calls [`GlyphMap::release()`] on the contained map; see its

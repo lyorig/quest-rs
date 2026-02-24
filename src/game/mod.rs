@@ -28,14 +28,15 @@ use crate::{
 
 pub mod resources;
 
-pub struct Game<'a> {
-    pub data: GameResources<'a>,
+pub struct Game {
+    pub data: GameResources,
     console: Console,
+    ttf: TtfContext,
 }
 
-impl Game<'_> {
+impl Game {
     /// Create a new game.
-    pub fn new<'a>(vid: &Video, ttf: &'a TtfContext) -> SdlResult<Game<'a>> {
+    pub fn new(vid: &Video) -> SdlResult<Self> {
         let window = WindowBuilder::new()
             .size(PointI32::new(1280, 720))
             .position(PointI32::new(Window::POS_CENTERED, Window::POS_CENTERED))
@@ -52,17 +53,19 @@ impl Game<'_> {
 
         let res_ldr = ResourceLoader::new();
 
+        let ttf = TtfContext::new()?;
+
         let data = GameResources {
             running: true,
             atlas: Atlas::new(),
             renderer,
             window,
-            fonts: FontStore::new(ttf, res_ldr),
+            fonts: unsafe { FontStore::new(res_ldr) },
         };
 
         let console = Console::new(data.renderer.as_ref())?;
 
-        Ok(Game { data, console })
+        Ok(Game { data, console, ttf })
     }
 
     /// Starts up the main loop.
