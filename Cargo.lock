@@ -48,9 +48,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.44"
+version = "1.0.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21b2ebcf727b7760c461f091f9f0f539b77b8e87f2fd88131e7f1b433b3cece4"
+checksum = "41f2619966050689382d2b44f664f4bc593e129785a36d6ee376ddf37259b924"
 dependencies = [
  "proc-macro2",
 ]
@@ -61,15 +61,15 @@ version = "0.1.0"
 
 [[package]]
 name = "sdl3-sys"
-version = "0.5.12+SDL3-3.2.30"
+version = "0.6.5+SDL-3.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78b9638d20441d9641bf479d5ec737a46e159549df3a03d1c09d6387f5adf128"
+checksum = "51ca7a36c908d1d2b6c259d426a5000fbb70e764dcc430f6a373cc151f614f68"
 
 [[package]]
 name = "sdl3-ttf-sys"
-version = "0.2.1+SDL3-ttf-3.2.2"
+version = "0.6.0+SDL-ttf-3.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b552f1d822f0024121a77ceebcb92c74c78532a3b9d4bf8aae3c2cbc02d3cbd2"
+checksum = "c30da3dcd7e062f19350b47a532f7629c42801b801687535fd31e8ba2adfd71d"
 dependencies = [
  "sdl3-sys",
 ]

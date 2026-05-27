@@ -68,7 +68,7 @@ impl Game {
         Ok(Game { data, console, ttf })
     }
 
-    /// Starts up the main loop.
+    /// Enter the main loop.
     pub fn main_loop(&mut self) {
         let mut delta = Instant::now();
 

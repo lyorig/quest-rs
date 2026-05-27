@@ -125,7 +125,12 @@ impl Atlas {
     }
 
     pub fn remove(&mut self, i: AtlasId) {
-        self.data[i.0 as usize].invalidate();
+        let Some(data) = self.data.get_mut(i.0 as usize) else {
+            eprintln!("[Atlas] Trying to remove non-existent glyph ({i:?})");
+            return;
+        };
+
+        data.invalidate();
     }
 
     fn create_texture(&mut self, rnd: RendererRef, size: PointI32) {

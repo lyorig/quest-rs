@@ -12,11 +12,11 @@ mod util;
 
 fn main() {
     let ctx = unsafe { Context::new() };
-    let vid = Video::new(&ctx).expect("Could not initialize Halcyon's video subsystem");
+    let vid = Video::new(&ctx).expect("Video subsystem should be available");
 
     let mut game = Game::new(&vid)
         .map_err(|p| unsafe { c_ptr_to_str(p.as_ptr()) })
-        .expect("Game initialization failed");
+        .expect("Game initialization shouldn't fail");
 
     game.main_loop();
 }

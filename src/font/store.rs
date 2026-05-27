@@ -8,6 +8,7 @@ impl FontId {
     pub const UBUNTU_MONO: Self = Self(0);
 }
 
+/// Contains all fonts used in the game.
 pub struct FontStore {
     array: [Font; 1],
 }

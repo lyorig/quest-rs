@@ -4,12 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-sdl3-sys = "0.5.5"
 halcyon = { path = "halcyon-rs" }
 rectpack2d-rs = { path = "rectpack2d-rs" }
+sdl3-sys = "0.6.5"
 
-# [target.release]
-# strip = true
-# lto = true
-# panic = "abort"
-# codegen-units = 1
+[profile.release-max]
+inherits = "release"
+strip = true
+lto = true
+panic = "abort"
+codegen-units = 1

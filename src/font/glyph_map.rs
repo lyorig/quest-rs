@@ -90,7 +90,7 @@ impl GlyphMap {
         );
 
         // SAFETY: The contained value is guaranteed to be non-minimal.
-        data.refcount = unsafe { NonZeroU32::new_unchecked(data.refcount.get() - 1) };
+        data.refcount = unsafe { NonZeroU32::new_unchecked(data.refcount.get().wrapping_sub(1)) };
     }
 
     pub fn release(&mut self, text: &str) {

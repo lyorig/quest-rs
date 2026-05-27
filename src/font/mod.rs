@@ -10,14 +10,13 @@ use crate::{atlas::Atlas, font::glyph_map::GlyphMap, game::resources::GameResour
 pub mod glyph_map;
 pub mod store;
 
+/// A Halcyon Font whose glyphs are cached in an [`Atlas`].
 pub struct Font {
     font: HalFont,
     pub glyph_size: PointF32,
     map: GlyphMap,
 }
 
-/// A wrapper around a Halcyon font with an added glyph map
-/// and convenience methods.
 impl Font {
     pub unsafe fn new(font_path: &CStr, size: f32) -> Font {
         let font = unsafe { HalFont::new(font_path, size) }.expect("Cannot open font");
