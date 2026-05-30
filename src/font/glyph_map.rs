@@ -3,7 +3,8 @@ use std::num::NonZeroU32;
 use halcyon::{
     color::Rgba,
     rect::{PointF32, RectF32},
-    ttf::FontRef,
+    traits::{Ref, Resource},
+    ttf::Font,
 };
 
 use crate::{
@@ -45,7 +46,7 @@ impl GlyphMap {
         }
     }
 
-    fn retain_glyph(&mut self, atlas: &mut Atlas, font: FontRef, glyph: char) {
+    fn retain_glyph(&mut self, atlas: &mut Atlas, font: Ref<Font>, glyph: char) {
         Self::assert_printable(glyph);
 
         let entry = &mut self.usage[Self::char_index(glyph)];
@@ -73,7 +74,7 @@ impl GlyphMap {
         }
     }
 
-    pub fn retain(&mut self, atlas: &mut Atlas, font: FontRef, text: &str) {
+    pub fn retain(&mut self, atlas: &mut Atlas, font: Ref<Font>, text: &str) {
         for c in text.chars().filter(char::is_ascii_graphic) {
             self.retain_glyph(atlas, font, c);
         }

@@ -7,7 +7,11 @@ mod writer;
 
 use std::time::Duration;
 
-use halcyon::{defs::SdlResult, renderer::RendererRef};
+use halcyon::{
+    defs::SdlResult,
+    renderer::Renderer,
+    traits::{Ref, Resource},
+};
 
 use sdl3_sys::keycode::*;
 
@@ -26,7 +30,7 @@ pub struct Console {
 }
 
 impl Console {
-    pub fn new(rnd: RendererRef) -> SdlResult<Console> {
+    pub fn new(rnd: Ref<Renderer>) -> SdlResult<Console> {
         Ok(Console {
             data: CachedData::new(rnd),
             state: ConsoleState::Disabled,

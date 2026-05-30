@@ -2,6 +2,7 @@ use halcyon::{
     color::Rgba,
     rect::{PointF32, RectF32},
     renderer::Renderer,
+    traits::Resource,
     window::Window,
 };
 

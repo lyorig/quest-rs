@@ -1,4 +1,4 @@
-use halcyon::{rect::PointF32, renderer::RendererRef};
+use halcyon::{rect::PointF32, renderer::Renderer, traits::Ref};
 
 use crate::console::{PREFIX_TEXT, active::TEXT_OFFSET, writer::ConsoleWriter};
 
@@ -69,7 +69,7 @@ fn desired_glyph(_size: PointF32) -> PointF32 {
 }
 
 impl CachedData {
-    pub fn new(rnd: RendererRef) -> Self {
+    pub fn new(rnd: Ref<Renderer>) -> Self {
         let glyph_size = desired_glyph(rnd.output_size().into());
 
         Self {

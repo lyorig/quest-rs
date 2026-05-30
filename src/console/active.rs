@@ -3,7 +3,7 @@ use std::time::Duration;
 use halcyon::{
     color::Rgb,
     rect::{PointF32, RectF32},
-    traits::ColorModF32,
+    traits::{ColorModF32, Resource},
 };
 use sdl3_sys::keycode::SDL_Keycode;
 

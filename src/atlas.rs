@@ -1,10 +1,10 @@
 use halcyon::{
     color::Rgba,
     rect::{Point, PointF32, PointI32, RectF32},
-    renderer::RendererRef,
+    renderer::Renderer,
     surface::Surface,
-    texture::{Texture, TextureRef},
-    traits::BlendMode,
+    texture::Texture,
+    traits::{BlendMode, Ref, Resource},
 };
 
 use rectpack2d_rs::{
@@ -133,7 +133,7 @@ impl Atlas {
         data.invalidate();
     }
 
-    fn create_texture(&mut self, rnd: RendererRef, size: PointI32) {
+    fn create_texture(&mut self, rnd: Ref<Renderer>, size: PointI32) {
         let new_tex =
             Texture::new(rnd, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, size).unwrap();
 
@@ -183,7 +183,7 @@ impl Atlas {
         let _ = unsafe { rnd.set_target_opt(old_tgt) };
     }
 
-    pub fn pack(&mut self, rnd: RendererRef) {
+    pub fn pack(&mut self, rnd: Ref<Renderer>) {
         if !self.pack_queued {
             return;
         }
@@ -221,7 +221,7 @@ impl Atlas {
         }
     }
 
-    pub fn draw(&self, rnd: RendererRef, id: AtlasId, dst: PointF32) {
+    pub fn draw(&self, rnd: Ref<Renderer>, id: AtlasId, dst: PointF32) {
         if let Some(tex) = &self.texture {
             let area = self.extract_area(id);
             let _ = rnd.draw(
@@ -232,14 +232,14 @@ impl Atlas {
         }
     }
 
-    pub fn draw_to(&self, rnd: RendererRef, id: AtlasId, dst: RectF32) {
+    pub fn draw_to(&self, rnd: Ref<Renderer>, id: AtlasId, dst: RectF32) {
         if let Some(tex) = &self.texture {
             let area = self.extract_area(id);
             let _ = rnd.draw(tex.as_ref(), Some(&area), Some(&dst));
         }
     }
 
-    pub fn replace(&mut self, id: AtlasId, rnd: RendererRef, surf: Surface) {
+    pub fn replace(&mut self, id: AtlasId, rnd: Ref<Renderer>, surf: Surface) {
         let d = &mut self.data[id.0 as usize];
         match d {
             Data::Active(a) => {
@@ -260,7 +260,7 @@ impl Atlas {
         }
     }
 
-    pub fn replace_exact(&mut self, id: AtlasId, rnd: RendererRef, s: Surface) {
+    pub fn replace_exact(&mut self, id: AtlasId, rnd: Ref<Renderer>, s: Surface) {
         match &self.data[id.0 as usize] {
             Data::Active(a) => {
                 // SAFETY: If a valid entry exists, the texture must exist as well.
@@ -271,7 +271,7 @@ impl Atlas {
         }
     }
 
-    fn replace_exact_known(tex: TextureRef, a: &ActiveEntry, rnd: RendererRef, s: Surface) {
+    fn replace_exact_known(tex: Ref<Texture>, a: &ActiveEntry, rnd: Ref<Renderer>, s: Surface) {
         let rep = Texture::from_surface(rnd, s.as_ref()).unwrap();
         let dst = a.current;
 
@@ -287,7 +287,7 @@ impl Atlas {
         rnd.set_blend_mode(old_blend);
     }
 
-    pub fn debug_draw(&self, rnd: RendererRef, origin: PointF32) {
+    pub fn debug_draw(&self, rnd: Ref<Renderer>, origin: PointF32) {
         fn offset(mut r: RectF32, o: PointF32) -> RectF32 {
             r.pos.x += o.x;
             r.pos.y += o.y;

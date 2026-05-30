@@ -8,7 +8,7 @@ use halcyon::{
     renderer::RendererBuilder,
     resource_loader::ResourceLoader,
     subsystem::Video,
-    traits::BlendMode,
+    traits::{BlendMode, Resource},
     ttf::TtfContext,
     util::c_ptr_to_str,
     window::{Window, WindowBuilder},

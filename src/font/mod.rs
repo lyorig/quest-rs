@@ -2,6 +2,7 @@ use std::ffi::CStr;
 
 use halcyon::{
     rect::PointF32,
+    traits::Resource,
     ttf::{Font as HalFont, Text},
 };
 
