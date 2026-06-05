@@ -14,6 +14,7 @@ pub struct FontStore {
 }
 
 impl FontStore {
+    // SAFETY: Make sure a [`TtfContext`] is active.
     pub unsafe fn new(rl: ResourceLoader) -> FontStore {
         let ubuntu = unsafe { Font::new(&rl.resolve("../../bin/assets/UbuntuMono.ttf"), 32.0) };
 

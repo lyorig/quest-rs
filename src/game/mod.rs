@@ -9,7 +9,6 @@ use halcyon::{
     resource_loader::ResourceLoader,
     subsystem::Video,
     traits::{BlendMode, Resource},
-    ttf::TtfContext,
     util::c_ptr_to_str,
     window::{Window, WindowBuilder},
 };
@@ -31,7 +30,6 @@ pub mod resources;
 pub struct Game {
     pub data: GameResources,
     console: Console,
-    ttf: TtfContext,
 }
 
 impl Game {
@@ -52,9 +50,6 @@ impl Game {
         renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
 
         let res_ldr = ResourceLoader::new();
-
-        let ttf = TtfContext::new()?;
-
         let data = GameResources {
             running: true,
             atlas: Atlas::new(),
@@ -65,31 +60,20 @@ impl Game {
 
         let console = Console::new(data.renderer.as_ref())?;
 
-        Ok(Game { data, console, ttf })
+        Ok(Game { data, console })
     }
 
     /// Enter the main loop.
     pub fn main_loop(&mut self) {
         let mut delta = Instant::now();
 
-        // I could probably just use a named loop and break it in case
-        // of a quit event, but there are two issues:
-        //
-        // 1) The Game class cannot easily be told to quit from other classes.
-        // 2) There are potentially important things running in the loop
-        // after events are polled, so breaking in the middle of polling events
-        // could cause some issues.
-        //
-        // In any case, it's literally one extra byte in exchange for a whole
-        // lot of extra flexibility, so I don't particularly mind implementing
-        // things this way.
         while self.data.running {
             let old = self.data.renderer.draw_color_f32();
             self.data
                 .renderer
                 .set_draw_color_f32(Rgba::rgb(0.0, 0.0, 0.75));
 
-            let _ = self.data.renderer.clear();
+            _ = self.data.renderer.clear();
 
             // --- Processing ---
             self.process_events();
