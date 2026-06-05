@@ -1,13 +1,34 @@
+use std::cell::OnceCell;
 use std::io::Write;
-use std::sync::OnceLock;
 use std::{fmt::Arguments, io::stdout, time::Instant};
 
-static EPOCH: OnceLock<Instant> = OnceLock::new();
+struct Wrapper {
+    inner: OnceCell<Instant>,
+}
+
+impl Wrapper {
+    const fn new() -> Self {
+        Self {
+            inner: OnceCell::new(),
+        }
+    }
+
+    fn elapsed(&self) -> f32 {
+        // SAFETY: Debug calls only happen after the epoch has been initialized.
+        let inst = unsafe { self.inner.get().unwrap_unchecked() };
+        inst.elapsed().as_secs_f32()
+    }
+}
+
+// SAFETY: We only use debug facilities on the main thread.
+unsafe impl Sync for Wrapper {}
+
+static EPOCH: Wrapper = Wrapper::new();
 
 /// Initialize the epoch used for printing debug message timestamps.
 /// The epoch is initialized to [`Instant::now`].
 pub fn init_epoch() {
-    _ = EPOCH.set(Instant::now());
+    _ = EPOCH.inner.set(Instant::now());
 }
 
 #[macro_export]
@@ -21,9 +42,6 @@ macro_rules! dprint {
 /// been initialized yet, it's set to [`Instant::now`]. This function
 /// is delegated to by [`dprint`].
 pub fn print(args: Arguments) {
-    // PERF: Replace with EPOCH.get().unwrap_unchecked().
-    let elapsed = EPOCH.get_or_init(Instant::now).elapsed().as_secs_f32();
     let mut lock = stdout().lock();
-
-    _ = writeln!(lock, "[{:.3}] {}", elapsed, args);
+    _ = writeln!(lock, "[{:.3}] {}", EPOCH.elapsed(), args);
 }
