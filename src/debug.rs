@@ -1,22 +1,29 @@
-use std::cell::OnceCell;
+use std::cell::UnsafeCell;
 use std::io::Write;
+use std::mem::MaybeUninit;
 use std::{fmt::Arguments, io::stdout, time::Instant};
 
 struct Wrapper {
-    inner: OnceCell<Instant>,
+    inner: UnsafeCell<MaybeUninit<Instant>>,
 }
 
 impl Wrapper {
     const fn new() -> Self {
         Self {
-            inner: OnceCell::new(),
+            inner: UnsafeCell::new(MaybeUninit::uninit()),
         }
     }
 
     fn elapsed(&self) -> f32 {
         // SAFETY: Debug calls only happen after the epoch has been initialized.
-        let inst = unsafe { self.inner.get().unwrap_unchecked() };
+        let ptr = unsafe { *self.inner.get() };
+        let inst = unsafe { ptr.assume_init() };
         inst.elapsed().as_secs_f32()
+    }
+
+    fn init_epoch(&self) {
+        let r = unsafe { self.inner.get().as_mut_unchecked() };
+        r.write(Instant::now());
     }
 }
 
@@ -28,7 +35,7 @@ static EPOCH: Wrapper = Wrapper::new();
 /// Initialize the epoch used for printing debug message timestamps.
 /// The epoch is initialized to [`Instant::now`].
 pub fn init_epoch() {
-    _ = EPOCH.inner.set(Instant::now());
+    EPOCH.init_epoch();
 }
 
 #[macro_export]
