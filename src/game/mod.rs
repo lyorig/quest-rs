@@ -4,7 +4,7 @@ use halcyon::{
     color::Rgba,
     defs::SdlResult,
     event::{Event, EventIter},
-    rect::PointI32,
+    rect::Point,
     renderer::RendererBuilder,
     resource_loader::ResourceLoader,
     subsystem::Video,
@@ -37,8 +37,8 @@ impl Game {
     /// Create a new game.
     pub fn new(vid: &Video) -> SdlResult<Self> {
         let window = WindowBuilder::new()
-            .size(PointI32::new(1280, 720))
-            .position(PointI32::new(Window::POS_CENTERED, Window::POS_CENTERED))
+            .size(Point::new(1280, 720))
+            .position(Point::new(Window::POS_CENTERED, Window::POS_CENTERED))
             .title(c"HalodaQuest [Euclid]")
             .build(vid)?;
 
