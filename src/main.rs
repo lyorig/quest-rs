@@ -1,10 +1,10 @@
 #![allow(dead_code)]
+#![windows_subsystem = "windows"]
 
-use std::{process::ExitCode, ptr::NonNull};
+use std::process::ExitCode;
 
 use game::Game;
-use halcyon::{context::Context, subsystem::Video, ttf::TtfContext};
-use sdl3_sys::messagebox::{SDL_MESSAGEBOX_ERROR, SDL_ShowSimpleMessageBox};
+use halcyon::{context::Context, error::Error, subsystem::Video, ttf::TtfContext};
 
 mod atlas;
 mod console;
@@ -13,19 +13,11 @@ mod font;
 mod game;
 mod util;
 
-fn fail() {
-    let msg = halcyon::error::get_owned();
-    unsafe {
-        SDL_ShowSimpleMessageBox(
-            SDL_MESSAGEBOX_ERROR,
-            c"Game init failed".as_ptr(),
-            msg.as_ptr(),
-            std::ptr::null_mut(),
-        )
-    };
+fn fail(e: Error) {
+    dprintln!("Initialization error: \"{e}\"");
 }
 
-fn do_init() -> Result<(), NonNull<i8>> {
+fn do_init() -> Result<(), Error> {
     let ctx = unsafe { Context::new() };
     let vid = Video::new(&ctx)?;
     let _ttf = TtfContext::new()?;
@@ -37,12 +29,12 @@ fn do_init() -> Result<(), NonNull<i8>> {
 }
 
 fn main() -> ExitCode {
-    debug::init_epoch();
+    debug::init();
 
     match do_init() {
         Ok(()) => ExitCode::SUCCESS,
-        Err(_) => {
-            fail();
+        Err(e) => {
+            fail(e);
             ExitCode::FAILURE
         }
     }

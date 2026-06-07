@@ -78,7 +78,7 @@ impl ActiveConsole {
     pub fn draw(&mut self, cd: &mut CachedData, data: &GameResources) {
         let rnd = data.renderer.as_ref();
         let old = rnd.xchg_draw_color_f32(Rgb::BLACK.with_alpha(0.5));
-        let _ = rnd.fill_target();
+        _ = rnd.fill_target();
 
         let mut curr_draw = TEXT_OFFSET;
 
@@ -95,7 +95,7 @@ impl ActiveConsole {
 
         if self.cursor_time.subsec_millis() < 500 {
             curr_draw.x = self.cursor_pos;
-            let _ = rnd.fill_rect(RectF32::new(curr_draw, cd.glyph_size));
+            _ = rnd.fill_rect(RectF32::new(curr_draw, cd.glyph_size));
         }
 
         rnd.set_draw_color_f32(old);

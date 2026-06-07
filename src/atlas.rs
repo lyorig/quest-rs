@@ -144,7 +144,7 @@ impl Atlas {
         let old_tgt = unsafe { rnd.xchg_target(new_tex.as_ref()) }.unwrap();
         let old_col = rnd.xchg_draw_color_f32(Rgba::TRANSPARENT);
 
-        let _ = rnd.clear();
+        _ = rnd.clear();
 
         for d in &mut self.data {
             match d {
@@ -154,7 +154,7 @@ impl Atlas {
 
                     // Newly staged, just draw to the new texture.
                     let tex = Texture::from_surface(rnd, s.surface.as_ref()).unwrap();
-                    let _ = rnd.draw(tex.as_ref(), None, Some(&new_area));
+                    _ = rnd.draw(tex.as_ref(), None, Some(&new_area));
 
                     *d = Data::Active(ActiveEntry {
                         current: new_area,
@@ -165,7 +165,7 @@ impl Atlas {
                     let new_area = to_frect(a.staged);
 
                     // Old, draw from previous rect to new one.
-                    let _ = rnd.draw(
+                    _ = rnd.draw(
                         self.texture.as_ref().unwrap().as_ref(),
                         Some(&a.current),
                         Some(&new_area),
@@ -180,7 +180,7 @@ impl Atlas {
         self.texture = Some(new_tex);
 
         rnd.set_draw_color_f32(old_col);
-        let _ = unsafe { rnd.set_target_opt(old_tgt) };
+        _ = unsafe { rnd.set_target_opt(old_tgt) };
     }
 
     pub fn pack(&mut self, rnd: Ref<Renderer>) {
@@ -224,7 +224,7 @@ impl Atlas {
     pub fn draw(&self, rnd: Ref<Renderer>, id: AtlasId, dst: PointF32) {
         if let Some(tex) = &self.texture {
             let area = self.extract_area(id);
-            let _ = rnd.draw(
+            _ = rnd.draw(
                 tex.as_ref(),
                 Some(&area),
                 Some(&RectF32::new(dst, area.size)),
@@ -235,7 +235,7 @@ impl Atlas {
     pub fn draw_to(&self, rnd: Ref<Renderer>, id: AtlasId, dst: RectF32) {
         if let Some(tex) = &self.texture {
             let area = self.extract_area(id);
-            let _ = rnd.draw(tex.as_ref(), Some(&area), Some(&dst));
+            _ = rnd.draw(tex.as_ref(), Some(&area), Some(&dst));
         }
     }
 
@@ -279,11 +279,11 @@ impl Atlas {
         let old_tgt = unsafe { rnd.xchg_target(tex) }.unwrap();
         let old_draw = rnd.xchg_draw_color_f32(Rgba::TRANSPARENT);
 
-        let _ = rnd.fill_rect(dst);
-        let _ = rnd.draw(rep.as_ref(), None, Some(&dst));
+        _ = rnd.fill_rect(dst);
+        _ = rnd.draw(rep.as_ref(), None, Some(&dst));
 
         rnd.set_draw_color_f32(old_draw);
-        let _ = unsafe { rnd.set_target_opt(old_tgt) };
+        _ = unsafe { rnd.set_target_opt(old_tgt) };
         rnd.set_blend_mode(old_blend);
     }
 
@@ -308,7 +308,7 @@ impl Atlas {
             .collect::<Vec<_>>();
 
         let old_col = rnd.xchg_draw_color_f32(Rgba::RED);
-        let _ = rnd.draw_rects(&vec);
+        _ = rnd.draw_rects(&vec);
         rnd.set_draw_color_f32(old_col);
     }
 }

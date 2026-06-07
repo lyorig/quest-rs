@@ -30,8 +30,8 @@ impl GameResources {
 
             let old_col = self.renderer.xchg_draw_color_f32(Rgba::BLACK);
 
-            let _ = self.renderer.draw_rect(sz);
-            let _ = self.renderer.draw(at.as_ref(), None, Some(&sz));
+            _ = self.renderer.draw_rect(sz);
+            _ = self.renderer.draw(at.as_ref(), None, Some(&sz));
 
             self.atlas.debug_draw(self.renderer.as_ref(), origin);
 

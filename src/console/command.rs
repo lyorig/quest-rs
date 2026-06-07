@@ -46,29 +46,15 @@ fn cmd_test_args(_: &mut GameResources, out: &mut ConsoleWriter, args: ArgsSplit
     }
 }
 
-fn cmd_get_error(_: &mut GameResources, out: &mut ConsoleWriter, _: ArgsSplit) {
-    out.write(&format!("\"{}\"", unsafe { halcyon::error::get_str() }))
-}
-
-fn cmd_set_error(_: &mut GameResources, _: &mut ConsoleWriter, _: ArgsSplit) {
-    halcyon::error::set(c"[set-error dummy message]")
-}
-
 fn cmd_font_gc(game: &mut GameResources, _: &mut ConsoleWriter, _: ArgsSplit) {
     game.font_gc_all();
 }
 
-const COMMANDS: [Command; 7] = [
+const COMMANDS: [Command; 5] = [
     Command::new("help", "Print a command's provided help text.", cmd_help),
     Command::new("exit", "Exit the game.", cmd_exit),
     Command::new("commit", "Print the commit hash.", cmd_commit),
     Command::new("test-args", "Print all arguments.", cmd_test_args),
-    Command::new("get-error", "Print SDL_GetError().", cmd_get_error),
-    Command::new(
-        "set-error",
-        "Calls SDL_SetError() with a dummy value.",
-        cmd_set_error,
-    ),
     Command::new("font-gc", "Perform GC on all game fonts.", cmd_font_gc),
 ];
 

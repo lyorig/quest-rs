@@ -42,7 +42,7 @@ impl Console {
 
         match &self.state {
             ConsoleState::Disabled => {
-                let _ = halcyon::keyboard::text_input_start(wnd);
+                _ = halcyon::keyboard::text_input_start(wnd);
 
                 let np = self.data.next_placeholder();
                 data.font_alloc(CONSOLE_FONT, np);
@@ -53,7 +53,7 @@ impl Console {
             }
 
             ConsoleState::Enabled(ac) => {
-                let _ = halcyon::keyboard::text_input_stop(wnd);
+                _ = halcyon::keyboard::text_input_stop(wnd);
 
                 data.font_free(CONSOLE_FONT, self.data.writer.data());
                 data.font_free(CONSOLE_FONT, PREFIX_TEXT);

@@ -21,7 +21,7 @@ use sdl3_sys::{
 use crate::{
     atlas::Atlas,
     console::{Console, state::ConsoleState},
-    dprint,
+    dprintln,
     font::store::FontStore,
     game::resources::GameResources,
 };
@@ -61,7 +61,7 @@ impl Game {
 
         let console = Console::new(data.renderer.as_ref())?;
 
-        dprint!("Game init complete");
+        dprintln!("Game init complete");
 
         Ok(Game { data, console })
     }
@@ -91,12 +91,12 @@ impl Game {
             self.console.draw(&self.data);
             self.data.draw_atlas();
 
-            let _ = self.data.renderer.present();
+            _ = self.data.renderer.present();
 
             self.data.renderer.set_draw_color_f32(old);
         }
 
-        dprint!("Game loop ended");
+        dprintln!("Game loop ended");
     }
 
     fn process_events(&mut self) {
