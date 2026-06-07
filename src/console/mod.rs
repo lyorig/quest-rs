@@ -19,6 +19,7 @@ use crate::{
     console::{active::ActiveConsole, cache::CachedData, state::ConsoleState},
     font::store::FontId,
     game::resources::GameResources,
+    util,
 };
 
 const PREFIX_TEXT: &str = "raine1@Arctic~ %";
@@ -42,7 +43,7 @@ impl Console {
 
         match &self.state {
             ConsoleState::Disabled => {
-                _ = halcyon::keyboard::text_input_start(wnd);
+                util::chk(halcyon::keyboard::text_input_start(wnd));
 
                 let np = self.data.next_placeholder();
                 data.font_alloc(CONSOLE_FONT, np);
@@ -53,7 +54,7 @@ impl Console {
             }
 
             ConsoleState::Enabled(ac) => {
-                _ = halcyon::keyboard::text_input_stop(wnd);
+                util::chk(halcyon::keyboard::text_input_stop(wnd));
 
                 data.font_free(CONSOLE_FONT, self.data.writer.data());
                 data.font_free(CONSOLE_FONT, PREFIX_TEXT);

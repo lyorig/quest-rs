@@ -24,6 +24,7 @@ use crate::{
     dprintln,
     font::store::FontStore,
     game::resources::GameResources,
+    util,
 };
 
 pub mod resources;
@@ -76,7 +77,7 @@ impl Game {
                 .renderer
                 .set_draw_color_f32(Rgba::rgb(0.0, 0.0, 0.75));
 
-            _ = self.data.renderer.clear();
+            util::chk(self.data.renderer.clear());
 
             // --- Processing ---
             self.process_events();
@@ -91,7 +92,7 @@ impl Game {
             self.console.draw(&self.data);
             self.data.draw_atlas();
 
-            _ = self.data.renderer.present();
+            util::chk(self.data.renderer.present());
 
             self.data.renderer.set_draw_color_f32(old);
         }

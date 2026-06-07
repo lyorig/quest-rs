@@ -9,6 +9,7 @@ use halcyon::{
 use crate::{
     atlas::Atlas,
     font::store::{FontId, FontStore},
+    util,
 };
 
 pub struct GameResources {
@@ -30,8 +31,8 @@ impl GameResources {
 
             let old_col = self.renderer.xchg_draw_color_f32(Rgba::BLACK);
 
-            _ = self.renderer.draw_rect(sz);
-            _ = self.renderer.draw(at.as_ref(), None, Some(&sz));
+            util::chk(self.renderer.draw_rect(sz));
+            util::chk(self.renderer.draw(at.as_ref(), None, Some(&sz)));
 
             self.atlas.debug_draw(self.renderer.as_ref(), origin);
 

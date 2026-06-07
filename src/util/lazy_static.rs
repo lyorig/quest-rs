@@ -1,5 +1,11 @@
 use std::{cell::UnsafeCell, mem::MaybeUninit};
 
+/// A `static`-friendly struct whose value can be overwritten
+/// and read at will... with certain caveats.
+///
+/// Basically a [`std::sync::OnceLock`] with all of the safety.
+/// features taken out, thus shifting more responsibility onto
+/// the user, while improving performance.
 pub struct LazyStatic<T> {
     inner: UnsafeCell<MaybeUninit<T>>,
 }

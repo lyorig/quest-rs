@@ -17,11 +17,11 @@ mod util;
 fn fail(e: Error) {
     dprintln!("Initialization error: \"{e}\"");
 
-    _ = halcyon::msgbox::show(
+    util::chk(halcyon::msgbox::show(
         SDL_MESSAGEBOX_ERROR,
         c"Game initialization failed",
         e.as_cstr(),
-    );
+    ));
 }
 
 fn do_init() -> Result<(), Error> {
