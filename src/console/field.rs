@@ -20,13 +20,13 @@ const MAX_CHARS: usize = 32;
 /// analysis of an optimal way to perform UTF-8 operations may
 /// very well be in order.
 pub struct Field {
-    /// The current contents of the `Field`.
+    /// The current contents of the input.
     pub text: String,
 
     /// The **character** index of where the cursor lies.
     /// Special care must be taken when using this variable
-    /// within Rust's `String` API, since they expect indices
-    /// to lie on a **byte** boundary. Use `self.cursor_byte_index()`
+    /// within Rust's [`String`] API, since they expect indices
+    /// to lie on a **byte** boundary. Use [`Field::cursor_byte_index`]
     /// in order to find out which byte index it corresponds to.
     pub cursor: usize,
 }
@@ -40,7 +40,7 @@ impl Field {
     }
 
     pub fn process_str(&mut self, inp: &str, gd: &mut GameResources) {
-        let fil = inp.chars().filter(char::is_ascii).collect::<String>();
+        let fil: String = inp.chars().filter(char::is_ascii).collect();
 
         self.text.insert_str(self.cursor_byte_index(), &fil);
         self.cursor += fil.len();
@@ -186,8 +186,7 @@ impl Field {
     }
 
     fn byte_index(&self, i: usize) -> usize {
-        // PERF: We only operate on ASCII chars,
-        // so we don't need to go through UTF-8 calculations.
+        // PERF: ASCII-only, so every char is 1 byte.
         i
     }
 

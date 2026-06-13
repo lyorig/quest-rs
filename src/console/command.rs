@@ -1,6 +1,8 @@
 use std::str::Split;
 
-use crate::{console::writer::ConsoleWriter, game::resources::GameResources};
+use crate::{
+    atlas::viewer::Viewer, console::writer::ConsoleWriter, game::resources::GameResources,
+};
 
 type ArgsSplit<'a> = Split<'a, char>;
 type CommandFn = fn(&mut GameResources, &mut ConsoleWriter, ArgsSplit);
@@ -26,14 +28,14 @@ fn cmd_help(_: &mut GameResources, out: &mut ConsoleWriter, mut args: ArgsSplit)
     match cmd {
         Some(cmd) => match find(cmd) {
             Some(c) => help_exact(c, out),
-            None => out.write(&format!("help: unknown command {cmd}")),
+            None => {
+                let fmt = format!("help: unknown command {cmd}");
+                out.write(&fmt);
+            }
         },
+        // No command provided, print help for the command itself.
         None => help_exact(&COMMANDS[0], out),
     }
-}
-
-fn cmd_exit(g: &mut GameResources, _: &mut ConsoleWriter, _: ArgsSplit) {
-    g.running = false;
 }
 
 fn cmd_commit(_: &mut GameResources, out: &mut ConsoleWriter, _: ArgsSplit) {
@@ -42,7 +44,8 @@ fn cmd_commit(_: &mut GameResources, out: &mut ConsoleWriter, _: ArgsSplit) {
 
 fn cmd_test_args(_: &mut GameResources, out: &mut ConsoleWriter, args: ArgsSplit) {
     for (i, arg) in args.enumerate() {
-        out.write(&format!("{i}: {arg}"));
+        let fmt = format!("{i}: {arg}");
+        out.write(&fmt);
     }
 }
 
@@ -50,9 +53,33 @@ fn cmd_font_gc(game: &mut GameResources, _: &mut ConsoleWriter, _: ArgsSplit) {
     game.font_gc_all();
 }
 
+fn cmd_atlas(game: &mut GameResources, out: &mut ConsoleWriter, mut args: ArgsSplit) {
+    let Some(arg) = args.next() else {
+        out.write("usage: atlas <subcommand>");
+        return;
+    };
+
+    match arg {
+        "open" => {
+            if let Some(surf) = game.read_atlas_pixels() {
+                let viewer = Viewer::new().expect("Cannot init atlas viewer");
+                let s = surf.expect("Cannot read atlas pixels");
+                viewer.update(s, game.atlas.areas());
+
+                game.atlas.viewer = Some(viewer);
+            }
+        }
+        "close" => game.atlas.viewer = None,
+        _ => {
+            let fmt = format!("atlas: unknown subcommand \"{arg}\"");
+            out.write(&fmt);
+        }
+    }
+}
+
 const COMMANDS: [Command; 5] = [
+    Command::new("atlas", "Manipulate the texture atlas.", cmd_atlas),
     Command::new("help", "Print a command's provided help text.", cmd_help),
-    Command::new("exit", "Exit the game.", cmd_exit),
     Command::new("commit", "Print the commit hash.", cmd_commit),
     Command::new("test-args", "Print all arguments.", cmd_test_args),
     Command::new("font-gc", "Perform GC on all game fonts.", cmd_font_gc),

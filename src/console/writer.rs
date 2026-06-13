@@ -20,9 +20,9 @@ impl ConsoleWriter {
         self.data.push_str(data);
     }
 
-    pub fn clear(&mut self) {
-        self.data.clear();
-    }
+    // pub fn clear(&mut self) {
+    //     self.data.clear();
+    // }
 
     pub fn lines<'a>(&'a self) -> Skip<Split<'a, char>> {
         self.data.split('\n').skip(1)

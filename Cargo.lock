@@ -18,6 +18,7 @@ version = "0.1.0"
 dependencies = [
  "bitmask-enum",
  "paste",
+ "sdl3-mixer-sys",
  "sdl3-sys",
  "sdl3-ttf-sys",
 ]
@@ -27,6 +28,12 @@ name = "paste"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
+
+[[package]]
+name = "pkg-config"
+version = "0.3.33"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19f132c84eca552bf34cab8ec81f1c1dcc229b811638f9d283dceabe58c5569e"
 
 [[package]]
 name = "proc-macro2"
@@ -43,6 +50,7 @@ version = "0.1.0"
 dependencies = [
  "halcyon",
  "rectpack2d-rs",
+ "sdl3-main",
  "sdl3-sys",
 ]
 
@@ -58,6 +66,33 @@ dependencies = [
 [[package]]
 name = "rectpack2d-rs"
 version = "0.1.0"
+
+[[package]]
+name = "sdl3-main"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed59449e282746fc5ee2b7a29d791a2909512abb6a97e1db7067d3b24837091e"
+dependencies = [
+ "sdl3-main-macros",
+ "sdl3-sys",
+]
+
+[[package]]
+name = "sdl3-main-macros"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e048178242b2c7ce0ac0858a0d6a09c9580b4c2044215ddc785bc7e44080f7f9"
+
+[[package]]
+name = "sdl3-mixer-sys"
+version = "0.6.3+SDL-mixer-3.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b5a157588924cf886bdc3a7c9d0e478cdad35d315740f26af00609a61e7c327"
+dependencies = [
+ "pkg-config",
+ "sdl3-sys",
+ "vcpkg",
+]
 
 [[package]]
 name = "sdl3-sys"
@@ -90,3 +125,9 @@ name = "unicode-ident"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
+
+[[package]]
+name = "vcpkg"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"

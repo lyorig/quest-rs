@@ -1,10 +1,6 @@
 use std::ffi::CStr;
 
-use halcyon::{
-    rect::PointF32,
-    traits::Resource,
-    ttf::{Font as HalFont, Text},
-};
+use halcyon::{rect::PointF32, traits::Resource, ttf};
 
 use crate::{atlas::Atlas, font::glyph_map::GlyphMap, game::resources::GameResources};
 
@@ -13,25 +9,21 @@ pub mod store;
 
 /// A Halcyon Font whose glyphs are cached in an [`Atlas`].
 pub struct Font {
-    font: HalFont,
-    pub glyph_size: PointF32,
+    font: ttf::Font,
     map: GlyphMap,
 }
 
 impl Font {
     pub unsafe fn new(font_path: &CStr, size: f32) -> Font {
-        let font = unsafe { HalFont::new(font_path, size) }.expect("Cannot open font");
+        let font = unsafe { ttf::Font::new(font_path, size) }.expect("Cannot open font");
         assert!(
             font.is_mono(),
             "Font \"{}\" isn't fixed-width",
             font.family()
         );
 
-        let glyph_size = Text::new(*font, "X").unwrap().size().into();
-
         Font {
             font,
-            glyph_size,
             map: GlyphMap::new(),
         }
     }

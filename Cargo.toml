@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 halcyon = { path = "halcyon-rs" }
 rectpack2d-rs = { path = "rectpack2d-rs" }
+sdl3-main = "0.6.4"
 sdl3-sys = "0.6.5"
 
 [profile.release-max]

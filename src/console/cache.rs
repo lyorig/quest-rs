@@ -51,7 +51,7 @@ const PLACEHOLDERS: [&str; 41] = [
 /// that, while also preventing double-mutable-borrow errors that would otherwise
 /// occur if the calling `Console` passed itself as a parameter.
 pub struct CachedData {
-    /// The current index into `PLACEHOLDERS` used for
+    /// The current index into [`PLACEHOLDERS`] used for
     /// generating, well, placeholders.
     pub placeholder_index: u8,
 

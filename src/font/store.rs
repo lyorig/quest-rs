@@ -14,10 +14,9 @@ pub struct FontStore {
 }
 
 impl FontStore {
-    // SAFETY: Make sure a [`TtfContext`] is active.
+    /// SAFETY: Make sure a [`halcyon::ttf::TtfContext`] is active.
     pub unsafe fn new(rl: ResourceLoader) -> FontStore {
         let ubuntu = unsafe { Font::new(&rl.resolve("../../bin/assets/UbuntuMono.ttf"), 32.0) };
-
         FontStore { array: [ubuntu] }
     }
 
@@ -46,9 +45,5 @@ impl FontStore {
         glyph_size: PointF32,
     ) {
         self.array[id.0].draw(text, res, origin, glyph_size)
-    }
-
-    pub fn get(&self, id: FontId) -> &Font {
-        &self.array[id.0]
     }
 }

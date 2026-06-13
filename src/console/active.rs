@@ -8,9 +8,9 @@ use halcyon::{
 use sdl3_sys::keycode::SDL_Keycode;
 
 use crate::{
+    chk,
     console::{CONSOLE_FONT, PREFIX_TEXT, cache::CachedData, command, field::Field},
     game::resources::GameResources,
-    util,
 };
 
 pub const TEXT_OFFSET: PointF32 = PointF32::new(10.0, 10.0);
@@ -79,7 +79,7 @@ impl ActiveConsole {
     pub fn draw(&mut self, cd: &mut CachedData, data: &GameResources) {
         let rnd = data.renderer.as_ref();
         let old = rnd.xchg_draw_color_f32(Rgb::BLACK.with_alpha(0.5));
-        util::chk(rnd.fill_target());
+        chk!(rnd.fill_target());
 
         let mut curr_draw = TEXT_OFFSET;
 
@@ -96,7 +96,7 @@ impl ActiveConsole {
 
         if self.cursor_time.subsec_millis() < 500 {
             curr_draw.x = self.cursor_pos;
-            util::chk(rnd.fill_rect(RectF32::new(curr_draw, cd.glyph_size)));
+            chk!(rnd.fill_rect(RectF32::new(curr_draw, cd.glyph_size)));
         }
 
         rnd.set_draw_color_f32(old);

@@ -1,8 +1,5 @@
 use halcyon::{
-    color::Rgba,
-    rect::{PointF32, RectF32},
-    renderer::Renderer,
-    traits::Resource,
+    defs::SdlResult, rect::PointF32, renderer::Renderer, surface::Surface, traits::Resource,
     window::Window,
 };
 
@@ -13,8 +10,6 @@ use crate::{
 };
 
 pub struct GameResources {
-    pub running: bool,
-
     pub atlas: Atlas,
 
     pub renderer: Renderer,
@@ -24,19 +19,12 @@ pub struct GameResources {
 }
 
 impl GameResources {
-    pub fn draw_atlas(&self) {
-        if let Some(at) = self.atlas.texture.as_ref() {
-            let origin = PointF32::new(300.0, 300.0);
-            let sz = RectF32::new(origin, at.size());
-
-            let old_col = self.renderer.xchg_draw_color_f32(Rgba::BLACK);
-
-            util::chk(self.renderer.draw_rect(sz));
-            util::chk(self.renderer.draw(at.as_ref(), None, Some(&sz)));
-
-            self.atlas.debug_draw(self.renderer.as_ref(), origin);
-
-            self.renderer.set_draw_color_f32(old_col);
+    pub fn new(atlas: Atlas, renderer: Renderer, window: Window, fonts: FontStore) -> Self {
+        Self {
+            atlas,
+            renderer,
+            window,
+            fonts,
         }
     }
 
@@ -44,7 +32,7 @@ impl GameResources {
         self.fonts.alloc(i, text, &mut self.atlas);
     }
 
-    /// This function simply forwards to [`Fonts::free()`],
+    /// This function simply forwards to [`FontStore::free`],
     /// it's provided purely for completeness.
     pub fn font_free(&mut self, i: FontId, text: &str) {
         self.fonts.free(i, text);
@@ -60,5 +48,12 @@ impl GameResources {
 
     pub fn font_draw(&self, id: FontId, text: &str, origin: &mut PointF32, glyph_size: PointF32) {
         self.fonts.draw(id, self, text, origin, glyph_size)
+    }
+
+    pub fn read_atlas_pixels(&self) -> Option<SdlResult<Surface>> {
+        self.atlas
+            .texture
+            .as_ref()
+            .map(|t| util::read_pixels(self.renderer.as_ref(), t.as_ref()))
     }
 }

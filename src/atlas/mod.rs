@@ -1,6 +1,6 @@
 use halcyon::{
     color::Rgba,
-    rect::{Point, PointF32, PointI32, RectF32},
+    rect::{Point, PointI32, RectF32},
     renderer::Renderer,
     surface::Surface,
     texture::Texture,
@@ -17,27 +17,29 @@ use rectpack2d_rs::{
 
 use sdl3_sys::{blendmode::*, pixels::SDL_PIXELFORMAT_RGBA32, render::SDL_TEXTUREACCESS_TARGET};
 
-use crate::util;
+use crate::{atlas::viewer::Viewer, chk, util};
+
+pub mod viewer;
 
 fn to_frect(src: RectXYWH) -> RectF32 {
     RectF32::xywh(src.x as f32, src.y as f32, src.w as f32, src.h as f32)
 }
 
-fn to_r2d(src: PointI32) -> RectXYWH {
-    RectXYWH::from_wh(src.x, src.y)
-}
+// fn to_r2d(src: PointI32) -> RectXYWH {
+//     RectXYWH::from_wh(src.x, src.y)
+// }
 
-struct StagedEntry {
+pub struct StagedEntry {
     surface: Surface,
     area: RectXYWH,
 }
 
-struct ActiveEntry {
+pub struct ActiveEntry {
     current: RectF32,
     staged: RectXYWH,
 }
 
-enum Data {
+pub enum Data {
     Unused,
     Staged(StagedEntry),
     Active(ActiveEntry),
@@ -86,7 +88,7 @@ pub struct Atlas {
     /// Necessary for `find_best_packing`.
     empty_spaces: EmptySpaces<DefaultEmptySpaces>,
 
-    /// If `false`, [`Atlas::pack()`] is a no-op.
+    /// If `false`, [`Atlas::pack`] is a no-op.
     /// This enables the caller to call said function in a loop without
     /// caring about anything else, while the atlas internally ensures
     /// it only executes when there's something to be done.
@@ -94,6 +96,8 @@ pub struct Atlas {
 
     /// The atlas texture itself.
     pub texture: Option<Texture>,
+
+    pub viewer: Option<Viewer>,
 }
 
 impl Atlas {
@@ -103,6 +107,7 @@ impl Atlas {
             empty_spaces: EmptySpaces::default(),
             pack_queued: false,
             texture: None,
+            viewer: None,
         }
     }
 
@@ -146,7 +151,7 @@ impl Atlas {
         let old_tgt = unsafe { rnd.xchg_target(new_tex.as_ref()) }.unwrap();
         let old_col = rnd.xchg_draw_color_f32(Rgba::TRANSPARENT);
 
-        util::chk(rnd.clear());
+        chk!(rnd.clear());
 
         for d in &mut self.data {
             match d {
@@ -156,7 +161,7 @@ impl Atlas {
 
                     // Newly staged, just draw to the new texture.
                     let tex = Texture::from_surface(rnd, s.surface.as_ref()).unwrap();
-                    util::chk(rnd.draw(tex.as_ref(), None, Some(&new_area)));
+                    chk!(rnd.draw(tex.as_ref(), None, Some(&new_area)));
 
                     *d = Data::Active(ActiveEntry {
                         current: new_area,
@@ -167,7 +172,7 @@ impl Atlas {
                     let new_area = to_frect(a.staged);
 
                     // Old, draw from previous rect to new one.
-                    util::chk(rnd.draw(
+                    chk!(rnd.draw(
                         self.texture.as_ref().unwrap().as_ref(),
                         Some(&a.current),
                         Some(&new_area),
@@ -179,10 +184,26 @@ impl Atlas {
         }
 
         new_tex.set_blend_mode(SDL_BLENDMODE_ADD_PREMULTIPLIED);
+        let s = util::read_pixels(rnd, new_tex.as_ref()).expect("Cannot read atlas texture");
         self.texture = Some(new_tex);
 
+        if let Some(ref viewer) = self.viewer {
+            viewer.update(s, self.areas());
+        }
+
         rnd.set_draw_color_f32(old_col);
-        util::chk(unsafe { rnd.set_target_opt(old_tgt) });
+        chk!(unsafe { rnd.set_target_opt(old_tgt) });
+    }
+
+    pub fn areas(&self) -> impl Iterator<Item = RectF32> {
+        fn fm(d: &Data) -> Option<RectF32> {
+            match d {
+                Data::Active(a) => Some(a.current),
+                _ => None,
+            }
+        }
+
+        self.data.iter().filter_map(fm)
     }
 
     pub fn pack(&mut self, rnd: Ref<Renderer>) {
@@ -223,94 +244,69 @@ impl Atlas {
         }
     }
 
-    pub fn draw(&self, rnd: Ref<Renderer>, id: AtlasId, dst: PointF32) {
-        if let Some(tex) = &self.texture {
-            let area = self.extract_area(id);
-            util::chk(rnd.draw(
-                tex.as_ref(),
-                Some(&area),
-                Some(&RectF32::new(dst, area.size)),
-            ));
-        }
-    }
+    // pub fn draw(&self, rnd: Ref<Renderer>, id: AtlasId, dst: PointF32) {
+    //     if let Some(tex) = &self.texture {
+    //         let area = self.extract_area(id);
+    //         chk!(rnd.draw(
+    //             tex.as_ref(),
+    //             Some(&area),
+    //             Some(&RectF32::new(dst, area.size)),
+    //         ));
+    //     }
+    // }
 
     pub fn draw_to(&self, rnd: Ref<Renderer>, id: AtlasId, dst: RectF32) {
         if let Some(tex) = &self.texture {
             let area = self.extract_area(id);
-            util::chk(rnd.draw(tex.as_ref(), Some(&area), Some(&dst)));
+            chk!(rnd.draw(tex.as_ref(), Some(&area), Some(&dst)));
         }
     }
 
-    pub fn replace(&mut self, id: AtlasId, rnd: Ref<Renderer>, surf: Surface) {
-        let d = &mut self.data[id.0 as usize];
-        match d {
-            Data::Active(a) => {
-                let sz = surf.size();
-                if sz.as_f32() == a.current.size {
-                    // SAFETY: If a valid entry exists, the texture must exist as well.
-                    let tex = self.texture.as_ref().unwrap().as_ref();
-                    return Self::replace_exact_known(tex, a, rnd, surf);
-                }
+    // pub fn replace(&mut self, id: AtlasId, rnd: Ref<Renderer>, surf: Surface) {
+    //     let d = &mut self.data[id.0 as usize];
+    //     match d {
+    //         Data::Active(a) => {
+    //             let sz = surf.size();
+    //             if sz.as_f32() == a.current.size {
+    //                 // SAFETY: If a valid entry exists, the texture must exist as well.
+    //                 let tex = self.texture.as_ref().unwrap().as_ref();
+    //                 return Self::replace_exact_known(tex, a, rnd, surf);
+    //             }
 
-                self.pack_queued = true;
-                *d = Data::Staged(StagedEntry {
-                    surface: surf,
-                    area: to_r2d(sz),
-                });
-            }
-            _ => panic!("[Atlas] Trying to replace invalid ID {}", id.0),
-        }
-    }
+    //             self.pack_queued = true;
+    //             *d = Data::Staged(StagedEntry {
+    //                 surface: surf,
+    //                 area: to_r2d(sz),
+    //             });
+    //         }
+    //         _ => panic!("[Atlas] Trying to replace invalid ID {}", id.0),
+    //     }
+    // }
 
-    pub fn replace_exact(&mut self, id: AtlasId, rnd: Ref<Renderer>, s: Surface) {
-        match &self.data[id.0 as usize] {
-            Data::Active(a) => {
-                // SAFETY: If a valid entry exists, the texture must exist as well.
-                let tex = self.texture.as_ref().unwrap().as_ref();
-                Self::replace_exact_known(tex, a, rnd, s)
-            }
-            _ => panic!("[Atlas] Trying to replace-exact invalid ID {}", id.0),
-        }
-    }
+    // pub fn replace_exact(&mut self, id: AtlasId, rnd: Ref<Renderer>, s: Surface) {
+    //     match &self.data[id.0 as usize] {
+    //         Data::Active(a) => {
+    //             // SAFETY: If a valid entry exists, the texture must exist as well.
+    //             let tex = self.texture.as_ref().map(Texture::as_ref).unwrap();
+    //             Self::replace_exact_known(tex, a, rnd, s)
+    //         }
+    //         _ => panic!("[Atlas] Trying to replace-exact invalid ID {}", id.0),
+    //     }
+    // }
 
-    fn replace_exact_known(tex: Ref<Texture>, a: &ActiveEntry, rnd: Ref<Renderer>, s: Surface) {
-        let rep = Texture::from_surface(rnd, s.as_ref()).unwrap();
-        let dst = a.current;
+    // fn replace_exact_known(tex: Ref<Texture>, a: &ActiveEntry, rnd: Ref<Renderer>, s: Surface) {
+    //     let rep = Texture::from_surface(rnd, s.as_ref()).unwrap();
+    //     let dst = a.current;
 
-        let old_blend = rnd.xchg_blend_mode(SDL_BLENDMODE_NONE);
-        let old_tgt = unsafe { rnd.xchg_target(tex) }.unwrap();
-        let old_draw = rnd.xchg_draw_color_f32(Rgba::TRANSPARENT);
+    //     let old_blend = rnd.xchg_blend_mode(SDL_BLENDMODE_NONE);
+    //     let old_tgt = unsafe { rnd.xchg_target(tex) }.unwrap();
+    //     let old_draw = rnd.xchg_draw_color_f32(Rgba::TRANSPARENT);
 
-        util::chk(rnd.fill_rect(dst));
-        util::chk(rnd.draw(rep.as_ref(), None, Some(&dst)));
+    //     chk!(rnd.fill_rect(dst));
+    //     chk!(rnd.draw(rep.as_ref(), None, Some(&dst)));
 
-        rnd.set_draw_color_f32(old_draw);
-        util::chk(unsafe { rnd.set_target_opt(old_tgt) });
-        rnd.set_blend_mode(old_blend);
-    }
-
-    pub fn debug_draw(&self, rnd: Ref<Renderer>, origin: PointF32) {
-        fn offset(mut r: RectF32, o: PointF32) -> RectF32 {
-            r.pos.x += o.x;
-            r.pos.y += o.y;
-            r
-        }
-
-        fn fm(d: &Data, origin: PointF32) -> Option<RectF32> {
-            match d {
-                Data::Active(a) => Some(offset(a.current, origin)),
-                _ => None,
-            }
-        }
-
-        let vec = self
-            .data
-            .iter()
-            .filter_map(|d| fm(d, origin))
-            .collect::<Vec<_>>();
-
-        let old_col = rnd.xchg_draw_color_f32(Rgba::RED);
-        util::chk(rnd.draw_rects(&vec));
-        rnd.set_draw_color_f32(old_col);
-    }
+    //     rnd.set_draw_color_f32(old_draw);
+    //     chk!(unsafe { rnd.set_target_opt(old_tgt) });
+    //     rnd.set_blend_mode(old_blend);
+    // }
 }
