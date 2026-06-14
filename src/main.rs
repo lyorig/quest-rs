@@ -27,24 +27,19 @@ fn fail(e: Error) {
     ));
 }
 
-fn init() -> SdlResult {
+fn run() -> SdlResult {
     let ttf = ttf::Context::new()?;
     let mut game = Game::new(&ttf)?;
-
-    dprintln!("Game init complete");
-    dprintln!("Linked TTF version = {}", ttf::version());
-    dprintln!("Base path = `{}`", halcyon::base_path().to_string_lossy());
 
     game.main_loop();
 
     Ok(())
 }
 
-#[sdl3_main::main]
 fn main() {
     debug::init();
 
-    if let Err(e) = init() {
+    if let Err(e) = run() {
         fail(e)
     }
 }

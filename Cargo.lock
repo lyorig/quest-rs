@@ -50,7 +50,6 @@ version = "0.1.0"
 dependencies = [
  "halcyon",
  "rectpack2d-rs",
- "sdl3-main",
  "sdl3-sys",
 ]
 
@@ -66,22 +65,6 @@ dependencies = [
 [[package]]
 name = "rectpack2d-rs"
 version = "0.1.0"
-
-[[package]]
-name = "sdl3-main"
-version = "0.6.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed59449e282746fc5ee2b7a29d791a2909512abb6a97e1db7067d3b24837091e"
-dependencies = [
- "sdl3-main-macros",
- "sdl3-sys",
-]
-
-[[package]]
-name = "sdl3-main-macros"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e048178242b2c7ce0ac0858a0d6a09c9580b4c2044215ddc785bc7e44080f7f9"
 
 [[package]]
 name = "sdl3-mixer-sys"
