@@ -1,18 +1,18 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use halcyon::{
     color::Rgba,
     defs::SdlResult,
-    event::Event,
+    event::{Event, EventIter},
     rect::Point,
     renderer::RendererBuilder,
     resource_loader::ResourceLoader,
     traits::{BlendMode, Resource},
+    ttf,
     util::c_ptr_to_str,
     window::{Window, WindowBuilder},
 };
 
-use sdl3_main::AppResult;
 use sdl3_sys::{
     blendmode::SDL_BLENDMODE_BLEND,
     keycode::{SDLK_F1, SDLK_RETURN},
@@ -22,21 +22,20 @@ use crate::{
     atlas::Atlas,
     chk,
     console::{Console, state::ConsoleState},
-    dprintln,
     font::store::FontStore,
     game::resources::GameResources,
 };
 
 pub mod resources;
 
-pub struct Game {
-    pub data: GameResources,
+pub struct Game<'t> {
+    pub data: GameResources<'t>,
     console: Console,
-    delta: Instant,
 }
 
-impl Game {
-    pub fn new() -> SdlResult<Self> {
+impl Game<'_> {
+    /// Create a new game.
+    pub fn new<'t>(ttf: &'t ttf::Context) -> SdlResult<Game<'t>> {
         let window = WindowBuilder::new()
             .size(Point::new(1280, 720))
             .position(Point::new(Window::POS_CENTERED, Window::POS_CENTERED))
@@ -52,62 +51,65 @@ impl Game {
         renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
 
         let res_ldr = ResourceLoader::new();
-        let data = GameResources::new(Atlas::new(), renderer, window, unsafe {
-            FontStore::new(res_ldr)
-        });
+        let data = GameResources {
+            atlas: Atlas::new(),
+            renderer,
+            window,
+            fonts: FontStore::new(ttf, res_ldr),
+            running: true,
+        };
 
         let console = Console::new(data.renderer.as_ref())?;
-        let delta = Instant::now();
 
-        dprintln!("Game init complete");
-
-        Ok(Game {
-            data,
-            console,
-            delta,
-        })
+        Ok(Game { data, console })
     }
 
-    pub fn iterate(&mut self) -> AppResult {
-        let old = self.data.renderer.draw_color_f32();
-        self.data
-            .renderer
-            .set_draw_color_f32(Rgba::rgb(0.0, 0.0, 0.75));
+    /// Enter the main loop.
+    pub fn main_loop(&mut self) {
+        let mut delta = Instant::now();
 
-        chk!(self.data.renderer.clear());
+        while self.data.running {
+            let old = self.data.renderer.draw_color_f32();
+            self.data
+                .renderer
+                .set_draw_color_f32(Rgba::rgb(0.0, 0.0, 0.75));
 
-        // --- Updating ---
-        self.update_delta();
-        self.delta = Instant::now();
+            chk!(self.data.renderer.clear());
 
-        self.data.atlas.pack(self.data.renderer.as_ref());
+            // --- Processing ---
+            self.process_events();
 
-        // --- Drawing ---
-        self.console.draw(&self.data);
+            // --- Updating ---
+            self.update_delta(delta.elapsed());
+            delta = Instant::now();
 
-        chk!(self.data.renderer.present());
+            self.data.atlas.pack(self.data.renderer.as_ref());
 
-        self.data.renderer.set_draw_color_f32(old);
+            // --- Drawing ---
+            self.console.draw(&self.data);
 
-        AppResult::Continue
-    }
+            chk!(self.data.renderer.present());
 
-    pub fn process_event(&mut self, evt: Event) -> AppResult {
-        match evt {
-            Event::Quit => return AppResult::Success,
-            Event::KeyDown(k) => match k.key {
-                SDLK_F1 => self.console.switch(&mut self.data),
-                SDLK_RETURN => self.process_command(),
-                other => self.console.process_key(&mut self.data, other),
-            },
-            Event::TextInput(ti) => {
-                self.console
-                    .process_str(&mut self.data, unsafe { c_ptr_to_str(ti.text) });
-            }
-            _ => (),
+            self.data.renderer.set_draw_color_f32(old);
         }
+    }
 
-        AppResult::Continue
+    fn process_events(&mut self) {
+        for evt in EventIter::new() {
+            match evt {
+                Event::Quit => self.data.running = false,
+                Event::KeyDown(k) => match k.key {
+                    SDLK_F1 => self.console.switch(&mut self.data),
+                    SDLK_RETURN => self.process_command(),
+                    other => self.console.process_key(&mut self.data, other),
+                },
+                Event::TextInput(ti) => {
+                    self.console
+                        .process_str(&mut self.data, unsafe { c_ptr_to_str(ti.text) });
+                }
+                _ => (),
+            }
+        }
     }
 
     fn process_command(&mut self) {
@@ -116,9 +118,7 @@ impl Game {
         }
     }
 
-    fn update_delta(&mut self) {
-        let elapsed = self.delta.elapsed();
+    fn update_delta(&mut self, elapsed: Duration) {
         self.console.update_delta(elapsed);
-        self.delta = Instant::now();
     }
 }

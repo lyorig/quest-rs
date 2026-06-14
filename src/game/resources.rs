@@ -9,25 +9,17 @@ use crate::{
     util,
 };
 
-pub struct GameResources {
+pub struct GameResources<'t> {
     pub atlas: Atlas,
 
     pub renderer: Renderer,
     pub window: Window,
 
-    pub fonts: FontStore,
+    pub fonts: FontStore<'t>,
+    pub running: bool,
 }
 
-impl GameResources {
-    pub fn new(atlas: Atlas, renderer: Renderer, window: Window, fonts: FontStore) -> Self {
-        Self {
-            atlas,
-            renderer,
-            window,
-            fonts,
-        }
-    }
-
+impl GameResources<'_> {
     pub fn font_alloc(&mut self, i: FontId, text: &str) {
         self.fonts.alloc(i, text, &mut self.atlas);
     }

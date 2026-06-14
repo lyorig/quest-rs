@@ -78,8 +78,9 @@ fn cmd_atlas(game: &mut GameResources, out: &mut ConsoleWriter, mut args: ArgsSp
 }
 
 const COMMANDS: [Command; 5] = [
-    Command::new("atlas", "Manipulate the texture atlas.", cmd_atlas),
+    // NOTE: This needs to be the first command.
     Command::new("help", "Print a command's provided help text.", cmd_help),
+    Command::new("atlas", "Manipulate the texture atlas.", cmd_atlas),
     Command::new("commit", "Print the commit hash.", cmd_commit),
     Command::new("test-args", "Print all arguments.", cmd_test_args),
     Command::new("font-gc", "Perform GC on all game fonts.", cmd_font_gc),

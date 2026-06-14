@@ -1,4 +1,4 @@
-use halcyon::{rect::PointF32, resource_loader::ResourceLoader};
+use halcyon::{rect::PointF32, resource_loader::ResourceLoader, ttf};
 
 use crate::{atlas::Atlas, font::Font, game::resources::GameResources};
 
@@ -9,14 +9,14 @@ impl FontId {
 }
 
 /// Contains all fonts used in the game.
-pub struct FontStore {
-    array: [Font; 1],
+pub struct FontStore<'t> {
+    array: [Font<'t>; 1],
 }
 
-impl FontStore {
+impl FontStore<'_> {
     /// SAFETY: Make sure a [`halcyon::ttf::TtfContext`] is active.
-    pub unsafe fn new(rl: ResourceLoader) -> FontStore {
-        let ubuntu = unsafe { Font::new(&rl.resolve("../../bin/assets/UbuntuMono.ttf"), 32.0) };
+    pub fn new<'t>(ttf: &'t ttf::Context, rl: ResourceLoader) -> FontStore<'t> {
+        let ubuntu = Font::new(ttf, &rl.resolve("../../bin/assets/UbuntuMono.ttf"), 32.0);
         FontStore { array: [ubuntu] }
     }
 

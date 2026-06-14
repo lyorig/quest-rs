@@ -8,14 +8,15 @@ pub mod glyph_map;
 pub mod store;
 
 /// A Halcyon Font whose glyphs are cached in an [`Atlas`].
-pub struct Font {
-    font: ttf::Font,
+pub struct Font<'t> {
+    font: ttf::Font<'t>,
     map: GlyphMap,
 }
 
-impl Font {
-    pub unsafe fn new(font_path: &CStr, size: f32) -> Font {
-        let font = unsafe { ttf::Font::new(font_path, size) }.expect("Cannot open font");
+impl Font<'_> {
+    pub fn new<'t>(ttf: &'t ttf::Context, font_path: &CStr, size: f32) -> Font<'t> {
+        let font = ttf.open(font_path, size).expect("Cannot open font");
+
         assert!(
             font.is_mono(),
             "Font \"{}\" isn't fixed-width",

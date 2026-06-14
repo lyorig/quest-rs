@@ -1,15 +1,9 @@
 #![allow(dead_code)]
 #![windows_subsystem = "windows"]
 
-use std::sync::Mutex;
+use halcyon::{defs::SdlResult, error::Error, ttf};
 
-use game::Game;
-use halcyon::{
-    context::Context, defs::SdlResult, error::Error, event::Event, subsystem::Video,
-    ttf::TtfContext,
-};
-use sdl3_main::{AppResult, AppResultWithState};
-use sdl3_sys::events::SDL_Event;
+use crate::game::Game;
 
 mod atlas;
 mod console;
@@ -33,58 +27,24 @@ fn fail(e: Error) {
     ));
 }
 
-fn do_init() -> SdlResult<MyAppState> {
-    let _ctx = unsafe { Context::new() };
-    let _vid = Video::new(&_ctx)?;
-    let _ttf = TtfContext::new()?;
+fn init() -> SdlResult {
+    let ttf = ttf::Context::new()?;
+    let mut game = Game::new(&ttf)?;
 
-    let game = Game::new()?;
+    dprintln!("Game init complete");
+    dprintln!("Linked TTF version = {}", ttf::version());
+    dprintln!("Base path = `{}`", halcyon::base_path().to_string_lossy());
 
-    let ret = MyAppState {
-        game,
-        _ctx,
-        _vid,
-        _ttf,
-    };
+    game.main_loop();
 
-    Ok(ret)
+    Ok(())
 }
 
-// NOTE: The drop order is important here!
-struct MyAppState {
-    game: Game,
-    _ttf: TtfContext,
-    _vid: Video,
-    _ctx: Context,
-}
+#[sdl3_main::main]
+fn main() {
+    debug::init();
 
-unsafe impl Send for MyAppState {}
-
-#[sdl3_main::app_impl]
-impl MyAppState {
-    fn app_init() -> AppResultWithState<Box<Mutex<Self>>> {
-        debug::init();
-
-        match do_init() {
-            Ok(mas) => {
-                let ret = Box::new(Mutex::new(mas));
-                AppResultWithState::Continue(ret)
-            }
-            Err(e) => {
-                fail(e);
-                AppResultWithState::Failure(None)
-            }
-        }
+    if let Err(e) = init() {
+        fail(e)
     }
-
-    fn app_iterate(&mut self) -> AppResult {
-        self.game.iterate()
-    }
-
-    fn app_event(&mut self, event: SDL_Event) -> AppResult {
-        let evt = Event::from(event);
-        self.game.process_event(evt)
-    }
-
-    fn app_quit(&mut self) {}
 }
