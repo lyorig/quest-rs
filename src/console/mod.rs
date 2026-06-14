@@ -7,11 +7,7 @@ mod writer;
 
 use std::time::Duration;
 
-use halcyon::{
-    defs::SdlResult,
-    renderer::Renderer,
-    traits::{Ref, Resource},
-};
+use halcyon::traits::Resource;
 
 use sdl3_sys::keycode::*;
 
@@ -31,11 +27,11 @@ pub struct Console {
 }
 
 impl Console {
-    pub fn new(rnd: Ref<Renderer>) -> SdlResult<Console> {
-        Ok(Console {
-            data: CachedData::new(rnd),
+    pub fn new() -> Console {
+        Console {
+            data: CachedData::new(),
             state: ConsoleState::Disabled,
-        })
+        }
     }
 
     pub fn switch(&mut self, data: &mut GameResources) {

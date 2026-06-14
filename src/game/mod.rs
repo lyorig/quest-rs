@@ -59,7 +59,7 @@ impl Game<'_> {
             running: true,
         };
 
-        let console = Console::new(data.renderer.as_ref())?;
+        let console = Console::new();
 
         Ok(Game { data, console })
     }
