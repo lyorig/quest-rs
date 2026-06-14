@@ -42,23 +42,11 @@ impl Game<'_> {
             .title(c"HalodaQuest [Euclid]")
             .build()?;
 
-        let mut renderer = RendererBuilder::new(window.as_ref());
-        if !std::env::args().any(|x| x == "--no-vsync") {
-            renderer.vsync(1);
-        }
-
-        let renderer = renderer.build()?;
+        let renderer = RendererBuilder::new(window.as_ref()).vsync(1).build()?;
         renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
 
         let res_ldr = ResourceLoader::new();
-        let data = GameResources {
-            atlas: Atlas::new(),
-            renderer,
-            window,
-            fonts: FontStore::new(ttf, res_ldr),
-            running: true,
-        };
-
+        let data = GameResources::new(Atlas::new(), renderer, window, FontStore::new(ttf, res_ldr));
         let console = Console::new();
 
         Ok(Game { data, console })
@@ -104,8 +92,8 @@ impl Game<'_> {
                     other => self.console.process_key(&mut self.data, other),
                 },
                 Event::TextInput(ti) => {
-                    self.console
-                        .process_str(&mut self.data, unsafe { c_ptr_to_str(ti.text) });
+                    let text = unsafe { c_ptr_to_str(ti.text) };
+                    self.console.process_str(&mut self.data, text);
                 }
                 _ => (),
             }

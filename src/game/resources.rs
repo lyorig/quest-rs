@@ -20,6 +20,21 @@ pub struct GameResources<'t> {
 }
 
 impl GameResources<'_> {
+    pub fn new<'t>(
+        atlas: Atlas,
+        renderer: Renderer,
+        window: Window,
+        fonts: FontStore<'t>,
+    ) -> GameResources<'t> {
+        GameResources {
+            atlas,
+            renderer,
+            window,
+            fonts,
+            running: true,
+        }
+    }
+
     pub fn font_alloc(&mut self, i: FontId, text: &str) {
         self.fonts.alloc(i, text, &mut self.atlas);
     }
