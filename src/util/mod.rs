@@ -20,11 +20,12 @@ macro_rules! chk {
     };
 }
 
+/// Reads a [`Texture`]'s pixels using a [`Renderer`] into a [`Surface`].
 pub fn read_pixels(rnd: Ref<Renderer>, tex: Ref<Texture>) -> SdlResult<Surface> {
-    let old_tgt = unsafe { rnd.xchg_target(tex) }?;
+    let old_tgt = rnd.xchg_target(tex)?;
     let surface = rnd.read_target()?;
 
-    unsafe { rnd.set_target_opt(old_tgt) }?;
+    rnd.set_target_opt(old_tgt)?;
 
     Ok(surface)
 }

@@ -1,6 +1,6 @@
 use halcyon::{rect::PointF32, resource_loader::ResourceLoader, ttf};
 
-use crate::{atlas::Atlas, font::Font, game::resources::GameResources};
+use crate::{atlas::Atlas, font::Font, game::resources::Resources};
 
 pub struct FontId(usize);
 
@@ -39,7 +39,7 @@ impl FontStore<'_> {
     pub fn draw(
         &self,
         id: FontId,
-        res: &GameResources,
+        res: &Resources,
         text: &str,
         origin: &mut PointF32,
         glyph_size: PointF32,

@@ -1,5 +1,5 @@
-use crate::game::resources::GameResources;
+use crate::game::resources::Resources;
 
 pub trait Scene {
-    fn process_events(&mut self, res: &mut GameResources);
+    fn process_events(&mut self, res: &mut Resources);
 }

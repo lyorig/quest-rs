@@ -10,7 +10,7 @@ use sdl3_sys::keycode::SDL_Keycode;
 use crate::{
     chk,
     console::{CONSOLE_FONT, PREFIX_TEXT, cache::CachedData, command, field::Field},
-    game::resources::GameResources,
+    game::resources::Resources,
 };
 
 pub const TEXT_OFFSET: PointF32 = PointF32::new(10.0, 10.0);
@@ -44,7 +44,7 @@ impl ActiveConsole {
     }
 
     /// This is the only way that text gets added do the [`Field`].
-    pub fn process_str(&mut self, cd: &mut CachedData, data: &mut GameResources, input: &str) {
+    pub fn process_str(&mut self, cd: &mut CachedData, data: &mut Resources, input: &str) {
         self.field.process_str(input, data);
         self.field.trim_check();
 
@@ -52,7 +52,7 @@ impl ActiveConsole {
     }
 
     /// Hands over a pressed key to this console's [`Field`], which decides what to do next.
-    pub fn process_key(&mut self, cd: &mut CachedData, data: &mut GameResources, k: SDL_Keycode) {
+    pub fn process_key(&mut self, cd: &mut CachedData, data: &mut Resources, k: SDL_Keycode) {
         let op = self.field.process_key(k, data);
 
         self.field.trim_check();
@@ -62,7 +62,7 @@ impl ActiveConsole {
         }
     }
 
-    pub fn process_command(&mut self, cd: &mut CachedData, gd: &mut GameResources) {
+    pub fn process_command(&mut self, cd: &mut CachedData, gd: &mut Resources) {
         let mut args = self.field.text.split(' ');
         if let Some(name) = args.next() {
             match command::find(name) {
@@ -76,7 +76,7 @@ impl ActiveConsole {
         }
     }
 
-    pub fn draw(&mut self, cd: &mut CachedData, data: &GameResources) {
+    pub fn draw(&mut self, cd: &mut CachedData, data: &Resources) {
         let rnd = data.renderer.as_ref();
         let old = rnd.xchg_draw_color_f32(Rgb::BLACK.with_alpha(0.5));
         chk!(rnd.fill_target());
@@ -104,13 +104,13 @@ impl ActiveConsole {
 
     /// Clear the [`Field`], update the cursor,
     /// and signal for a repaint.
-    pub fn clear(&mut self, cd: &mut CachedData, res: &mut GameResources) {
+    pub fn clear(&mut self, cd: &mut CachedData, res: &mut Resources) {
         res.font_free(CONSOLE_FONT, &self.field.text);
         self.field.clear();
         self.update_outline(cd);
     }
 
-    fn draw_prompt(&self, cd: &CachedData, data: &GameResources, mut origin: PointF32) {
+    fn draw_prompt(&self, cd: &CachedData, data: &Resources, mut origin: PointF32) {
         let tex = data.atlas.texture.as_ref().unwrap().as_ref();
         let old = tex.xchg_rgb_mod_f32(Rgb::GREEN);
 

@@ -9,7 +9,7 @@ use halcyon::{
 
 use crate::{
     atlas::{Atlas, AtlasId},
-    game::resources::GameResources,
+    game::resources::Resources,
 };
 
 #[derive(Clone, Copy)]
@@ -127,13 +127,7 @@ impl GlyphMap {
 
     /// Convenience method for drawing a string to the screen.
     /// Panics if any character in `text` isn't available in glyph form in `atlas`.
-    pub fn draw(
-        &self,
-        text: &str,
-        res: &GameResources,
-        origin: &mut PointF32,
-        glyph_size: PointF32,
-    ) {
+    pub fn draw(&self, text: &str, res: &Resources, origin: &mut PointF32, glyph_size: PointF32) {
         for glyph in text.chars() {
             if !glyph.is_whitespace() {
                 let Some(id) = self.id(glyph) else {

@@ -148,7 +148,7 @@ impl Atlas {
         // which is absolutely sufficient for our case.
         new_tex.set_blend_mode(SDL_BLENDMODE_NONE);
 
-        let old_tgt = unsafe { rnd.xchg_target(new_tex.as_ref()) }.unwrap();
+        let old_tgt = rnd.xchg_target(new_tex.as_ref()).unwrap();
         let old_col = rnd.xchg_draw_color_f32(Rgba::TRANSPARENT);
 
         chk!(rnd.clear());
@@ -192,7 +192,7 @@ impl Atlas {
         }
 
         rnd.set_draw_color_f32(old_col);
-        chk!(unsafe { rnd.set_target_opt(old_tgt) });
+        chk!(rnd.set_target_opt(old_tgt));
     }
 
     pub fn areas(&self) -> impl Iterator<Item = RectF32> {

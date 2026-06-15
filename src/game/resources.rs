@@ -9,7 +9,7 @@ use crate::{
     util,
 };
 
-pub struct GameResources<'t> {
+pub struct Resources<'t> {
     pub atlas: Atlas,
 
     pub renderer: Renderer,
@@ -19,14 +19,14 @@ pub struct GameResources<'t> {
     pub running: bool,
 }
 
-impl GameResources<'_> {
+impl Resources<'_> {
     pub fn new<'t>(
         atlas: Atlas,
         renderer: Renderer,
         window: Window,
         fonts: FontStore<'t>,
-    ) -> GameResources<'t> {
-        GameResources {
+    ) -> Resources<'t> {
+        Resources {
             atlas,
             renderer,
             window,
@@ -39,8 +39,6 @@ impl GameResources<'_> {
         self.fonts.alloc(i, text, &mut self.atlas);
     }
 
-    /// This function simply forwards to [`FontStore::free`],
-    /// it's provided purely for completeness.
     pub fn font_free(&mut self, i: FontId, text: &str) {
         self.fonts.free(i, text);
     }

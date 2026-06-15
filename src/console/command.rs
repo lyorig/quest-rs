@@ -1,11 +1,9 @@
 use std::str::Split;
 
-use crate::{
-    atlas::viewer::Viewer, console::writer::ConsoleWriter, game::resources::GameResources,
-};
+use crate::{atlas::viewer::Viewer, console::writer::ConsoleWriter, game::resources::Resources};
 
 type ArgsSplit<'a> = Split<'a, char>;
-type CommandFn = fn(&mut GameResources, &mut ConsoleWriter, ArgsSplit);
+type CommandFn = fn(&mut Resources, &mut ConsoleWriter, ArgsSplit);
 
 pub struct Command {
     name: &'static str,
@@ -18,12 +16,12 @@ impl Command {
         Self { name, help, func }
     }
 
-    pub fn execute(&self, data: &mut GameResources, out: &mut ConsoleWriter, args: ArgsSplit) {
+    pub fn execute(&self, data: &mut Resources, out: &mut ConsoleWriter, args: ArgsSplit) {
         (self.func)(data, out, args)
     }
 }
 
-fn cmd_help(_: &mut GameResources, out: &mut ConsoleWriter, mut args: ArgsSplit) {
+fn cmd_help(_: &mut Resources, out: &mut ConsoleWriter, mut args: ArgsSplit) {
     let cmd = args.next();
     match cmd {
         Some(cmd) => match find(cmd) {
@@ -38,22 +36,22 @@ fn cmd_help(_: &mut GameResources, out: &mut ConsoleWriter, mut args: ArgsSplit)
     }
 }
 
-fn cmd_commit(_: &mut GameResources, out: &mut ConsoleWriter, _: ArgsSplit) {
+fn cmd_commit(_: &mut Resources, out: &mut ConsoleWriter, _: ArgsSplit) {
     out.write(env!("BUILD_COMMIT_HASH"));
 }
 
-fn cmd_test_args(_: &mut GameResources, out: &mut ConsoleWriter, args: ArgsSplit) {
+fn cmd_test_args(_: &mut Resources, out: &mut ConsoleWriter, args: ArgsSplit) {
     for (i, arg) in args.enumerate() {
         let fmt = format!("{i}: {arg}");
         out.write(&fmt);
     }
 }
 
-fn cmd_font_gc(game: &mut GameResources, _: &mut ConsoleWriter, _: ArgsSplit) {
+fn cmd_font_gc(game: &mut Resources, _: &mut ConsoleWriter, _: ArgsSplit) {
     game.font_gc_all();
 }
 
-fn cmd_atlas(game: &mut GameResources, out: &mut ConsoleWriter, mut args: ArgsSplit) {
+fn cmd_atlas(game: &mut Resources, out: &mut ConsoleWriter, mut args: ArgsSplit) {
     let Some(arg) = args.next() else {
         out.write("usage: atlas <subcommand>");
         return;

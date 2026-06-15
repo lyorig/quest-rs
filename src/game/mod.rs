@@ -23,36 +23,34 @@ use crate::{
     chk,
     console::{Console, state::ConsoleState},
     font::store::FontStore,
-    game::resources::GameResources,
+    game::resources::Resources,
 };
 
 pub mod resources;
 
 pub struct Game<'t> {
-    pub data: GameResources<'t>,
+    pub data: Resources<'t>,
     console: Console,
 }
 
 impl Game<'_> {
-    /// Create a new game.
     pub fn new<'t>(ttf: &'t ttf::Context) -> SdlResult<Game<'t>> {
         let window = WindowBuilder::new()
             .size(Point::new(1280, 720))
             .position(Point::new(Window::POS_CENTERED, Window::POS_CENTERED))
-            .title(c"HalodaQuest [Euclid]")
+            .title(c"HalodaQuest")
             .build()?;
 
         let renderer = RendererBuilder::new(window.as_ref()).vsync(1).build()?;
         renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
 
         let res_ldr = ResourceLoader::new();
-        let data = GameResources::new(Atlas::new(), renderer, window, FontStore::new(ttf, res_ldr));
+        let data = Resources::new(Atlas::new(), renderer, window, FontStore::new(ttf, res_ldr));
         let console = Console::new();
 
         Ok(Game { data, console })
     }
 
-    /// Enter the main loop.
     pub fn main_loop(&mut self) {
         let mut delta = Instant::now();
 
