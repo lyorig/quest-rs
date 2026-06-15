@@ -19,11 +19,7 @@ use sdl3_sys::{
 };
 
 use crate::{
-    atlas::Atlas,
-    chk,
-    console::{Console, state::ConsoleState},
-    font::store::FontStore,
-    game::resources::Resources,
+    atlas::Atlas, chk, console::Console, font::store::FontStore, game::resources::Resources,
 };
 
 pub mod resources;
@@ -54,7 +50,7 @@ impl Game<'_> {
     pub fn main_loop(&mut self) {
         let mut delta = Instant::now();
 
-        while self.data.running {
+        loop {
             let old = self.data.renderer.draw_color_f32();
             self.data
                 .renderer
@@ -63,7 +59,9 @@ impl Game<'_> {
             chk!(self.data.renderer.clear());
 
             // --- Processing ---
-            self.process_events();
+            if !self.process_events() {
+                break;
+            }
 
             // --- Updating ---
             self.update_delta(delta.elapsed());
@@ -80,10 +78,10 @@ impl Game<'_> {
         }
     }
 
-    fn process_events(&mut self) {
+    fn process_events(&mut self) -> bool {
         for evt in EventIter::new() {
             match evt {
-                Event::Quit => self.data.running = false,
+                Event::Quit => return false,
                 Event::KeyDown(k) => match k.key {
                     SDLK_F1 => self.console.switch(&mut self.data),
                     SDLK_RETURN => self.process_command(),
@@ -96,10 +94,12 @@ impl Game<'_> {
                 _ => (),
             }
         }
+
+        true
     }
 
     fn process_command(&mut self) {
-        if let ConsoleState::Enabled(ac) = &mut self.console.state {
+        if let Some(ref mut ac) = self.console.state {
             ac.process_command(&mut self.console.data, &mut self.data);
         }
     }

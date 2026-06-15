@@ -14,7 +14,6 @@ pub struct FontStore<'t> {
 }
 
 impl FontStore<'_> {
-    /// SAFETY: Make sure a [`halcyon::ttf::TtfContext`] is active.
     pub fn new<'t>(ttf: &'t ttf::Context, rl: ResourceLoader) -> FontStore<'t> {
         let ubuntu = Font::new(ttf, &rl.resolve("../../bin/assets/UbuntuMono.ttf"), 32.0);
         FontStore { array: [ubuntu] }

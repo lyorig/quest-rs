@@ -1,10 +1,10 @@
-use std::{iter::Skip, str::Split};
+type Size = u8;
 
-/// Essentially a wrapper around a `String`.
+/// Essentially a wrapper around a [`String`].
 /// Used for commands to output text.
 pub struct ConsoleWriter {
     data: String,
-    last_added: usize,
+    last_added: Size,
 }
 
 impl ConsoleWriter {
@@ -20,11 +20,7 @@ impl ConsoleWriter {
         self.data.push_str(data);
     }
 
-    // pub fn clear(&mut self) {
-    //     self.data.clear();
-    // }
-
-    pub fn lines<'a>(&'a self) -> Skip<Split<'a, char>> {
+    pub fn lines(&self) -> impl Iterator<Item = &'_ str> {
         self.data.split('\n').skip(1)
     }
 
@@ -35,14 +31,14 @@ impl ConsoleWriter {
     /// Returns a string slice containing all text that has been
     /// added since the last call to this method.
     pub fn added_since_last_check(&mut self) -> &str {
-        if self.last_added >= self.data.len() {
+        if self.last_added >= self.data.len() as _ {
             // NOTE: This fixes a situation when the last command provided no output.
             // The `last_added` field is offset by 1 to skip over newlines,
             // which isn't present in this case.
             ""
         } else {
-            let slice = &self.data[self.last_added..];
-            self.last_added = self.data.len() + 1; // Compensate for \n.
+            let slice = &self.data[self.last_added as usize..];
+            self.last_added = (self.data.len() + 1) as Size; // Compensate for \n.
 
             slice
         }

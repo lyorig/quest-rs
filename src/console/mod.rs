@@ -2,7 +2,6 @@ pub mod active;
 mod cache;
 pub mod command;
 mod field;
-pub mod state;
 mod writer;
 
 use std::time::Duration;
@@ -13,7 +12,7 @@ use sdl3_sys::keycode::*;
 
 use crate::{
     chk,
-    console::{active::ActiveConsole, cache::CachedData, state::ConsoleState},
+    console::{active::ActiveConsole, cache::CachedData},
     font::store::FontId,
     game::resources::Resources,
 };
@@ -23,14 +22,14 @@ const CONSOLE_FONT: FontId = FontId::UBUNTU_MONO;
 
 pub struct Console {
     pub data: CachedData,
-    pub state: ConsoleState,
+    pub state: Option<ActiveConsole>,
 }
 
 impl Console {
     pub fn new() -> Console {
         Console {
             data: CachedData::new(),
-            state: ConsoleState::Disabled,
+            state: None,
         }
     }
 
@@ -38,7 +37,7 @@ impl Console {
         let wnd = data.window.as_ref();
 
         match &self.state {
-            ConsoleState::Disabled => {
+            None => {
                 chk!(halcyon::keyboard::text_input_start(wnd));
 
                 let np = self.data.next_placeholder();
@@ -46,10 +45,10 @@ impl Console {
                 data.font_alloc(CONSOLE_FONT, PREFIX_TEXT);
                 data.font_alloc(CONSOLE_FONT, self.data.writer.data());
 
-                self.state = ConsoleState::Enabled(ActiveConsole::new(&mut self.data));
+                self.state = Some(ActiveConsole::new(&mut self.data));
             }
 
-            ConsoleState::Enabled(ac) => {
+            Some(ac) => {
                 chk!(halcyon::keyboard::text_input_stop(wnd));
 
                 data.font_free(CONSOLE_FONT, self.data.writer.data());
@@ -60,7 +59,7 @@ impl Console {
                 // NOTE: Only for debug purposes.
                 data.font_gc(CONSOLE_FONT);
 
-                self.state = ConsoleState::Disabled;
+                self.state = None;
             }
         }
     }
@@ -68,7 +67,7 @@ impl Console {
     /// If the console is active, calls `ActiveConsole::process_key()`.
     /// Otherwise, does nothing.
     pub fn process_key(&mut self, data: &mut Resources, k: SDL_Keycode) {
-        if let ConsoleState::Enabled(ac) = &mut self.state {
+        if let Some(ac) = &mut self.state {
             ac.process_key(&mut self.data, data, k);
         }
     }
@@ -76,7 +75,7 @@ impl Console {
     /// If the console is active, calls `ActiveConsole::process_str()`.
     /// Otherwise, does nothing.
     pub fn process_str(&mut self, data: &mut Resources, text: &str) {
-        if let ConsoleState::Enabled(ac) = &mut self.state {
+        if let Some(ac) = &mut self.state {
             ac.process_str(&mut self.data, data, text);
         }
     }
@@ -84,13 +83,13 @@ impl Console {
     /// If the console is active, calls `ActiveConsole::draw()`.
     /// Otherwise, does nothing.
     pub fn draw(&mut self, data: &Resources) {
-        if let ConsoleState::Enabled(ac) = &mut self.state {
+        if let Some(ac) = &mut self.state {
             ac.draw(&mut self.data, data);
         }
     }
 
     pub fn update_delta(&mut self, elapsed: Duration) {
-        if let ConsoleState::Enabled(ac) = &mut self.state {
+        if let Some(ac) = &mut self.state {
             ac.update_delta(elapsed);
         }
     }

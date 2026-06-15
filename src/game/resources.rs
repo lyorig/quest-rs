@@ -16,7 +16,6 @@ pub struct Resources<'t> {
     pub window: Window,
 
     pub fonts: FontStore<'t>,
-    pub running: bool,
 }
 
 impl Resources<'_> {
@@ -31,7 +30,6 @@ impl Resources<'_> {
             renderer,
             window,
             fonts,
-            running: true,
         }
     }
 
