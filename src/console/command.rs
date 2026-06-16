@@ -1,6 +1,10 @@
 use std::str::Split;
 
-use crate::{atlas::viewer::Viewer, console::writer::ConsoleWriter, game::resources::Resources};
+use crate::{
+    atlas::viewer::Viewer,
+    console::writer::ConsoleWriter,
+    game::{Game, resources::Resources},
+};
 
 type ArgsSplit<'a> = Split<'a, char>;
 type CommandFn = fn(&mut Resources, &mut ConsoleWriter, ArgsSplit);
@@ -34,6 +38,10 @@ fn cmd_help(_: &mut Resources, out: &mut ConsoleWriter, mut args: ArgsSplit) {
         // No command provided, print help for the command itself.
         None => help_exact(&COMMANDS[0], out),
     }
+}
+
+fn cmd_exit(_: &mut Resources, _: &mut ConsoleWriter, _: ArgsSplit) {
+    Game::quit();
 }
 
 fn cmd_commit(_: &mut Resources, out: &mut ConsoleWriter, _: ArgsSplit) {
@@ -75,9 +83,10 @@ fn cmd_atlas(game: &mut Resources, out: &mut ConsoleWriter, mut args: ArgsSplit)
     }
 }
 
-const COMMANDS: [Command; 5] = [
+const COMMANDS: [Command; 6] = [
     // NOTE: This needs to be the first command.
     Command::new("help", "Print a command's provided help text.", cmd_help),
+    Command::new("exit", "Exit the game (push a quit event).", cmd_exit),
     Command::new("atlas", "Manipulate the texture atlas.", cmd_atlas),
     Command::new("commit", "Print the commit hash.", cmd_commit),
     Command::new("test-args", "Print all arguments.", cmd_test_args),

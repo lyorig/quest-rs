@@ -4,8 +4,22 @@ use halcyon::{
 
 pub mod lazy_static;
 
-/// Used to wrap [`SdlResult`]s on whose values you don't necessarily depend,
-/// but would still like a sanity check in debug builds.
+/// In debug builds, calls [`SdlResult::expect`] on the passed value.
+/// Otherwise, the value is ignored.
+///
+/// This can be used as a debug-only [`SdlResult::expect`].
+///
+/// # Example
+/// ```rust
+/// use halcyon::chk;
+/// use halcyon::traits::Ref;
+/// use halcyon::renderer::Renderer;
+///
+/// fn render(rnd: Ref<Renderer>) {
+///     // this should never really fail, but just in case
+///     chk!(rnd.clear());
+/// }
+/// ```
 #[macro_export]
 macro_rules! chk {
     ($res:expr) => {

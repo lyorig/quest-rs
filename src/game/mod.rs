@@ -107,4 +107,8 @@ impl Game<'_> {
     fn update_delta(&mut self, elapsed: Duration) {
         self.console.update_delta(elapsed);
     }
+
+    pub fn quit() {
+        chk!(Event::Quit.push());
+    }
 }
