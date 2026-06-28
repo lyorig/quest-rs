@@ -3,6 +3,7 @@ use halcyon::{
 };
 
 pub mod lazy_static;
+pub mod scheduler;
 
 /// In debug builds, calls [`SdlResult::expect`] on the passed value.
 /// Otherwise, the value is ignored.

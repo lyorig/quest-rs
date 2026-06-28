@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use halcyon::{
     defs::SdlResult, rect::PointF32, renderer::Renderer, surface::Surface, traits::Resource,
     window::Window,
@@ -16,6 +18,7 @@ pub struct Resources<'t> {
     pub window: Window,
 
     pub fonts: FontStore<'t>,
+    pub now: Instant,
 }
 
 impl Resources<'_> {
@@ -30,6 +33,7 @@ impl Resources<'_> {
             renderer,
             window,
             fonts,
+            now: Instant::now(),
         }
     }
 
