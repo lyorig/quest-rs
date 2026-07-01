@@ -1,7 +1,4 @@
-use std::{
-    path::Path,
-    time::{Duration, Instant},
-};
+use std::{path::Path, time::Instant};
 
 use halcyon::{
     color::Rgba,
@@ -16,10 +13,7 @@ use halcyon::{
     window::{Window, WindowBuilder},
 };
 
-use sdl3_sys::{
-    blendmode::SDL_BLENDMODE_BLEND,
-    keycode::{SDLK_F1, SDLK_P, SDLK_RETURN},
-};
+use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
 
 use crate::{
     atlas::Atlas, chk, console::Console, font::store::FontStore, game::resources::Resources,
@@ -72,8 +66,11 @@ impl Game<'_> {
             }
 
             // --- Updating ---
-            self.update_delta();
-            self.data.now = Instant::now();
+            let now = Instant::now();
+            let dt = now.duration_since(self.data.now);
+            self.data.now = now;
+
+            self.console.update_delta(dt);
 
             self.sched.update(self.data.now, &mut self.data);
 
@@ -94,9 +91,6 @@ impl Game<'_> {
                 Event::Quit => return false,
                 Event::KeyDown(k) => match k.key {
                     SDLK_F1 => self.console.switch(&mut self.data),
-                    SDLK_P => self
-                        .sched
-                        .schedule(self.data.now + Duration::from_secs(1), |_| println!("Blah")),
                     SDLK_RETURN => self.process_command(),
                     other => self.console.process_key(&mut self.data, other),
                 },
@@ -115,10 +109,6 @@ impl Game<'_> {
         if let Some(ref mut ac) = self.console.state {
             ac.process_command(&mut self.console.data, &mut self.data);
         }
-    }
-
-    fn update_delta(&mut self) {
-        self.console.update_delta(self.data.now.elapsed());
     }
 
     pub fn quit() {

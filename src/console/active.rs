@@ -64,7 +64,9 @@ impl ActiveConsole {
 
     pub fn process_command(&mut self, cd: &mut CachedData, gd: &mut Resources) {
         let mut args = self.field.text.split(' ');
-        if let Some(name) = args.next() {
+        if let Some(name) = args.next()
+            && !name.is_empty()
+        {
             match command::find(name) {
                 Some(c) => c.execute(gd, &mut cd.writer, args),
                 None => cd.writer.write(&format!("unknown command \"{name}\"")),
