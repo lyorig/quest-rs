@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use halcyon::{
     color::Rgba,
     rect::{Point, PointI32, RectF32},
@@ -21,7 +23,7 @@ use crate::{atlas::viewer::Viewer, chk, util};
 
 pub mod viewer;
 
-fn to_frect(src: RectXYWH) -> RectF32 {
+const fn to_frect(src: RectXYWH) -> RectF32 {
     RectF32::xywh(src.x as f32, src.y as f32, src.w as f32, src.h as f32)
 }
 
@@ -34,15 +36,37 @@ pub struct StagedEntry {
     area: RectXYWH,
 }
 
+impl Display for StagedEntry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "staged @ {}", self.area)
+    }
+}
+
 pub struct ActiveEntry {
     current: RectF32,
     staged: RectXYWH,
+}
+
+impl Display for ActiveEntry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "active @ {}", self.current)
+    }
 }
 
 pub enum Data {
     Unused,
     Staged(StagedEntry),
     Active(ActiveEntry),
+}
+
+impl Display for Data {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Data::Unused => write!(f, "unused"),
+            Data::Staged(s) => write!(f, "{s}"),
+            Data::Active(a) => write!(f, "{a}"),
+        }
+    }
 }
 
 impl Data {
@@ -66,20 +90,6 @@ impl Data {
 /// Resize in accordance with expected required atlas capacity.
 #[derive(Clone, Copy, Debug)]
 pub struct AtlasId(u8);
-
-pub struct RectWrapper<'a>(&'a mut RectXYWH);
-
-impl<'a> From<&'a RectWrapper<'_>> for &'a RectXYWH {
-    fn from(value: &'a RectWrapper) -> Self {
-        value.0
-    }
-}
-
-impl<'a> From<&'a mut RectWrapper<'_>> for &'a mut RectXYWH {
-    fn from(value: &'a mut RectWrapper) -> Self {
-        value.0
-    }
-}
 
 pub struct Atlas {
     /// Stores both rectangles and staged surfaces.
@@ -153,38 +163,13 @@ impl Atlas {
 
         chk!(rnd.clear());
 
-        for d in &mut self.data {
-            match d {
-                Data::Unused => continue,
-                Data::Staged(s) => {
-                    let new_area = to_frect(s.area);
-
-                    // Newly staged, just draw to the new texture.
-                    let tex = Texture::from_surface(rnd, s.surface.as_ref()).unwrap();
-                    chk!(rnd.draw(tex.as_ref(), None, Some(&new_area)));
-
-                    *d = Data::Active(ActiveEntry {
-                        current: new_area,
-                        staged: s.area,
-                    })
-                }
-                Data::Active(a) => {
-                    let new_area = to_frect(a.staged);
-
-                    // Old, draw from previous rect to new one.
-                    chk!(rnd.draw(
-                        self.texture.as_ref().unwrap().as_ref(),
-                        Some(&a.current),
-                        Some(&new_area),
-                    ));
-
-                    a.current = new_area;
-                }
-            }
+        match self.texture.take() {
+            Some(tex) => self.copy_some(rnd, tex.as_ref()),
+            None => self.copy_none(rnd),
         }
 
-        new_tex.set_blend_mode(SDL_BLENDMODE_ADD_PREMULTIPLIED);
         let s = util::read_pixels(rnd, new_tex.as_ref()).expect("Cannot read atlas texture");
+        new_tex.set_blend_mode(SDL_BLENDMODE_ADD_PREMULTIPLIED);
         self.texture = Some(new_tex);
 
         if let Some(ref viewer) = self.viewer {
@@ -193,6 +178,10 @@ impl Atlas {
 
         rnd.set_draw_color_f32(old_col);
         chk!(rnd.set_target_opt(old_tgt));
+    }
+
+    pub fn data(&self) -> impl Iterator<Item = &Data> {
+        self.data.iter()
     }
 
     pub fn areas(&self) -> impl Iterator<Item = RectF32> {
@@ -309,4 +298,54 @@ impl Atlas {
     //     chk!(unsafe { rnd.set_target_opt(old_tgt) });
     //     rnd.set_blend_mode(old_blend);
     // }
+
+    fn copy_some(&mut self, rnd: Ref<Renderer>, tex: Ref<Texture>) {
+        tex.set_blend_mode(SDL_BLENDMODE_NONE);
+        for d in &mut self.data {
+            match d {
+                Data::Unused => continue,
+                Data::Staged(s) => {
+                    let new_area = to_frect(s.area);
+
+                    // Newly staged, just draw to the new texture.
+                    let tex = Texture::from_surface(rnd, s.surface.as_ref()).unwrap();
+                    chk!(rnd.draw(tex.as_ref(), None, Some(&new_area)));
+
+                    *d = Data::Active(ActiveEntry {
+                        current: new_area,
+                        staged: s.area,
+                    })
+                }
+                Data::Active(a) => {
+                    let new_area = to_frect(a.staged);
+
+                    // Old, draw from previous rect to new one.
+                    chk!(rnd.draw(tex, Some(&a.current), Some(&new_area),));
+
+                    a.current = new_area;
+                }
+            }
+        }
+    }
+
+    fn copy_none(&mut self, rnd: Ref<Renderer>) {
+        for d in &mut self.data {
+            match d {
+                Data::Unused => continue,
+                Data::Staged(s) => {
+                    let new_area = to_frect(s.area);
+
+                    // Newly staged, just draw to the new texture.
+                    let tex = Texture::from_surface(rnd, s.surface.as_ref()).unwrap();
+                    chk!(rnd.draw(tex.as_ref(), None, Some(&new_area)));
+
+                    *d = Data::Active(ActiveEntry {
+                        current: new_area,
+                        staged: s.area,
+                    })
+                }
+                _ => unreachable!(),
+            }
+        }
+    }
 }

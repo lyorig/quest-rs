@@ -1,6 +1,9 @@
-use halcyon::rect::PointF32;
+use halcyon::rect::{PointF32, RectF32};
 
-use crate::console::{PREFIX_TEXT, active::TEXT_OFFSET, writer::ConsoleWriter};
+use crate::{
+    console::{PREFIX_TEXT, active::TEXT_OFFSET, writer::ConsoleWriter},
+    game::resources::Resources,
+};
 
 const PLACEHOLDERS: [&str; 41] = [
     "[meow]",
@@ -87,5 +90,18 @@ impl CachedData {
 
     pub fn advance_placeholder(&mut self) {
         self.placeholder_index = (self.placeholder_index + 1) % PLACEHOLDERS.len() as u8;
+    }
+
+    pub fn scroll_bar(&self, res: &Resources) -> RectF32 {
+        let lines = self.writer.lines().count();
+        let height = self.glyph_size.y * lines as f32;
+
+        let sz = res.renderer.output_size();
+        let wndy = sz.y as f32;
+
+        let ratio = wndy / height;
+        let bar_height = wndy * ratio;
+
+        RectF32::xywh(sz.x as f32 - 10., 0., 10., bar_height)
     }
 }

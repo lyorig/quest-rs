@@ -43,8 +43,8 @@ impl Font<'_> {
 
     /// Calls [`GlyphMap::gc()`] on the contained map; see its
     /// documentation for more information.
-    pub fn gc(&mut self, atlas: &mut Atlas) {
-        self.map.gc(atlas);
+    pub fn gc(&mut self, atlas: &mut Atlas) -> usize {
+        self.map.gc(atlas)
     }
 
     pub fn draw(&self, text: &str, res: &Resources, origin: &mut PointF32, glyph_size: PointF32) {

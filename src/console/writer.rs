@@ -1,10 +1,8 @@
-type Size = u8;
-
 /// Essentially a wrapper around a [`String`].
 /// Used for commands to output text.
 pub struct ConsoleWriter {
     data: String,
-    last_added: Size,
+    last_added: u32,
 }
 
 impl ConsoleWriter {
@@ -16,8 +14,12 @@ impl ConsoleWriter {
     }
 
     pub fn write(&mut self, data: &str) {
-        self.data.push('\n');
         self.data.push_str(data);
+    }
+
+    pub fn writeln(&mut self, data: &str) {
+        self.data.push('\n');
+        self.write(data);
     }
 
     pub fn lines(&self) -> impl Iterator<Item = &'_ str> {
@@ -38,9 +40,14 @@ impl ConsoleWriter {
             ""
         } else {
             let slice = &self.data[self.last_added as usize..];
-            self.last_added = (self.data.len() + 1) as Size; // Compensate for \n.
+            self.last_added = (self.data.len() + 1) as _; // Compensate for \n.
 
             slice
         }
+    }
+
+    pub fn clear(&mut self) {
+        self.data.clear();
+        self.last_added = 1;
     }
 }

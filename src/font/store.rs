@@ -2,10 +2,14 @@ use halcyon::{rect::PointF32, resource_loader::ResourceLoader, ttf};
 
 use crate::{atlas::Atlas, font::Font, game::resources::Resources};
 
-pub struct FontId(usize);
+pub struct FontId(u8);
 
 impl FontId {
     pub const UBUNTU_MONO: Self = Self(0);
+
+    const fn as_index(&self) -> usize {
+        self.0 as _
+    }
 }
 
 /// Contains all fonts used in the game.
@@ -20,19 +24,20 @@ impl FontStore<'_> {
     }
 
     pub fn alloc(&mut self, id: FontId, text: &str, atlas: &mut Atlas) {
-        self.array[id.0].alloc(text, atlas);
+        self.array[id.as_index()].alloc(text, atlas);
     }
 
     pub fn free(&mut self, id: FontId, text: &str) {
-        self.array[id.0].free(text);
+        self.array[id.as_index()].free(text);
     }
 
     pub fn gc(&mut self, id: FontId, atlas: &mut Atlas) {
-        self.array[id.0].gc(atlas);
+        self.array[id.as_index()].gc(atlas);
     }
 
-    pub fn gc_all(&mut self, atlas: &mut Atlas) {
-        self.array.iter_mut().for_each(|f| f.gc(atlas))
+    /// Returns the total amount of fonts freed.
+    pub fn gc_all(&mut self, atlas: &mut Atlas) -> usize {
+        self.array.iter_mut().fold(0, |acc, f| acc + f.gc(atlas))
     }
 
     pub fn draw(
@@ -43,6 +48,6 @@ impl FontStore<'_> {
         origin: &mut PointF32,
         glyph_size: PointF32,
     ) {
-        self.array[id.0].draw(text, res, origin, glyph_size)
+        self.array[id.as_index()].draw(text, res, origin, glyph_size)
     }
 }

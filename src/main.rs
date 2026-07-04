@@ -17,14 +17,10 @@ fn fail(e: Error) {
     use halcyon::msgbox;
     use halcyon::msgbox::Severity;
 
-    dprintln!("Initialization error: \"{e}\"");
+    dprintln!("Launch error: \"{e}\"");
 
     let msg = e.into_cstring();
-    chk!(msgbox::show(
-        Severity::Error,
-        c"Game initialization failed",
-        &msg,
-    ));
+    chk!(msgbox::show(Severity::Error, c"Game launch failed", &msg));
 }
 
 fn run() -> SdlResult {
@@ -39,7 +35,5 @@ fn run() -> SdlResult {
 fn main() {
     debug::init();
 
-    if let Err(e) = run() {
-        fail(e)
-    }
+    run().unwrap_or_else(fail);
 }

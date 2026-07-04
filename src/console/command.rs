@@ -2,12 +2,12 @@ use std::str::Split;
 
 use crate::{
     atlas::viewer::Viewer,
-    console::writer::ConsoleWriter,
+    console::{CONSOLE_FONT, CachedData},
     game::{Game, resources::Resources},
 };
 
 type ArgsSplit<'a> = Split<'a, char>;
-type CommandFn = fn(&mut Resources, &mut ConsoleWriter, ArgsSplit);
+type CommandFn = fn(&mut Resources, &mut CachedData, ArgsSplit);
 
 pub struct Command {
     name: &'static str,
@@ -20,19 +20,19 @@ impl Command {
         Self { name, help, func }
     }
 
-    pub fn execute(&self, data: &mut Resources, out: &mut ConsoleWriter, args: ArgsSplit) {
+    pub fn execute(&self, data: &mut Resources, out: &mut CachedData, args: ArgsSplit) {
         (self.func)(data, out, args)
     }
 }
 
-fn cmd_help(_: &mut Resources, out: &mut ConsoleWriter, mut args: ArgsSplit) {
+fn cmd_help(_: &mut Resources, out: &mut CachedData, mut args: ArgsSplit) {
     let cmd = args.next();
     match cmd {
         Some(cmd) => match find(cmd) {
             Some(c) => help_exact(c, out),
             None => {
                 let fmt = format!("help: unknown command {cmd}");
-                out.write(&fmt);
+                out.writer.writeln(&fmt);
             }
         },
         // No command provided, print help for the command itself.
@@ -40,63 +40,101 @@ fn cmd_help(_: &mut Resources, out: &mut ConsoleWriter, mut args: ArgsSplit) {
     }
 }
 
-fn cmd_exit(_: &mut Resources, _: &mut ConsoleWriter, _: ArgsSplit) {
+fn cmd_exit(_: &mut Resources, _: &mut CachedData, _: ArgsSplit) {
     Game::quit();
 }
 
-fn cmd_commit(_: &mut Resources, out: &mut ConsoleWriter, _: ArgsSplit) {
-    out.write(env!("BUILD_COMMIT_HASH"));
+fn cmd_commit(_: &mut Resources, out: &mut CachedData, _: ArgsSplit) {
+    out.writer.writeln(env!("BUILD_COMMIT_HASH"));
 }
 
-fn cmd_test_args(_: &mut Resources, out: &mut ConsoleWriter, args: ArgsSplit) {
+fn cmd_test_args(_: &mut Resources, out: &mut CachedData, args: ArgsSplit) {
     for (i, arg) in args.enumerate() {
         let fmt = format!("{i}: {arg}");
-        out.write(&fmt);
+        out.writer.writeln(&fmt);
     }
 }
 
-fn cmd_font_gc(game: &mut Resources, _: &mut ConsoleWriter, _: ArgsSplit) {
-    game.font_gc_all();
+fn cmd_font(game: &mut Resources, out: &mut CachedData, mut args: ArgsSplit) {
+    let Some(arg) = args.next() else {
+        out.writer.writeln("usage: font <subcommand>");
+        return;
+    };
+
+    match arg {
+        "gc" => {
+            let msg = format!("freed {} glyphs", game.font_gc_all());
+            out.writer.writeln(&msg);
+        }
+        _ => {
+            let fmt = format!("font: unknown subcommand \"{arg}\"");
+            out.writer.writeln(&fmt);
+        }
+    }
 }
 
-fn cmd_atlas(game: &mut Resources, out: &mut ConsoleWriter, mut args: ArgsSplit) {
+fn cmd_atlas(game: &mut Resources, out: &mut CachedData, mut args: ArgsSplit) {
     let Some(arg) = args.next() else {
-        out.write("usage: atlas <subcommand>");
+        out.writer.writeln("usage: atlas <subcommand>");
         return;
     };
 
     match arg {
         "open" => {
             if let Some(surf) = game.read_atlas_pixels() {
-                let viewer = Viewer::new().expect("Cannot init atlas viewer");
-                let s = surf.expect("Cannot read atlas pixels");
-                viewer.update(s, game.atlas.areas());
+                match Viewer::new() {
+                    Ok(viewer) => {
+                        let s = surf.expect("Cannot read atlas pixels");
+                        viewer.update(s, game.atlas.areas());
 
-                game.atlas.viewer = Some(viewer);
+                        game.atlas.viewer = Some(viewer);
+                    }
+                    Err(e) => {
+                        let msg = format!("Cannot init viewer: {e}");
+                        out.writer.writeln(&msg)
+                    }
+                }
             }
         }
         "close" => game.atlas.viewer = None,
+        "list" => {
+            for (i, data) in game.atlas.data().enumerate() {
+                let msg = format!("{i}: {data}");
+                out.writer.writeln(&msg);
+            }
+        }
         _ => {
             let fmt = format!("atlas: unknown subcommand \"{arg}\"");
-            out.write(&fmt);
+            out.writer.writeln(&fmt);
         }
     }
 }
 
-const COMMANDS: [Command; 6] = [
+fn cmd_clear(game: &mut Resources, cd: &mut CachedData, _: ArgsSplit) {
+    game.font_free(CONSOLE_FONT, cd.writer.data());
+    cd.writer.clear();
+}
+
+const COMMANDS: [Command; 7] = [
     // NOTE: This needs to be the first command.
     Command::new("help", "Print a command's provided help text.", cmd_help),
     Command::new("exit", "Exit the game (push a quit event).", cmd_exit),
     Command::new("atlas", "Manipulate the texture atlas.", cmd_atlas),
     Command::new("commit", "Print the commit hash.", cmd_commit),
     Command::new("test-args", "Print all arguments.", cmd_test_args),
-    Command::new("font-gc", "Perform GC on all game fonts.", cmd_font_gc),
+    Command::new("font", "Manipulate game fonts.", cmd_font),
+    Command::new("clear", "Clear the console.", cmd_clear),
 ];
 
 pub fn find(name: &str) -> Option<&Command> {
     COMMANDS.iter().find(|c| c.name == name)
 }
 
-fn help_exact(cmd: &Command, out: &mut ConsoleWriter) {
-    out.write(&format!("help: {} => {}", cmd.name, cmd.help))
+pub fn help_iter() -> impl Iterator<Item = &'static str> {
+    COMMANDS.iter().map(|c| c.help)
+}
+
+fn help_exact(cmd: &Command, out: &mut CachedData) {
+    out.writer
+        .writeln(&format!("help: {} => {}", cmd.name, cmd.help))
 }

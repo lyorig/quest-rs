@@ -49,8 +49,8 @@ impl Resources<'_> {
         self.fonts.gc(i, &mut self.atlas);
     }
 
-    pub fn font_gc_all(&mut self) {
-        self.fonts.gc_all(&mut self.atlas);
+    pub fn font_gc_all(&mut self) -> usize {
+        self.fonts.gc_all(&mut self.atlas)
     }
 
     pub fn font_draw(&self, id: FontId, text: &str, origin: &mut PointF32, glyph_size: PointF32) {

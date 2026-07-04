@@ -44,8 +44,9 @@ impl Console {
                 data.font_alloc(CONSOLE_FONT, np);
                 data.font_alloc(CONSOLE_FONT, PREFIX_TEXT);
                 data.font_alloc(CONSOLE_FONT, self.data.writer.data());
+                command::help_iter().for_each(|s| data.font_alloc(CONSOLE_FONT, s));
 
-                self.state = Some(ActiveConsole::new(&mut self.data));
+                self.state = Some(ActiveConsole::new(data, &mut self.data));
             }
 
             Some(ac) => {
@@ -55,6 +56,7 @@ impl Console {
                 data.font_free(CONSOLE_FONT, PREFIX_TEXT);
                 data.font_free(CONSOLE_FONT, self.data.current_placeholder());
                 data.font_free(CONSOLE_FONT, &ac.field.text);
+                command::help_iter().for_each(|s| data.font_free(CONSOLE_FONT, s));
 
                 // NOTE: Only for debug purposes.
                 data.font_gc(CONSOLE_FONT);

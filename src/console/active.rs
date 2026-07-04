@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use halcyon::{
-    color::Rgb,
+    color::{Rgb, Rgba},
     rect::{PointF32, RectF32},
     traits::{ColorModF32, Resource},
 };
@@ -19,18 +19,21 @@ pub struct ActiveConsole {
     pub field: Field,
 
     /// Where the cursor is currently being drawn to.
-    /// Only updated when [`ActiveConsole::update_outline()`] is called,
+    /// Only updated when [`ActiveConsole::update_outline`] is called,
     /// which sets its location to correspond to the [`Field`] cursor.
     cursor_pos: f32,
     cursor_time: Duration,
+
+    scroll_bar: RectF32,
 }
 
 impl ActiveConsole {
-    pub fn new(data: &mut CachedData) -> Self {
+    pub fn new(res: &Resources, data: &mut CachedData) -> Self {
         Self {
             field: Field::new(),
             cursor_pos: data.input_x_origin,
             cursor_time: Duration::ZERO,
+            scroll_bar: data.scroll_bar(res),
         }
     }
 
@@ -68,11 +71,15 @@ impl ActiveConsole {
             && !name.is_empty()
         {
             match command::find(name) {
-                Some(c) => c.execute(gd, &mut cd.writer, args),
-                None => cd.writer.write(&format!("unknown command \"{name}\"")),
+                Some(c) => c.execute(gd, cd, args),
+                None => {
+                    let msg = format!("unknown command \"{name}\"");
+                    cd.writer.writeln(&msg)
+                }
             }
 
-            gd.font_alloc(CONSOLE_FONT, cd.writer.added_since_last_check());
+            let added = cd.writer.added_since_last_check();
+            gd.font_alloc(CONSOLE_FONT, added);
 
             self.clear(cd, gd);
         }
@@ -101,6 +108,9 @@ impl ActiveConsole {
             chk!(rnd.fill_rect(RectF32::new(curr_draw, cd.glyph_size)));
         }
 
+        rnd.set_draw_color_f32(Rgba::new(0.5, 0.5, 0.5, 0.8));
+        chk!(rnd.fill_rect(self.scroll_bar));
+
         rnd.set_draw_color_f32(old);
     }
 
@@ -108,8 +118,10 @@ impl ActiveConsole {
     /// and signal for a repaint.
     pub fn clear(&mut self, cd: &mut CachedData, res: &mut Resources) {
         res.font_free(CONSOLE_FONT, &self.field.text);
+
         self.field.clear();
         self.update_outline(cd);
+        self.scroll_bar = cd.scroll_bar(res);
     }
 
     fn draw_prompt(&self, cd: &CachedData, data: &Resources, mut origin: PointF32) {

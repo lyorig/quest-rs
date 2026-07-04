@@ -75,9 +75,9 @@ impl GlyphMap {
     }
 
     pub fn retain(&mut self, atlas: &mut Atlas, font: Ref<Font>, text: &str) {
-        for c in text.chars().filter(char::is_ascii_graphic) {
-            self.retain_glyph(atlas, font, c);
-        }
+        text.chars()
+            .filter(char::is_ascii_graphic)
+            .for_each(|c| self.retain_glyph(atlas, font, c));
     }
 
     fn release_glyph(&mut self, glyph: char) {
@@ -87,7 +87,7 @@ impl GlyphMap {
 
         assert!(
             data.refcount != NonZeroU32::MIN,
-            "[GlyphMap] Popping scheduled-for-deletion glyph '{glyph}"
+            "[GlyphMap] Popping scheduled-for-deletion glyph '{glyph}'"
         );
 
         // SAFETY: The contained value is guaranteed to be non-minimal.
@@ -95,9 +95,9 @@ impl GlyphMap {
     }
 
     pub fn release(&mut self, text: &str) {
-        for c in text.chars().filter(char::is_ascii_graphic) {
-            self.release_glyph(c);
-        }
+        text.chars()
+            .filter(char::is_ascii_graphic)
+            .for_each(|c| self.release_glyph(c));
     }
 
     /// Perform garbage collection, i.e. remove all unreferenced glyphs.
@@ -105,15 +105,19 @@ impl GlyphMap {
     /// unreferenced, which is basically free. If this method is instead called
     /// beforehand, it's removed from the [`Atlas`] and all the work required
     /// for re-insertion must be performed.
-    pub fn gc(&mut self, atlas: &mut Atlas) {
+    pub fn gc(&mut self, atlas: &mut Atlas) -> usize {
+        let mut count = 0;
         for data in &mut self.usage {
             if let GlyphEntry::Allocated(gd) = data
                 && gd.can_delete()
             {
                 atlas.remove(gd.id);
                 *data = GlyphEntry::Free;
+                count += 1;
             }
         }
+
+        count
     }
 
     /// Retrieve an [`AtlasId`] for a glyph.
@@ -131,7 +135,7 @@ impl GlyphMap {
         for glyph in text.chars() {
             if !glyph.is_whitespace() {
                 let Some(id) = self.id(glyph) else {
-                    panic!("[GlyphMap] Cannot draw unavailable glyph '{glyph}'")
+                    panic!("[GlyphMap] Cannot draw unavailable glyph '{glyph}' from {text:?}")
                 };
 
                 res.atlas
