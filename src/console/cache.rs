@@ -1,7 +1,7 @@
 use halcyon::rect::{PointF32, RectF32};
 
 use crate::{
-    console::{PREFIX_TEXT, active::TEXT_OFFSET, writer::ConsoleWriter},
+    console::{CONSOLE_FONT, PREFIX_TEXT, active::TEXT_OFFSET, writer::ConsoleWriter},
     game::resources::Resources,
 };
 
@@ -65,6 +65,9 @@ pub struct CachedData {
     pub glyph_size: PointF32,
 
     pub writer: ConsoleWriter,
+
+    pub scroll_bar: RectF32,
+    pub line: u32,
 }
 
 impl CachedData {
@@ -76,6 +79,8 @@ impl CachedData {
             input_x_origin: TEXT_OFFSET.x + glyph_size.x * (PREFIX_TEXT.len() + 1) as f32,
             glyph_size,
             writer: ConsoleWriter::new(),
+            scroll_bar: RectF32::ZEROED,
+            line: 0,
         }
     }
 
@@ -92,7 +97,7 @@ impl CachedData {
         self.placeholder_index = (self.placeholder_index + 1) % PLACEHOLDERS.len() as u8;
     }
 
-    pub fn scroll_bar(&self, res: &Resources) -> RectF32 {
+    pub fn update_scroll_bar(&mut self, res: &Resources) {
         let lines = self.writer.lines().count();
         let height = self.glyph_size.y * lines as f32;
 
@@ -102,6 +107,12 @@ impl CachedData {
         let ratio = wndy / height;
         let bar_height = wndy * ratio;
 
-        RectF32::xywh(sz.x as f32 - 10., 0., 10., bar_height)
+        self.scroll_bar = RectF32::xywh(sz.x as f32 - 10., 0., 10., bar_height);
+    }
+
+    pub fn clear(&mut self, res: &mut Resources) {
+        res.font_free(CONSOLE_FONT, self.writer.data());
+        self.writer.clear();
+        self.line = 0;
     }
 }

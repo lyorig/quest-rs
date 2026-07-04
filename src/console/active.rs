@@ -23,20 +23,14 @@ pub struct ActiveConsole {
     /// which sets its location to correspond to the [`Field`] cursor.
     cursor_pos: f32,
     cursor_time: Duration,
-
-    scroll_bar: RectF32,
-
-    line: u32,
 }
 
 impl ActiveConsole {
-    pub fn new(res: &Resources, data: &mut CachedData) -> Self {
+    pub fn new(data: &mut CachedData) -> Self {
         Self {
             field: Field::new(),
             cursor_pos: data.input_x_origin,
             cursor_time: Duration::ZERO,
-            scroll_bar: data.scroll_bar(res),
-            line: 0,
         }
     }
 
@@ -68,7 +62,7 @@ impl ActiveConsole {
         }
     }
 
-    pub fn process_mouse(&mut self, cd: &CachedData, m: SDL_MouseWheelEvent) {
+    pub fn process_mouse(&mut self, cd: &mut CachedData, m: SDL_MouseWheelEvent) {
         let val = if m.direction == SDL_MouseWheelDirection::NORMAL {
             m.integer_y
         } else {
@@ -76,10 +70,10 @@ impl ActiveConsole {
         };
 
         let max = cd.writer.lines().count() as i32;
-        let new = self.line.cast_signed() + val;
+        let new = cd.line.cast_signed() + val;
         let clamped = new.clamp(0, max);
 
-        self.line = clamped as _;
+        cd.line = clamped as _;
     }
 
     pub fn process_command(&mut self, cd: &mut CachedData, gd: &mut Resources) {
@@ -109,7 +103,7 @@ impl ActiveConsole {
 
         let mut curr_draw = TEXT_OFFSET;
 
-        for line in cd.writer.lines().skip(self.line as _) {
+        for line in cd.writer.lines().skip(cd.line as _) {
             data.font_draw(CONSOLE_FONT, line, &mut curr_draw, cd.glyph_size);
 
             curr_draw.y += cd.glyph_size.y;
@@ -126,7 +120,7 @@ impl ActiveConsole {
         }
 
         rnd.set_draw_color_f32(Rgba::new(0.5, 0.5, 0.5, 0.8));
-        chk!(rnd.fill_rect(self.scroll_bar));
+        chk!(rnd.fill_rect(cd.scroll_bar));
 
         rnd.set_draw_color_f32(old);
     }
@@ -138,7 +132,7 @@ impl ActiveConsole {
 
         self.field.clear();
         self.update_outline(cd);
-        self.scroll_bar = cd.scroll_bar(res);
+        cd.update_scroll_bar(res);
     }
 
     fn draw_prompt(&self, cd: &CachedData, data: &Resources, mut origin: PointF32) {

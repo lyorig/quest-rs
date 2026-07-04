@@ -2,7 +2,7 @@ use std::str::Split;
 
 use crate::{
     atlas::viewer::Viewer,
-    console::{CONSOLE_FONT, CachedData},
+    console::CachedData,
     game::{Game, resources::Resources},
 };
 
@@ -111,12 +111,11 @@ fn cmd_atlas(game: &mut Resources, out: &mut CachedData, mut args: ArgsSplit) {
 }
 
 fn cmd_clear(game: &mut Resources, cd: &mut CachedData, _: ArgsSplit) {
-    game.font_free(CONSOLE_FONT, cd.writer.data());
-    cd.writer.clear();
+    cd.clear(game);
 }
 
 const COMMANDS: [Command; 7] = [
-    // NOTE: This needs to be the first command.
+    // NOTE: `help` needs to be the first command.
     Command::new("help", "Print a command's provided help text.", cmd_help),
     Command::new("exit", "Exit the game (push a quit event).", cmd_exit),
     Command::new("atlas", "Manipulate the texture atlas.", cmd_atlas),

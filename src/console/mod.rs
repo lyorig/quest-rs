@@ -46,7 +46,7 @@ impl Console {
                 data.font_alloc(CONSOLE_FONT, self.data.writer.data());
                 command::help_iter().for_each(|s| data.font_alloc(CONSOLE_FONT, s));
 
-                self.state = Some(ActiveConsole::new(data, &mut self.data));
+                self.state = Some(ActiveConsole::new(&mut self.data));
             }
 
             Some(ac) => {
