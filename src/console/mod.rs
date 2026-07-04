@@ -66,7 +66,7 @@ impl Console {
         }
     }
 
-    /// If the console is active, calls `ActiveConsole::process_key()`.
+    /// If the console is active, calls [`ActiveConsole::process_key`].
     /// Otherwise, does nothing.
     pub fn process_key(&mut self, data: &mut Resources, k: SDL_Keycode) {
         if let Some(ac) = &mut self.state {
@@ -74,7 +74,7 @@ impl Console {
         }
     }
 
-    /// If the console is active, calls `ActiveConsole::process_str()`.
+    /// If the console is active, calls [`ActiveConsole::process_str`].
     /// Otherwise, does nothing.
     pub fn process_str(&mut self, data: &mut Resources, text: &str) {
         if let Some(ac) = &mut self.state {
@@ -82,7 +82,7 @@ impl Console {
         }
     }
 
-    /// If the console is active, calls `ActiveConsole::draw()`.
+    /// If the console is active, calls [`ActiveConsole::draw()`].
     /// Otherwise, does nothing.
     pub fn draw(&mut self, data: &Resources) {
         if let Some(ac) = &mut self.state {

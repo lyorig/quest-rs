@@ -5,7 +5,7 @@ use halcyon::{
     rect::{PointF32, RectF32},
     traits::{ColorModF32, Resource},
 };
-use sdl3_sys::keycode::SDL_Keycode;
+use sdl3_sys::{events::SDL_MouseWheelEvent, keycode::SDL_Keycode, mouse::SDL_MouseWheelDirection};
 
 use crate::{
     chk,
@@ -25,6 +25,8 @@ pub struct ActiveConsole {
     cursor_time: Duration,
 
     scroll_bar: RectF32,
+
+    line: u32,
 }
 
 impl ActiveConsole {
@@ -34,6 +36,7 @@ impl ActiveConsole {
             cursor_pos: data.input_x_origin,
             cursor_time: Duration::ZERO,
             scroll_bar: data.scroll_bar(res),
+            line: 0,
         }
     }
 
@@ -65,6 +68,20 @@ impl ActiveConsole {
         }
     }
 
+    pub fn process_mouse(&mut self, cd: &CachedData, m: SDL_MouseWheelEvent) {
+        let val = if m.direction == SDL_MouseWheelDirection::NORMAL {
+            m.integer_y
+        } else {
+            -m.integer_y
+        };
+
+        let max = cd.writer.lines().count() as i32;
+        let new = self.line.cast_signed() + val;
+        let clamped = new.clamp(0, max);
+
+        self.line = clamped as _;
+    }
+
     pub fn process_command(&mut self, cd: &mut CachedData, gd: &mut Resources) {
         let mut args = self.field.text.split(' ');
         if let Some(name) = args.next()
@@ -92,7 +109,7 @@ impl ActiveConsole {
 
         let mut curr_draw = TEXT_OFFSET;
 
-        for line in cd.writer.lines() {
+        for line in cd.writer.lines().skip(self.line as _) {
             data.font_draw(CONSOLE_FONT, line, &mut curr_draw, cd.glyph_size);
 
             curr_draw.y += cd.glyph_size.y;

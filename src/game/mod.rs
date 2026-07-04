@@ -94,6 +94,11 @@ impl Game<'_> {
                     SDLK_RETURN => self.process_command(),
                     other => self.console.process_key(&mut self.data, other),
                 },
+                Event::MouseWheelMotion(m) => {
+                    if let Some(ref mut ac) = self.console.state {
+                        ac.process_mouse(&mut self.console.data, m);
+                    }
+                }
                 Event::TextInput(ti) => {
                     let text = unsafe { c_ptr_to_str(ti.text) };
                     self.console.process_str(&mut self.data, text);
