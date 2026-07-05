@@ -9,7 +9,7 @@ pub mod store;
 
 /// A Halcyon Font whose glyphs are cached in an [`Atlas`].
 pub struct Font<'t> {
-    font: ttf::Font<'t>,
+    pub font: ttf::Font<'t>,
     map: GlyphMap,
 }
 

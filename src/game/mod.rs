@@ -31,7 +31,7 @@ pub struct Game<'t> {
 impl Game<'_> {
     pub fn new<'t>(ttf: &'t ttf::Context) -> SdlResult<Game<'t>> {
         let window = WindowBuilder::new()
-            .size(Point::new(1280, 720))
+            .fullscreen(true)
             .position(Point::new(Window::POS_CENTERED, Window::POS_CENTERED))
             .title(c"HalodaQuest")
             .build()?;

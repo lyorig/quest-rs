@@ -1,5 +1,7 @@
 use std::str::Split;
 
+use halcyon::traits::Resource;
+
 use crate::{
     atlas::viewer::Viewer,
     console::CachedData,
@@ -65,6 +67,14 @@ fn cmd_font(game: &mut Resources, out: &mut CachedData, mut args: ArgsSplit) {
         "gc" => {
             let msg = format!("freed {} glyphs", game.font_gc_all());
             out.writer.writeln(&msg);
+        }
+        "list" => {
+            for (i, f) in game.fonts.iter().map(|f| f.font.as_ref()).enumerate() {
+                let fam = f.family();
+                let mono = if f.is_mono() { " (mono)" } else { "" };
+                let msg = format!("{i}: {fam}{mono}");
+                out.writer.writeln(&msg);
+            }
         }
         _ => {
             let fmt = format!("font: unknown subcommand \"{arg}\"");

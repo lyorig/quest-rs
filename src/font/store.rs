@@ -40,6 +40,10 @@ impl FontStore<'_> {
         self.array.iter_mut().fold(0, |acc, f| acc + f.gc(atlas))
     }
 
+    pub fn iter(&self) -> impl Iterator<Item = &Font<'_>> {
+        self.array.iter()
+    }
+
     pub fn draw(
         &self,
         id: FontId,

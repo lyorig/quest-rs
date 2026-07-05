@@ -88,7 +88,7 @@ impl CachedData {
             writer: ConsoleWriter::new(),
             scroll_bar: RectF32::ZEROED,
             line: 0,
-            max_lines: amnt,
+            max_lines: amnt - 1,
         }
     }
 
