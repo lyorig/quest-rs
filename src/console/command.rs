@@ -144,6 +144,6 @@ pub fn help_iter() -> impl Iterator<Item = &'static str> {
 }
 
 fn help_exact(cmd: &Command, out: &mut CachedData) {
-    out.writer
-        .writeln(&format!("help: {} => {}", cmd.name, cmd.help))
+    let data = format!("help: {} => {}", cmd.name, cmd.help);
+    out.writer.writeln(&data)
 }

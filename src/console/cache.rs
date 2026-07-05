@@ -2,7 +2,6 @@ use halcyon::rect::{PointF32, RectF32};
 
 use crate::{
     console::{CONSOLE_FONT, PREFIX_TEXT, active::TEXT_OFFSET, writer::ConsoleWriter},
-    dprintln,
     game::resources::Resources,
 };
 
@@ -51,9 +50,9 @@ const PLACEHOLDERS: [&str; 41] = [
 ];
 
 /// Not all data needs to/should be recreated every time the console is activated
-/// (i.e. on every `ActiveConsole::new()`). This struct aims to achieve just
+/// (i.e. on every [`crate::console::ActiveConsole::new`]). This struct aims to achieve just
 /// that, while also preventing double-mutable-borrow errors that would otherwise
-/// occur if the calling `Console` passed itself as a parameter.
+/// occur if the calling [`crate::console::Console`] passed itself as a parameter.
 pub struct CachedData {
     /// The current index into [`PLACEHOLDERS`] used for
     /// generating, well, placeholders.
@@ -75,11 +74,9 @@ pub struct CachedData {
 
 impl CachedData {
     pub fn new(res: &Resources) -> Self {
-        let glyph_size = PointF32::new(16.0, 32.0);
+        let glyph_size = res.fonts.glyph_size(CONSOLE_FONT).as_f32();
         let wnd_y = res.renderer.output_size().y;
         let amnt = wnd_y / glyph_size.y as i32;
-
-        dprintln!("Console max lines = {amnt}");
 
         Self {
             placeholder_index: 0,

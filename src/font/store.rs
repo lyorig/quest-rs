@@ -1,4 +1,9 @@
-use halcyon::{rect::PointF32, resource_loader::ResourceLoader, ttf};
+use halcyon::{
+    rect::{PointF32, PointI32},
+    resource_loader::ResourceLoader,
+    traits::Resource,
+    ttf::{self, Text},
+};
 
 use crate::{atlas::Atlas, font::Font, game::resources::Resources};
 
@@ -35,7 +40,7 @@ impl FontStore<'_> {
         self.array[id.as_index()].gc(atlas);
     }
 
-    /// Returns the total amount of fonts freed.
+    /// Returns the total amount of glyphs freed.
     pub fn gc_all(&mut self, atlas: &mut Atlas) -> usize {
         self.array.iter_mut().fold(0, |acc, f| acc + f.gc(atlas))
     }
@@ -53,5 +58,11 @@ impl FontStore<'_> {
         glyph_size: PointF32,
     ) {
         self.array[id.as_index()].draw(text, res, origin, glyph_size)
+    }
+
+    pub fn glyph_size(&self, id: FontId) -> PointI32 {
+        let f = self.array[id.as_index()].font.as_ref();
+        let tx = Text::new(f, "X").unwrap();
+        tx.size()
     }
 }

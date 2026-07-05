@@ -29,19 +29,19 @@ impl Font<'_> {
         }
     }
 
-    /// Calls [`GlyphMap::retain()`] on the contained map; see its
+    /// Calls [`GlyphMap::retain`] on the contained map; see its
     /// documentation for more information.
     pub fn alloc(&mut self, text: &str, atlas: &mut Atlas) {
         self.map.retain(atlas, self.font.as_ref(), text);
     }
 
-    /// Calls [`GlyphMap::release()`] on the contained map; see its
+    /// Calls [`GlyphMap::release`] on the contained map; see its
     /// documentation for more information.
     pub fn free(&mut self, text: &str) {
         self.map.release(text);
     }
 
-    /// Calls [`GlyphMap::gc()`] on the contained map; see its
+    /// Calls [`GlyphMap::gc`] on the contained map; see its
     /// documentation for more information.
     pub fn gc(&mut self, atlas: &mut Atlas) -> usize {
         self.map.gc(atlas)
