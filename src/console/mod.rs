@@ -26,9 +26,9 @@ pub struct Console {
 }
 
 impl Console {
-    pub fn new() -> Console {
+    pub fn new(res: &Resources) -> Console {
         Console {
-            data: CachedData::new(),
+            data: CachedData::new(res),
             state: None,
         }
     }
@@ -58,9 +58,6 @@ impl Console {
                 data.font_free(CONSOLE_FONT, &ac.field.text);
                 command::help_iter().for_each(|s| data.font_free(CONSOLE_FONT, s));
 
-                // NOTE: Only for debug purposes.
-                data.font_gc(CONSOLE_FONT);
-
                 self.state = None;
             }
         }
@@ -82,7 +79,7 @@ impl Console {
         }
     }
 
-    /// If the console is active, calls [`ActiveConsole::draw()`].
+    /// If the console is active, calls [`ActiveConsole::draw`].
     /// Otherwise, does nothing.
     pub fn draw(&mut self, data: &Resources) {
         if let Some(ac) = &mut self.state {

@@ -62,18 +62,25 @@ impl ActiveConsole {
         }
     }
 
-    pub fn process_mouse(&mut self, cd: &mut CachedData, m: SDL_MouseWheelEvent) {
+    pub fn process_mouse(
+        &mut self,
+        res: &mut Resources,
+        cd: &mut CachedData,
+        m: SDL_MouseWheelEvent,
+    ) {
         let val = if m.direction == SDL_MouseWheelDirection::NORMAL {
             m.integer_y
         } else {
             -m.integer_y
         };
 
-        let max = cd.writer.lines().count() as i32;
+        let max = cd.bottom();
         let new = cd.line.cast_signed() + val;
-        let clamped = new.clamp(0, max);
+        let clamped = new.clamp(0, max as _);
 
         cd.line = clamped as _;
+
+        cd.update_scroll_bar(res);
     }
 
     pub fn process_command(&mut self, cd: &mut CachedData, gd: &mut Resources) {

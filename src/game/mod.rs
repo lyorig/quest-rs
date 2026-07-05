@@ -41,7 +41,7 @@ impl Game<'_> {
 
         let res_ldr = ResourceLoader::from_path(Path::new("/usr/local/share/quest"));
         let data = Resources::new(Atlas::new(), renderer, window, FontStore::new(ttf, res_ldr));
-        let console = Console::new();
+        let console = Console::new(&data);
         let sched = Scheduler::new();
 
         Ok(Game {
@@ -96,7 +96,7 @@ impl Game<'_> {
                 },
                 Event::MouseWheelMotion(m) => {
                     if let Some(ref mut ac) = self.console.state {
-                        ac.process_mouse(&mut self.console.data, m);
+                        ac.process_mouse(&mut self.data, &mut self.console.data, m);
                     }
                 }
                 Event::TextInput(ti) => {

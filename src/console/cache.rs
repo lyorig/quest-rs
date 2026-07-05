@@ -2,6 +2,7 @@ use halcyon::rect::{PointF32, RectF32};
 
 use crate::{
     console::{CONSOLE_FONT, PREFIX_TEXT, active::TEXT_OFFSET, writer::ConsoleWriter},
+    dprintln,
     game::resources::Resources,
 };
 
@@ -68,11 +69,17 @@ pub struct CachedData {
 
     pub scroll_bar: RectF32,
     pub line: u32,
+
+    pub max_lines: i32,
 }
 
 impl CachedData {
-    pub fn new() -> Self {
+    pub fn new(res: &Resources) -> Self {
         let glyph_size = PointF32::new(16.0, 32.0);
+        let wnd_y = res.renderer.output_size().y;
+        let amnt = wnd_y / glyph_size.y as i32;
+
+        dprintln!("Console max lines = {amnt}");
 
         Self {
             placeholder_index: 0,
@@ -81,6 +88,7 @@ impl CachedData {
             writer: ConsoleWriter::new(),
             scroll_bar: RectF32::ZEROED,
             line: 0,
+            max_lines: amnt,
         }
     }
 
@@ -107,12 +115,27 @@ impl CachedData {
         let ratio = wndy / height;
         let bar_height = wndy * ratio;
 
-        self.scroll_bar = RectF32::xywh(sz.x as f32 - 10., 0., 10., bar_height);
+        let x_ratio = self.line as f32 / self.bottom() as f32;
+
+        self.scroll_bar = RectF32::xywh(
+            sz.x as f32 - 10.,
+            (wndy - bar_height) * x_ratio,
+            10.,
+            bar_height,
+        );
     }
 
     pub fn clear(&mut self, res: &mut Resources) {
         res.font_free(CONSOLE_FONT, self.writer.data());
         self.writer.clear();
         self.line = 0;
+    }
+
+    pub fn bottom(&self) -> usize {
+        self.writer
+            .lines()
+            .count()
+            .saturating_sub_signed(self.max_lines as _)
+            + 1
     }
 }
