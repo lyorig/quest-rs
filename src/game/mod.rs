@@ -40,7 +40,9 @@ impl Game<'_> {
         renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
 
         let res_ldr = ResourceLoader::from_path(Path::new("/usr/local/share/quest"));
-        let data = Resources::new(Atlas::new(), renderer, window, FontStore::new(ttf, res_ldr));
+        let mut atlas = Atlas::new();
+        let store = FontStore::new(ttf, res_ldr, &mut atlas);
+        let data = Resources::new(atlas, renderer, window, store);
         let console = Console::new(&data);
         let sched = Scheduler::new();
 
@@ -54,9 +56,7 @@ impl Game<'_> {
     pub fn main_loop(&mut self) {
         loop {
             let old = self.data.renderer.draw_color_f32();
-            self.data
-                .renderer
-                .set_draw_color_f32(Rgba::rgb(0.0, 0.0, 0.75));
+            self.data.renderer.set_draw_color_f32(Rgba::BLACK);
 
             chk!(self.data.renderer.clear());
 

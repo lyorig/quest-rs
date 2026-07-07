@@ -7,9 +7,14 @@ use halcyon::{
 
 use crate::{
     atlas::Atlas,
-    font::store::{FontId, FontStore},
+    font::{
+        provider::PreloadedGlyphMap,
+        store::{FontId, FontStore},
+    },
     util,
 };
+
+type GP = PreloadedGlyphMap;
 
 pub struct Resources<'t> {
     pub atlas: Atlas,
@@ -17,7 +22,10 @@ pub struct Resources<'t> {
     pub renderer: Renderer,
     pub window: Window,
 
-    pub fonts: FontStore<'t>,
+    pub fonts: FontStore<'t, GP>,
+
+    /// Caches the time at which the frame began, so that all calculations within a frame
+    /// are consistent and only a single `rdtsc` (or similar) is performed.
     pub now: Instant,
 }
 
@@ -26,7 +34,7 @@ impl Resources<'_> {
         atlas: Atlas,
         renderer: Renderer,
         window: Window,
-        fonts: FontStore<'t>,
+        fonts: FontStore<'t, GP>,
     ) -> Resources<'t> {
         Resources {
             atlas,
@@ -43,14 +51,6 @@ impl Resources<'_> {
 
     pub fn font_free(&mut self, i: FontId, text: &str) {
         self.fonts.free(i, text);
-    }
-
-    pub fn font_gc(&mut self, i: FontId) {
-        self.fonts.gc(i, &mut self.atlas);
-    }
-
-    pub fn font_gc_all(&mut self) -> usize {
-        self.fonts.gc_all(&mut self.atlas)
     }
 
     pub fn font_draw(&self, id: FontId, text: &str, origin: &mut PointF32, glyph_size: PointF32) {

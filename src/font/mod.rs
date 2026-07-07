@@ -2,19 +2,24 @@ use std::ffi::CStr;
 
 use halcyon::{rect::PointF32, traits::Resource, ttf};
 
-use crate::{atlas::Atlas, font::glyph_map::GlyphMap, game::resources::Resources};
+use crate::{atlas::Atlas, font::provider::GlyphProvider, game::resources::Resources};
 
-pub mod glyph_map;
+pub mod provider;
 pub mod store;
 
 /// A Halcyon Font whose glyphs are cached in an [`Atlas`].
-pub struct Font<'t> {
+pub struct Font<'t, GP: GlyphProvider> {
     pub font: ttf::Font<'t>,
-    map: GlyphMap,
+    map: GP,
 }
 
-impl Font<'_> {
-    pub fn new<'t>(ttf: &'t ttf::Context, font_path: &CStr, size: f32) -> Font<'t> {
+impl<GP: GlyphProvider> Font<'_, GP> {
+    pub fn new<'t>(
+        ttf: &'t ttf::Context,
+        font_path: &CStr,
+        size: f32,
+        atlas: &mut Atlas,
+    ) -> Font<'t, GP> {
         let font = ttf.open(font_path, size).expect("Cannot open font");
 
         assert!(
@@ -23,28 +28,21 @@ impl Font<'_> {
             font.family()
         );
 
-        Font {
-            font,
-            map: GlyphMap::new(),
-        }
+        let map = GP::new(atlas, font.as_ref());
+
+        Font { font, map }
     }
 
-    /// Calls [`GlyphMap::retain`] on the contained map; see its
+    /// Calls [`GlyphProvider::retain`] on the contained map; see its
     /// documentation for more information.
     pub fn alloc(&mut self, text: &str, atlas: &mut Atlas) {
         self.map.retain(atlas, self.font.as_ref(), text);
     }
 
-    /// Calls [`GlyphMap::release`] on the contained map; see its
+    /// Calls [`GlyphProvider::release`] on the contained map; see its
     /// documentation for more information.
     pub fn free(&mut self, text: &str) {
         self.map.release(text);
-    }
-
-    /// Calls [`GlyphMap::gc`] on the contained map; see its
-    /// documentation for more information.
-    pub fn gc(&mut self, atlas: &mut Atlas) -> usize {
-        self.map.gc(atlas)
     }
 
     pub fn draw(&self, text: &str, res: &Resources, origin: &mut PointF32, glyph_size: PointF32) {

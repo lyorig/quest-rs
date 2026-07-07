@@ -5,7 +5,11 @@ use halcyon::{
     ttf::{self, Text},
 };
 
-use crate::{atlas::Atlas, font::Font, game::resources::Resources};
+use crate::{
+    atlas::Atlas,
+    font::{Font, provider::GlyphProvider},
+    game::resources::Resources,
+};
 
 pub struct FontId(u8);
 
@@ -18,13 +22,17 @@ impl FontId {
 }
 
 /// Contains all fonts used in the game.
-pub struct FontStore<'t> {
-    array: [Font<'t>; 1],
+pub struct FontStore<'t, GP: GlyphProvider> {
+    array: [Font<'t, GP>; 1],
 }
 
-impl FontStore<'_> {
-    pub fn new<'t>(ttf: &'t ttf::Context, rl: ResourceLoader) -> FontStore<'t> {
-        let ubuntu = Font::new(ttf, &rl.resolve("UbuntuMono.ttf"), 32.0);
+impl<GP: GlyphProvider> FontStore<'_, GP> {
+    pub fn new<'t>(
+        ttf: &'t ttf::Context,
+        rl: ResourceLoader,
+        atlas: &mut Atlas,
+    ) -> FontStore<'t, GP> {
+        let ubuntu = Font::new(ttf, &rl.resolve("UbuntuMono.ttf"), 32.0, atlas);
         FontStore { array: [ubuntu] }
     }
 
@@ -36,16 +44,7 @@ impl FontStore<'_> {
         self.array[id.as_index()].free(text);
     }
 
-    pub fn gc(&mut self, id: FontId, atlas: &mut Atlas) {
-        self.array[id.as_index()].gc(atlas);
-    }
-
-    /// Returns the total amount of glyphs freed.
-    pub fn gc_all(&mut self, atlas: &mut Atlas) -> usize {
-        self.array.iter_mut().fold(0, |acc, f| acc + f.gc(atlas))
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = &Font<'_>> {
+    pub fn iter(&self) -> impl Iterator<Item = &Font<'_, GP>> {
         self.array.iter()
     }
 

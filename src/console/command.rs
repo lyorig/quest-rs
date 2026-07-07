@@ -64,10 +64,6 @@ fn cmd_font(game: &mut Resources, out: &mut CachedData, mut args: ArgsSplit) {
     };
 
     match arg {
-        "gc" => {
-            let msg = format!("freed {} glyphs", game.font_gc_all());
-            out.writer.writeln(&msg);
-        }
         "list" => {
             for (i, f) in game.fonts.iter().map(|f| f.font.as_ref()).enumerate() {
                 let fam = f.family();
