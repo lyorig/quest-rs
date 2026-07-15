@@ -28,13 +28,14 @@ pub struct Game<'t> {
     console: Console,
 }
 
-fn datadir() -> Box<Path> {
+fn datadir() -> &'static Path {
     let mut pb = dirs::data_dir().unwrap();
     pb.push("quest");
 
     dprintln!("datadir = {pb:?}");
 
-    pb.into_boxed_path()
+    let bx = pb.into_boxed_path();
+    Box::leak(bx)
 }
 
 impl Game<'_> {
@@ -48,7 +49,7 @@ impl Game<'_> {
         let renderer = RendererBuilder::new(window.as_ref()).vsync(1).build()?;
         renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
 
-        let res_ldr = ResourceLoader::from_path(Box::leak(datadir()));
+        let res_ldr = ResourceLoader::from_path(datadir());
         let mut atlas = Atlas::new();
         let store = FontStore::new(ttf, res_ldr, &mut atlas);
         let data = Resources::new(atlas, renderer, window, store);

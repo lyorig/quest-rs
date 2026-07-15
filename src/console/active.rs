@@ -75,7 +75,7 @@ impl ActiveConsole {
         };
 
         let max = cd.bottom();
-        let new = cd.line.cast_signed() + val;
+        let new = cd.line.cast_signed() - val;
         let clamped = new.clamp(0, max as _);
 
         cd.line = clamped as _;
