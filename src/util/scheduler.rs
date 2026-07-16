@@ -24,7 +24,7 @@ impl<T> Eq for Command<T> {}
 
 impl<T> PartialOrd for Command<T> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.when.partial_cmp(&other.when)
+        Some(self.cmp(other))
     }
 }
 
@@ -51,17 +51,13 @@ impl<T> Scheduler<T> {
     }
 
     pub fn update(&mut self, now: Instant, this: &mut T) {
-        loop {
-            let Some(Reverse(c)) = self.heap.peek() else {
-                break;
-            };
-
+        while let Some(Reverse(c)) = self.heap.peek() {
             if c.when > now {
                 break;
             }
 
-            if let Some(Reverse(foo)) = self.heap.pop() {
-                (foo.func)(this);
+            if let Some(Reverse(cmd)) = self.heap.pop() {
+                (cmd.func)(this);
             }
         }
     }
