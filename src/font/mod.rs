@@ -1,6 +1,6 @@
 use std::ffi::CStr;
 
-use halcyon::{rect::PointF32, traits::Resource, ttf};
+use halcyon::{defs::SdlResult, rect::PointF32, traits::Resource, ttf};
 
 use crate::{atlas::Atlas, font::provider::GlyphProvider, game::resources::Resources};
 
@@ -19,8 +19,8 @@ impl<GP: GlyphProvider> Font<'_, GP> {
         font_path: &CStr,
         size: f32,
         atlas: &mut Atlas,
-    ) -> Font<'t, GP> {
-        let font = ttf.open(font_path, size).expect("Cannot open font");
+    ) -> SdlResult<Font<'t, GP>> {
+        let font = ttf.open(font_path, size)?;
 
         assert!(
             font.is_mono(),
@@ -30,7 +30,7 @@ impl<GP: GlyphProvider> Font<'_, GP> {
 
         let map = GP::new(atlas, font.as_ref());
 
-        Font { font, map }
+        Ok(Font { font, map })
     }
 
     /// Calls [`GlyphProvider::retain`] on the contained map; see its

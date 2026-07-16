@@ -1,6 +1,6 @@
 use halcyon::{
+    defs::SdlResult,
     rect::{PointF32, PointI32},
-    resource_loader::ResourceLoader,
     traits::Resource,
     ttf::{self, Text},
 };
@@ -9,6 +9,7 @@ use crate::{
     atlas::Atlas,
     font::{Font, provider::GlyphProvider},
     game::resources::Resources,
+    util::resource_loader::ResourceLoader,
 };
 
 pub struct FontId(u8);
@@ -31,9 +32,9 @@ impl<GP: GlyphProvider> FontStore<'_, GP> {
         ttf: &'t ttf::Context,
         rl: ResourceLoader,
         atlas: &mut Atlas,
-    ) -> FontStore<'t, GP> {
-        let ubuntu = Font::new(ttf, &rl.resolve("UbuntuMono.ttf"), 32.0, atlas);
-        FontStore { array: [ubuntu] }
+    ) -> SdlResult<FontStore<'t, GP>> {
+        let ubuntu = Font::new(ttf, &rl.resolve("UbuntuMono.ttf"), 32.0, atlas)?;
+        Ok(FontStore { array: [ubuntu] })
     }
 
     pub fn alloc(&mut self, id: FontId, text: &str, atlas: &mut Atlas) {

@@ -1,4 +1,4 @@
-use std::{path::Path, time::Instant};
+use std::time::Instant;
 
 use halcyon::{
     color::Rgba,
@@ -6,7 +6,6 @@ use halcyon::{
     event::{Event, EventIter},
     rect::Point,
     renderer::RendererBuilder,
-    resource_loader::ResourceLoader,
     traits::{BlendMode, Resource},
     ttf,
     util::c_ptr_to_str,
@@ -16,8 +15,12 @@ use halcyon::{
 use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
 
 use crate::{
-    atlas::Atlas, chk, console::Console, dprintln, font::store::FontStore,
-    game::resources::Resources, util::scheduler::Scheduler,
+    atlas::Atlas,
+    chk,
+    console::Console,
+    font::store::FontStore,
+    game::resources::Resources,
+    util::{resource_loader::ResourceLoader, scheduler::Scheduler},
 };
 
 pub mod resources;
@@ -26,16 +29,6 @@ pub struct Game<'t> {
     pub data: Resources<'t>,
     sched: Scheduler<Resources<'t>>,
     console: Console,
-}
-
-fn datadir() -> &'static Path {
-    let mut pb = dirs::data_dir().unwrap();
-    pb.push("quest");
-
-    dprintln!("datadir = {pb:?}");
-
-    let bx = pb.into_boxed_path();
-    Box::leak(bx)
 }
 
 impl Game<'_> {
@@ -49,9 +42,9 @@ impl Game<'_> {
         let renderer = RendererBuilder::new(window.as_ref()).vsync(1).build()?;
         renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
 
-        let res_ldr = ResourceLoader::from_path(datadir());
+        let res_ldr = ResourceLoader::from_pref()?;
         let mut atlas = Atlas::new();
-        let store = FontStore::new(ttf, res_ldr, &mut atlas);
+        let store = FontStore::new(ttf, res_ldr, &mut atlas)?;
         let data = Resources::new(atlas, renderer, window, store);
         let console = Console::new(&data);
         let sched = Scheduler::new();
