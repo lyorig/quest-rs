@@ -24,9 +24,8 @@ impl ResourceLoader {
 
         let total_len = self.root.len() + path.len();
         let mut vec = Vec::<u8>::with_capacity(total_len);
-
-        self.root.as_bytes().iter().for_each(|&b| vec.push(b));
-        path.as_bytes().iter().for_each(|&b| vec.push(b));
+        vec.extend_from_slice(self.root.as_bytes());
+        vec.extend_from_slice(path.as_bytes());
 
         let cs = unsafe { CString::from_vec_unchecked(vec) };
         cs.into_boxed_c_str()
