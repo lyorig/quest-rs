@@ -120,7 +120,22 @@ fn cmd_clear(game: &mut Resources, cd: &mut CachedData, _: ArgsSplit) {
     cd.clear(game);
 }
 
-const COMMANDS: [Command; 7] = [
+fn cmd_commands(_: &mut Resources, out: &mut CachedData, mut args: ArgsSplit) {
+    out.writer.writeln("available commands:");
+    if args.next().is_some_and(|c| c == "--with-help") {
+        COMMANDS.iter().for_each(|c| {
+            let msg = format!("{}: {}", c.name, c.help);
+            out.writer.writeln(&msg)
+        });
+    } else {
+        COMMANDS
+            .iter()
+            .map(|c| c.name)
+            .for_each(|n| out.writer.writeln(n));
+    }
+}
+
+const COMMANDS: [Command; 8] = [
     // NOTE: `help` needs to be the first command.
     Command::new("help", "Print a command's provided help text.", cmd_help),
     Command::new("exit", "Exit the game (push a quit event).", cmd_exit),
@@ -129,6 +144,7 @@ const COMMANDS: [Command; 7] = [
     Command::new("test-args", "Print all arguments.", cmd_test_args),
     Command::new("font", "Manipulate game fonts.", cmd_font),
     Command::new("clear", "Clear the console.", cmd_clear),
+    Command::new("commands", "List all commands.", cmd_commands),
 ];
 
 pub fn find(name: &str) -> Option<&Command> {

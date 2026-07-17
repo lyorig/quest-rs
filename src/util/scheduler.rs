@@ -51,14 +51,11 @@ impl<T> Scheduler<T> {
     }
 
     pub fn update(&mut self, now: Instant, this: &mut T) {
-        while let Some(Reverse(c)) = self.heap.peek() {
-            if c.when > now {
-                break;
-            }
-
-            if let Some(Reverse(cmd)) = self.heap.pop() {
-                (cmd.func)(this);
-            }
+        while let Some(Reverse(c)) = self.heap.peek()
+            && c.when > now
+        {
+            let cmd = unsafe { self.heap.pop().unwrap_unchecked() }.0;
+            (cmd.func)(this);
         }
     }
 }
