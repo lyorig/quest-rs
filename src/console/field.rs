@@ -156,7 +156,8 @@ impl Field {
 
             SDLK_V => {
                 if halcyon::keyboard::mod_state() & SDL_KMOD_CTRL != 0 && clipboard::has_text() {
-                    self.process_str(&clipboard::text(), gd);
+                    let clip = clipboard::text();
+                    self.process_str(clip.to_str(), gd);
 
                     return true;
                 }
