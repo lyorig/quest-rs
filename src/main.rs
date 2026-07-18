@@ -11,6 +11,7 @@ mod debug;
 mod font;
 mod game;
 mod scene;
+mod ui;
 mod util;
 
 fn fail(e: Error) {
