@@ -23,12 +23,14 @@ impl ResourceLoader {
             "ResourceLoader::resolve() should never be given a Path with embedded NUL bytes";
 
         let root = self.root.to_str();
-        let total_len = root.len() + path.len();
+        let total_len = root.len() + path.len() + 1;
+
         let mut vec = Vec::<u8>::with_capacity(total_len);
         vec.extend_from_slice(root.as_bytes());
         vec.extend_from_slice(path.as_bytes());
+        vec.push(b'\0');
 
-        let cs = unsafe { CString::from_vec_unchecked(vec) };
+        let cs = unsafe { CString::from_vec_with_nul_unchecked(vec) };
         cs.into_boxed_c_str()
     }
 }
