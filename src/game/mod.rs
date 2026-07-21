@@ -18,7 +18,6 @@ use crate::{
     atlas::Atlas,
     chk,
     console::Console,
-    dprintln,
     font::store::FontStore,
     game::resources::Resources,
     ui::{Layer, ResizeInfo},
@@ -111,7 +110,6 @@ impl Game<'_> {
                 }
                 Event::WindowResized(r) => {
                     let ri = ResizeInfo::new(r);
-                    dprintln!("Resizing to {}", ri.new_size);
                     self.console.resize(&ri, &mut self.data);
                 }
                 _ => (),

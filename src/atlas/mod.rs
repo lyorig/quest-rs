@@ -348,4 +348,11 @@ impl Atlas {
             }
         }
     }
+
+    pub fn tex(&self) -> Ref<'_, Texture> {
+        self.texture
+            .as_ref()
+            .expect("Atlas texture not initialized")
+            .as_ref()
+    }
 }

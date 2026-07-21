@@ -116,7 +116,7 @@ impl ActiveConsole {
                 .expect("Shouldn't have empty lines here");
 
             if first == b'\0' {
-                let texref = data.atlas.texture.as_ref().map(Resource::as_ref).unwrap();
+                let texref = data.atlas.tex();
                 let old = texref.xchg_rgb_mod_f32(Rgb::GREEN);
 
                 data.font_draw(CONSOLE_FONT, PREFIX_TEXT, &mut curr_draw, cd.glyph_size);
@@ -158,7 +158,7 @@ impl ActiveConsole {
     }
 
     fn draw_prompt(&self, cd: &CachedData, data: &Resources, mut origin: PointF32) {
-        let tex = data.atlas.texture.as_ref().unwrap().as_ref();
+        let tex = data.atlas.tex();
         let old = tex.xchg_rgb_mod_f32(Rgb::GREEN);
 
         data.font_draw(CONSOLE_FONT, PREFIX_TEXT, &mut origin, cd.glyph_size);
