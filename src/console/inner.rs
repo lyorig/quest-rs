@@ -15,17 +15,17 @@ use crate::{
 
 pub const TEXT_OFFSET: PointF32 = PointF32::new(10.0, 10.0);
 
-pub struct ActiveConsole {
+pub struct Inner {
     pub field: Field,
 
     /// Where the cursor is currently being drawn to.
-    /// Only updated when [`ActiveConsole::update_outline`] is called,
+    /// Only updated when [`Self::update_outline`] is called,
     /// which sets its location to correspond to the [`Field`] cursor.
     cursor_pos: f32,
     cursor_time: Duration,
 }
 
-impl ActiveConsole {
+impl Inner {
     pub fn new(data: &mut CachedData) -> Self {
         Self {
             field: Field::new(),

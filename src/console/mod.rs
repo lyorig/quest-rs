@@ -1,7 +1,7 @@
-pub mod active;
 mod cache;
-pub mod command;
+mod command;
 mod field;
+mod inner;
 mod writer;
 
 use std::time::Duration;
@@ -12,7 +12,7 @@ use sdl3_sys::keycode::*;
 
 use crate::{
     chk,
-    console::{active::ActiveConsole, cache::CachedData},
+    console::{cache::CachedData, inner::Inner},
     font::store::FontId,
     game::resources::Resources,
     ui,
@@ -23,7 +23,7 @@ const CONSOLE_FONT: FontId = FontId::UBUNTU_MONO;
 
 pub struct Console {
     pub data: CachedData,
-    pub state: Option<ActiveConsole>,
+    pub state: Option<Inner>,
 }
 
 impl Console {
@@ -47,7 +47,7 @@ impl Console {
                 data.font_alloc(CONSOLE_FONT, self.data.writer.data());
                 command::help_iter().for_each(|s| data.font_alloc(CONSOLE_FONT, s));
 
-                self.state = Some(ActiveConsole::new(&mut self.data));
+                self.state = Some(Inner::new(&mut self.data));
             }
 
             Some(ac) => {
@@ -64,7 +64,7 @@ impl Console {
         }
     }
 
-    /// If the console is active, calls [`ActiveConsole::process_key`].
+    /// If the console is active, calls [`Inner::process_key`].
     /// Otherwise, does nothing.
     pub fn process_key(&mut self, data: &mut Resources, k: SDL_Keycode) {
         if let Some(ac) = &mut self.state {
@@ -72,7 +72,7 @@ impl Console {
         }
     }
 
-    /// If the console is active, calls [`ActiveConsole::process_str`].
+    /// If the console is active, calls [`Inner::process_str`].
     /// Otherwise, does nothing.
     pub fn process_str(&mut self, data: &mut Resources, text: &str) {
         if let Some(ac) = &mut self.state {
@@ -80,7 +80,7 @@ impl Console {
         }
     }
 
-    /// If the console is active, calls [`ActiveConsole::draw`].
+    /// If the console is active, calls [`Inner::draw`].
     /// Otherwise, does nothing.
     pub fn draw(&mut self, data: &Resources) {
         if let Some(ac) = &mut self.state {

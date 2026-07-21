@@ -1,12 +1,12 @@
 /// Essentially a wrapper around a [`String`].
 /// Used for commands to output text.
 /// Also kind of contains the console history.
-pub struct ConsoleWriter {
+pub struct Writer {
     data: String,
     last_added: u32,
 }
 
-impl ConsoleWriter {
+impl Writer {
     pub fn new() -> Self {
         Self {
             data: String::new(),

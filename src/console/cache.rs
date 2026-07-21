@@ -1,7 +1,7 @@
 use halcyon::rect::{PointF32, PointI32, RectF32};
 
 use crate::{
-    console::{CONSOLE_FONT, PREFIX_TEXT, active::TEXT_OFFSET, writer::ConsoleWriter},
+    console::{CONSOLE_FONT, PREFIX_TEXT, inner::TEXT_OFFSET, writer::Writer},
     game::resources::Resources,
 };
 
@@ -50,9 +50,9 @@ const PLACEHOLDERS: [&str; 41] = [
 ];
 
 /// Not all data needs to/should be recreated every time the console is activated
-/// (i.e. on every [`crate::console::ActiveConsole::new`]). This struct aims to achieve just
+/// (i.e. on every [`super::Inner::new`]). This struct aims to achieve just
 /// that, while also preventing double-mutable-borrow errors that would otherwise
-/// occur if the calling [`crate::console::Console`] passed itself as a parameter.
+/// occur if the calling [`super::Console`] passed itself as a parameter.
 pub struct CachedData {
     /// The current index into [`PLACEHOLDERS`] used for
     /// generating, well, placeholders.
@@ -64,7 +64,7 @@ pub struct CachedData {
     /// The desired size of a console glyph.
     pub glyph_size: PointF32,
 
-    pub writer: ConsoleWriter,
+    pub writer: Writer,
 
     pub scroll_bar: RectF32,
     pub line: u32,
@@ -80,7 +80,7 @@ impl CachedData {
             placeholder_index: 0,
             input_x_origin: TEXT_OFFSET.x + glyph_size.x * (PREFIX_TEXT.len() + 1) as f32,
             glyph_size,
-            writer: ConsoleWriter::new(),
+            writer: Writer::new(),
             scroll_bar: RectF32::ZEROED,
             line: 0,
             max_lines: 0,
