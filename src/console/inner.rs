@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{fmt::Write, time::Duration};
 
 use halcyon::{
     color::{Rgb, Rgba},
@@ -89,10 +89,7 @@ impl Inner {
 
             match command::find(name) {
                 Some(c) => c.execute(gd, cd, args),
-                None => {
-                    let msg = format!("unknown command \"{name}\"");
-                    cd.writer.writeln(&msg)
-                }
+                None => _ = writeln!(cd.writer, "sh: no such command: \"{name}\""),
             }
 
             let added = cd.writer.added_since_last_check();

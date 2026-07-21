@@ -50,3 +50,10 @@ impl Writer {
         self.last_added = 0;
     }
 }
+
+impl std::fmt::Write for Writer {
+    fn write_str(&mut self, s: &str) -> std::fmt::Result {
+        self.write(s);
+        Ok(())
+    }
+}

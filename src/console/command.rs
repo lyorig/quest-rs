@@ -1,4 +1,4 @@
-use std::str::Split;
+use std::{fmt::Write, str::Split};
 
 use halcyon::traits::Resource;
 
@@ -33,8 +33,7 @@ fn cmd_help(_: &mut Resources, out: &mut CachedData, mut args: ArgsSplit) {
         Some(cmd) => match find(cmd) {
             Some(c) => help_exact(c, out),
             None => {
-                let fmt = format!("help: unknown command {cmd}");
-                out.writer.writeln(&fmt);
+                _ = writeln!(out.writer, "help: unknown command {cmd}");
             }
         },
         // No command provided, print help for the command itself.
@@ -47,19 +46,18 @@ fn cmd_exit(_: &mut Resources, _: &mut CachedData, _: ArgsSplit) {
 }
 
 fn cmd_commit(_: &mut Resources, out: &mut CachedData, _: ArgsSplit) {
-    out.writer.writeln(env!("BUILD_COMMIT_HASH"));
+    _ = writeln!(out.writer, env!("BUILD_COMMIT_HASH"));
 }
 
 fn cmd_test_args(_: &mut Resources, out: &mut CachedData, args: ArgsSplit) {
     for (i, arg) in args.enumerate() {
-        let fmt = format!("{i}: {arg}");
-        out.writer.writeln(&fmt);
+        _ = writeln!(out.writer, "{i}: {arg}");
     }
 }
 
 fn cmd_font(game: &mut Resources, out: &mut CachedData, mut args: ArgsSplit) {
     let Some(arg) = args.next() else {
-        out.writer.writeln("usage: font <subcommand>");
+        _ = writeln!(out.writer, "usage: font <subcommand>");
         return;
     };
 
@@ -68,20 +66,16 @@ fn cmd_font(game: &mut Resources, out: &mut CachedData, mut args: ArgsSplit) {
             for (i, f) in game.fonts.iter().map(|f| f.font.as_ref()).enumerate() {
                 let fam = f.family();
                 let mono = if f.is_mono() { " (mono)" } else { "" };
-                let msg = format!("{i}: {fam}{mono}");
-                out.writer.writeln(&msg);
+                _ = writeln!(out.writer, "{i}: {fam}{mono}");
             }
         }
-        _ => {
-            let fmt = format!("font: unknown subcommand \"{arg}\"");
-            out.writer.writeln(&fmt);
-        }
+        _ => _ = writeln!(out.writer, "font: unknown subcommand \"{arg}\""),
     }
 }
 
 fn cmd_atlas(game: &mut Resources, out: &mut CachedData, mut args: ArgsSplit) {
     let Some(arg) = args.next() else {
-        out.writer.writeln("usage: atlas <subcommand>");
+        _ = writeln!(out.writer, "usage: atlas <subcommand>");
         return;
     };
 
@@ -95,24 +89,17 @@ fn cmd_atlas(game: &mut Resources, out: &mut CachedData, mut args: ArgsSplit) {
 
                         game.atlas.viewer = Some(viewer);
                     }
-                    Err(e) => {
-                        let msg = format!("Cannot init viewer: {e}");
-                        out.writer.writeln(&msg)
-                    }
+                    Err(e) => _ = writeln!(out.writer, "Cannot init viewer: {e}"),
                 }
             }
         }
         "close" => game.atlas.viewer = None,
         "list" => {
             for (i, data) in game.atlas.data().enumerate() {
-                let msg = format!("{i}: {data}");
-                out.writer.writeln(&msg);
+                _ = writeln!(out.writer, "{i}: {data}");
             }
         }
-        _ => {
-            let fmt = format!("atlas: unknown subcommand \"{arg}\"");
-            out.writer.writeln(&fmt);
-        }
+        _ => _ = writeln!(out.writer, "atlas: unknown subcommand \"{arg}\""),
     }
 }
 
@@ -121,17 +108,16 @@ fn cmd_clear(game: &mut Resources, cd: &mut CachedData, _: ArgsSplit) {
 }
 
 fn cmd_commands(_: &mut Resources, out: &mut CachedData, mut args: ArgsSplit) {
-    out.writer.writeln("available commands:");
+    _ = writeln!(out.writer, "available commands:");
     if args.next().is_some_and(|c| c == "--with-help") {
         COMMANDS.iter().for_each(|c| {
-            let msg = format!("{}: {}", c.name, c.help);
-            out.writer.writeln(&msg)
+            _ = writeln!(out.writer, "{}: {}", c.name, c.help);
         });
     } else {
         COMMANDS
             .iter()
             .map(|c| c.name)
-            .for_each(|n| out.writer.writeln(n));
+            .for_each(|n| _ = writeln!(out.writer, "{n}"));
     }
 }
 
@@ -156,6 +142,5 @@ pub fn help_iter() -> impl Iterator<Item = &'static str> {
 }
 
 fn help_exact(cmd: &Command, out: &mut CachedData) {
-    let data = format!("help: {} => {}", cmd.name, cmd.help);
-    out.writer.writeln(&data)
+    _ = writeln!(out.writer, "help: {} => {}", cmd.name, cmd.help);
 }
