@@ -110,10 +110,9 @@ impl ActiveConsole {
         let mut curr_draw = TEXT_OFFSET;
 
         for line in cd.writer.lines().skip(cd.line as _) {
-            let first = line
-                .bytes()
-                .next()
-                .expect("Shouldn't have empty lines here");
+            let Some(first) = line.bytes().next() else {
+                continue;
+            };
 
             if first == b'\0' {
                 let texref = data.atlas.tex();

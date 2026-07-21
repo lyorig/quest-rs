@@ -10,7 +10,7 @@ impl ConsoleWriter {
     pub fn new() -> Self {
         Self {
             data: String::new(),
-            last_added: 1,
+            last_added: 0,
         }
     }
 
@@ -19,18 +19,17 @@ impl ConsoleWriter {
     }
 
     pub fn writeln(&mut self, data: &str) {
-        self.data.push('\n');
         self.write(data);
+        self.data.push('\n');
     }
 
     pub fn write_command(&mut self, cmd: &str) {
-        self.data.push('\n');
         self.data.push('\0');
-        self.write(cmd);
+        self.writeln(cmd);
     }
 
     pub fn lines(&self) -> impl Iterator<Item = &'_ str> {
-        self.data.split('\n').skip(1)
+        self.data.split('\n')
     }
 
     pub fn data(&self) -> &str {
@@ -40,21 +39,14 @@ impl ConsoleWriter {
     /// Returns a string slice containing all text that has been
     /// added since the last call to this method.
     pub fn added_since_last_check(&mut self) -> &str {
-        if self.last_added >= self.data.len() as _ {
-            // NOTE: This fixes a situation when the last command provided no output.
-            // The `last_added` field is offset by 1 to skip over newlines,
-            // which isn't present in this case.
-            ""
-        } else {
-            let slice = &self.data[self.last_added as usize..];
-            self.last_added = (self.data.len() + 1) as _; // Compensate for \n.
+        let slice = &self.data[self.last_added as usize..];
+        self.last_added = (self.data.len() + 1) as _; // Compensate for \n.
 
-            slice
-        }
+        slice
     }
 
     pub fn clear(&mut self) {
         self.data.clear();
-        self.last_added = 1;
+        self.last_added = 0;
     }
 }
