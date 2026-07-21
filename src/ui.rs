@@ -1,18 +1,20 @@
-use halcyon::rect::{PointF32, PointI32};
+use halcyon::rect::PointI32;
+use sdl3_sys::events::SDL_WindowEvent;
+
+use crate::game::resources::Resources;
 
 pub struct ResizeInfo {
-    old_size: PointI32,
-    new_size: PointI32,
+    pub new_size: PointI32,
 }
 
 impl ResizeInfo {
-    pub fn ratio(&self) -> PointF32 {
-        let x = self.new_size.x as f32 / self.old_size.x as f32;
-        let y = self.new_size.y as f32 / self.old_size.y as f32;
-        PointF32::new(x, y)
+    pub fn new(we: SDL_WindowEvent) -> Self {
+        let new_size = PointI32::new(we.data1, we.data2);
+        Self { new_size }
     }
 }
 
+/// A UI layer which wants to respond to canvas resize events.
 pub trait Layer {
-    fn resize(&mut self, layout: &ResizeInfo);
+    fn resize(&mut self, info: &ResizeInfo, res: &mut Resources);
 }

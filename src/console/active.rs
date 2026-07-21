@@ -74,13 +74,10 @@ impl ActiveConsole {
             -m.integer_y
         };
 
-        let max = cd.bottom();
         let new = cd.line.cast_signed() - val;
-        let clamped = new.clamp(0, max as _);
+        cd.line = new.clamp(0, cd.total_lines() as _) as _;
 
-        cd.line = clamped as _;
-
-        cd.update_scroll_bar(res);
+        cd.clamp_line(res);
     }
 
     pub fn process_command(&mut self, cd: &mut CachedData, gd: &mut Resources) {

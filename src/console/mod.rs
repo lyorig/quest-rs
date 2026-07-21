@@ -15,6 +15,7 @@ use crate::{
     console::{active::ActiveConsole, cache::CachedData},
     font::store::FontId,
     game::resources::Resources,
+    ui,
 };
 
 const PREFIX_TEXT: &str = "raine1@Arctic~ %";
@@ -91,5 +92,11 @@ impl Console {
         if let Some(ac) = &mut self.state {
             ac.update_delta(elapsed);
         }
+    }
+}
+
+impl ui::Layer for Console {
+    fn resize(&mut self, layout: &ui::ResizeInfo, res: &mut Resources) {
+        self.data.resize(layout.new_size, res);
     }
 }

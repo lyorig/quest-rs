@@ -2,12 +2,9 @@ use std::ffi::{CStr, CString};
 
 use halcyon::{defs::SdlResult, sdl_string::SdlString};
 
-/// An abstraction over [`crate::base_path`] that provides
-/// utility methods for constructing `Path`s relative to the
-/// directory of the program that's running.
-///
-/// This struct is made up of a single `&'static Path`, so it's
-/// safe to clone/copy.
+/// A simple string wrapper that provides utility methods for
+/// constructing a [`std::path::Path`] relative to the directory
+/// of the program that's running.
 pub struct ResourceLoader {
     root: SdlString,
 }

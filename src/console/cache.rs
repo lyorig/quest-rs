@@ -1,4 +1,4 @@
-use halcyon::rect::{PointF32, RectF32};
+use halcyon::rect::{PointF32, PointI32, RectF32};
 
 use crate::{
     console::{CONSOLE_FONT, PREFIX_TEXT, active::TEXT_OFFSET, writer::ConsoleWriter},
@@ -75,18 +75,27 @@ pub struct CachedData {
 impl CachedData {
     pub fn new(res: &Resources) -> Self {
         let glyph_size = res.fonts.glyph_size(CONSOLE_FONT).as_f32();
-        let wnd_y = res.renderer.output_size().y;
-        let amnt = wnd_y / glyph_size.y as i32;
 
-        Self {
+        let mut ret = Self {
             placeholder_index: 0,
             input_x_origin: TEXT_OFFSET.x + glyph_size.x * (PREFIX_TEXT.len() + 1) as f32,
             glyph_size,
             writer: ConsoleWriter::new(),
             scroll_bar: RectF32::ZEROED,
             line: 0,
-            max_lines: amnt - 1,
-        }
+            max_lines: 0,
+        };
+
+        ret.resize(res.renderer.output_size(), res);
+
+        ret
+    }
+
+    pub fn resize(&mut self, size: PointI32, res: &Resources) {
+        let amnt = size.y / self.glyph_size.y as i32;
+
+        self.max_lines = amnt - 1;
+        self.clamp_line(res);
     }
 
     pub fn next_placeholder(&mut self) -> &'static str {
@@ -112,7 +121,7 @@ impl CachedData {
         let ratio = wndy / height;
         let bar_height = wndy * ratio;
 
-        let x_ratio = self.line as f32 / self.bottom() as f32;
+        let x_ratio = self.line as f32 / self.total_lines() as f32;
 
         self.scroll_bar = RectF32::xywh(
             sz.x as f32 - 10.,
@@ -128,11 +137,16 @@ impl CachedData {
         self.line = 0;
     }
 
-    pub fn bottom(&self) -> usize {
+    pub fn total_lines(&self) -> usize {
         self.writer
             .lines()
             .count()
             .saturating_sub_signed(self.max_lines as _)
             + 1
+    }
+
+    pub fn clamp_line(&mut self, res: &Resources) {
+        self.line = self.line.clamp(0, self.total_lines() as _);
+        self.update_scroll_bar(res);
     }
 }

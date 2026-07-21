@@ -18,8 +18,10 @@ use crate::{
     atlas::Atlas,
     chk,
     console::Console,
+    dprintln,
     font::store::FontStore,
     game::resources::Resources,
+    ui::{Layer, ResizeInfo},
     util::{resource_loader::ResourceLoader, scheduler::Scheduler},
 };
 
@@ -34,9 +36,10 @@ pub struct Game<'t> {
 impl Game<'_> {
     pub fn new<'t>(ttf: &'t ttf::Context) -> SdlResult<Game<'t>> {
         let window = WindowBuilder::new()
-            .fullscreen(true)
-            .position(Point::new(Window::POS_CENTERED, Window::POS_CENTERED))
             .title(c"HalodaQuest")
+            .size(Point::new(1280, 720))
+            .position(Point::new(Window::POS_CENTERED, Window::POS_CENTERED))
+            .resizable(true)
             .build()?;
 
         let renderer = RendererBuilder::new(window.as_ref()).vsync(1).build()?;
@@ -105,6 +108,11 @@ impl Game<'_> {
                 Event::TextInput(ti) => {
                     let text = unsafe { c_ptr_to_str(ti.text) };
                     self.console.process_str(&mut self.data, text);
+                }
+                Event::WindowResized(r) => {
+                    let ri = ResizeInfo::new(r);
+                    dprintln!("Resizing to {}", ri.new_size);
+                    self.console.resize(&ri, &mut self.data);
                 }
                 _ => (),
             }
