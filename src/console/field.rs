@@ -5,7 +5,7 @@ use crate::{font::store::FontId, game::resources::Resources};
 
 const MAX_CHARS: usize = 32;
 
-/// Represents the `Console`'s text input field.
+/// Represents [`super::Console`]'s text input field.
 ///
 /// This is an intermediary between the console's graphical
 /// presentation of what's being typed, and the in-memory one.
@@ -32,7 +32,7 @@ pub struct Field {
 }
 
 impl Field {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             text: String::new(),
             cursor: 0,
@@ -182,16 +182,16 @@ impl Field {
         self.cursor = 0;
     }
 
-    fn char_at(&self, i: usize) -> char {
+    const fn char_at(&self, i: usize) -> char {
         self.text.as_bytes()[i] as char
     }
 
-    fn byte_index(&self, i: usize) -> usize {
+    const fn byte_index(&self, i: usize) -> usize {
         // PERF: ASCII-only, so every char is 1 byte.
         i
     }
 
-    fn cursor_byte_index(&self) -> usize {
+    const fn cursor_byte_index(&self) -> usize {
         self.byte_index(self.cursor)
     }
 }

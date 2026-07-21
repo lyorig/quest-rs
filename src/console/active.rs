@@ -85,6 +85,8 @@ impl ActiveConsole {
         if let Some(name) = args.next()
             && !name.is_empty()
         {
+            cd.writer.write_command(&self.field.text);
+
             match command::find(name) {
                 Some(c) => c.execute(gd, cd, args),
                 None => {
@@ -108,7 +110,23 @@ impl ActiveConsole {
         let mut curr_draw = TEXT_OFFSET;
 
         for line in cd.writer.lines().skip(cd.line as _) {
-            data.font_draw(CONSOLE_FONT, line, &mut curr_draw, cd.glyph_size);
+            let first = line
+                .bytes()
+                .next()
+                .expect("Shouldn't have empty lines here");
+
+            if first == b'\0' {
+                let texref = data.atlas.texture.as_ref().map(Resource::as_ref).unwrap();
+                let old = texref.xchg_rgb_mod_f32(Rgb::GREEN);
+
+                data.font_draw(CONSOLE_FONT, PREFIX_TEXT, &mut curr_draw, cd.glyph_size);
+                texref.set_rgb_mod_f32(old);
+
+                curr_draw.x += cd.glyph_size.x;
+                data.font_draw(CONSOLE_FONT, &line[1..], &mut curr_draw, cd.glyph_size);
+            } else {
+                data.font_draw(CONSOLE_FONT, line, &mut curr_draw, cd.glyph_size);
+            }
 
             curr_draw.y += cd.glyph_size.y;
             curr_draw.x = TEXT_OFFSET.x;

@@ -1,5 +1,6 @@
 /// Essentially a wrapper around a [`String`].
 /// Used for commands to output text.
+/// Also kind of contains the console history.
 pub struct ConsoleWriter {
     data: String,
     last_added: u32,
@@ -20,6 +21,12 @@ impl ConsoleWriter {
     pub fn writeln(&mut self, data: &str) {
         self.data.push('\n');
         self.write(data);
+    }
+
+    pub fn write_command(&mut self, cmd: &str) {
+        self.data.push('\n');
+        self.data.push('\0');
+        self.write(cmd);
     }
 
     pub fn lines(&self) -> impl Iterator<Item = &'_ str> {
