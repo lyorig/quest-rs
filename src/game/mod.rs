@@ -1,8 +1,8 @@
 use std::time::Instant;
 
 use halcyon::{
+    Result,
     color::Rgba,
-    defs::SdlResult,
     event::{Event, EventIter},
     rect::Point,
     renderer::RendererBuilder,
@@ -33,7 +33,7 @@ pub struct Game<'t> {
 }
 
 impl Game<'_> {
-    pub fn new<'t>(ttf: &'t ttf::Context) -> SdlResult<Game<'t>> {
+    pub fn new<'t>(ttf: &'t ttf::Context) -> Result<Game<'t>> {
         let window = WindowBuilder::new()
             .title(c"HalodaQuest")
             .size(Point::new(1280, 720))

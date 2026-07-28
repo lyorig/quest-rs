@@ -1,6 +1,6 @@
 use std::ffi::CStr;
 
-use halcyon::{defs::SdlResult, rect::PointF32, traits::Resource, ttf};
+use halcyon::{Result, rect::PointF32, traits::Resource, ttf};
 
 use crate::{atlas::Atlas, font::provider::GlyphProvider, game::resources::Resources};
 
@@ -19,7 +19,7 @@ impl<GP: GlyphProvider> Font<'_, GP> {
         font_path: &CStr,
         size: f32,
         atlas: &mut Atlas,
-    ) -> SdlResult<Font<'t, GP>> {
+    ) -> Result<Font<'t, GP>> {
         let font = ttf.open(font_path, size)?;
 
         assert!(

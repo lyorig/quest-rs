@@ -1,15 +1,13 @@
-use halcyon::{
-    defs::SdlResult, renderer::Renderer, surface::Surface, texture::Texture, traits::Ref,
-};
+use halcyon::{Result, renderer::Renderer, surface::Surface, texture::Texture, traits::Ref};
 
 pub mod lazy_static;
 pub mod resource_loader;
 pub mod scheduler;
 
-/// In debug builds, calls [`SdlResult::expect`] on the passed value.
+/// In debug builds, calls [`Result::expect`] on the passed value.
 /// Otherwise, the value is ignored.
 ///
-/// This can be used as a debug-only [`SdlResult::expect`].
+/// This can be used as a debug-only [`Result::expect`].
 ///
 /// # Example
 /// ```rust
@@ -37,7 +35,7 @@ macro_rules! chk {
 }
 
 /// Reads a [`Texture`]'s pixels using a [`Renderer`] into a [`Surface`].
-pub fn read_pixels(rnd: Ref<Renderer>, tex: Ref<Texture>) -> SdlResult<Surface> {
+pub fn read_pixels(rnd: Ref<Renderer>, tex: Ref<Texture>) -> Result<Surface> {
     let old_tgt = rnd.xchg_target(tex)?;
     let surface = rnd.read_target()?;
 

@@ -127,7 +127,7 @@ const COMMANDS: [Command; 8] = [
     Command::new("exit", "Exit the game (push a quit event).", cmd_exit),
     Command::new("atlas", "Manipulate the texture atlas.", cmd_atlas),
     Command::new("commit", "Print the commit hash.", cmd_commit),
-    Command::new("test-args", "Print all arguments.", cmd_test_args),
+    Command::new("test-args", "Enumerate all arguments.", cmd_test_args),
     Command::new("font", "Manipulate game fonts.", cmd_font),
     Command::new("clear", "Clear the console.", cmd_clear),
     Command::new("commands", "List all commands.", cmd_commands),

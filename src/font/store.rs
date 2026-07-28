@@ -1,5 +1,5 @@
 use halcyon::{
-    defs::SdlResult,
+    Result,
     rect::{PointF32, PointI32},
     traits::Resource,
     ttf::{self, Text},
@@ -32,7 +32,7 @@ impl<GP: GlyphProvider> FontStore<'_, GP> {
         ttf: &'t ttf::Context,
         rl: ResourceLoader,
         atlas: &mut Atlas,
-    ) -> SdlResult<FontStore<'t, GP>> {
+    ) -> Result<FontStore<'t, GP>> {
         let ubuntu = Font::new(ttf, &rl.resolve("UbuntuMono.ttf"), 32.0, atlas)?;
         Ok(FontStore { array: [ubuntu] })
     }

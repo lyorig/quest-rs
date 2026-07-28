@@ -1,6 +1,6 @@
 use std::ffi::{CStr, CString};
 
-use halcyon::{defs::SdlResult, sdl_string::SdlString};
+use halcyon::{Result, sdl_string::SdlString};
 
 /// A simple string wrapper that provides utility methods for
 /// constructing a [`std::path::Path`] relative to the directory
@@ -10,7 +10,7 @@ pub struct ResourceLoader {
 }
 
 impl ResourceLoader {
-    pub fn from_pref() -> SdlResult<Self> {
+    pub fn from_pref() -> Result<Self> {
         let root = halcyon::pref_path(c"cz.lyorig", c"quest")?;
         Ok(Self { root })
     }

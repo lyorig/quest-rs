@@ -1,8 +1,7 @@
 use std::time::Instant;
 
 use halcyon::{
-    defs::SdlResult, rect::PointF32, renderer::Renderer, surface::Surface, traits::Resource,
-    window::Window,
+    Result, rect::PointF32, renderer::Renderer, surface::Surface, traits::Resource, window::Window,
 };
 
 use crate::{
@@ -57,7 +56,7 @@ impl Resources<'_> {
         self.fonts.draw(id, self, text, origin, glyph_size)
     }
 
-    pub fn read_atlas_pixels(&self) -> Option<SdlResult<Surface>> {
+    pub fn read_atlas_pixels(&self) -> Option<Result<Surface>> {
         self.atlas
             .texture
             .as_ref()

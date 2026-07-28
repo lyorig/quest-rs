@@ -1,6 +1,6 @@
 use halcyon::{
+    Result,
     color::Rgba,
-    defs::SdlResult,
     rect::{Point, RectF32},
     renderer::Renderer,
     surface::Surface,
@@ -17,7 +17,7 @@ pub struct Viewer {
 }
 
 impl Viewer {
-    pub fn new() -> SdlResult<Self> {
+    pub fn new() -> Result<Self> {
         let window = WindowBuilder::new()
             .title(c"Atlas Viewer")
             .position(Point::new(0, 0))

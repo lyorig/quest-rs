@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![windows_subsystem = "windows"]
 
-use halcyon::{defs::SdlResult, error::Error, ttf};
+use halcyon::{Result, error::Error, subsystem::Video, ttf};
 
 use crate::game::Game;
 
@@ -24,7 +24,10 @@ fn fail(e: Error) {
     chk!(msgbox::show(Severity::Error, c"Game launch failed", &msg));
 }
 
-fn run() -> SdlResult {
+fn run() -> Result {
+    let ctx = halcyon::Context::new();
+    let _vid = Video::new(&ctx)?;
+
     let ttf = ttf::Context::new()?;
     let mut game = Game::new(&ttf)?;
 
