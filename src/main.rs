@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 #![windows_subsystem = "windows"]
 
+use std::mem::ManuallyDrop;
+
 use halcyon::{Result, error::Error, subsystem::Video, ttf};
 
 use crate::game::Game;
@@ -26,7 +28,7 @@ fn fail(e: Error) {
 
 fn run() -> Result {
     let ctx = halcyon::Context::new();
-    let _vid = Video::new(&ctx)?;
+    let _vid = ManuallyDrop::new(Video::new(&ctx)?);
 
     let ttf = ttf::Context::new()?;
     let mut game = Game::new(&ttf)?;
