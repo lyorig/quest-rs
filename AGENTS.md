@@ -3,6 +3,10 @@
 quest-rs is a 2D video game written in Rust. It uses SDL via the halcyon-rs crate,
 which provides bindings; see `halcyon-rs/AGENTS.md` for more info.
 
+# General rules
+
+- Respond in ASD-STE100 English.
+
 # Core structs
 
 Video games are complex. Rust complicates things further, since it imposes strict requirements on ownership.
