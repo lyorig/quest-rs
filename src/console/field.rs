@@ -145,10 +145,7 @@ impl Field {
             }
 
             SDLK_TAB => {
-                self.text.insert_str(
-                    self.cursor,
-                    &std::iter::repeat_n(' ', 4).collect::<String>(),
-                );
+                self.text.insert_str(self.cursor, "    ");
                 self.cursor += 4;
 
                 return true;
