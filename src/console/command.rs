@@ -1,6 +1,6 @@
 use std::{fmt::Write, str::Split};
 
-use halcyon::resource::Resource;
+use halcyon::{error::Error, resource::Resource};
 
 use crate::{
     atlas::viewer::Viewer,
@@ -121,7 +121,11 @@ fn cmd_commands(_: &mut Resources, out: &mut CachedData, mut args: ArgsSplit) {
     }
 }
 
-const COMMANDS: [Command; 8] = [
+fn cmd_last_error(_: &mut Resources, out: &mut CachedData, _: ArgsSplit) {
+    _ = writeln!(out.writer, "\"{}\"", Error::current());
+}
+
+const COMMANDS: [Command; 9] = [
     // NOTE: `help` needs to be the first command.
     Command::new("help", "Print a command's provided help text.", cmd_help),
     Command::new("exit", "Exit the game (push a quit event).", cmd_exit),
@@ -131,6 +135,7 @@ const COMMANDS: [Command; 8] = [
     Command::new("font", "Manipulate game fonts.", cmd_font),
     Command::new("clear", "Clear the console.", cmd_clear),
     Command::new("commands", "List all commands.", cmd_commands),
+    Command::new("last-error", "Prints SDL_GetError().", cmd_last_error),
 ];
 
 pub fn find(name: &str) -> Option<&Command> {
