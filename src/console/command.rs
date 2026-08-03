@@ -1,6 +1,6 @@
 use std::{fmt::Write, str::Split};
 
-use halcyon::traits::Resource;
+use halcyon::resource::Resource;
 
 use crate::{
     atlas::viewer::Viewer,

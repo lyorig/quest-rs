@@ -3,7 +3,7 @@ use std::{mem::MaybeUninit, num::NonZeroU32};
 use halcyon::{
     color::Rgba,
     rect::{PointF32, RectF32},
-    traits::{Ref, Resource},
+    resource::{Ref, Resource},
     ttf::Font,
 };
 

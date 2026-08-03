@@ -39,7 +39,5 @@ fn run() -> Result {
 }
 
 fn main() {
-    debug::init();
-
     run().unwrap_or_else(fail);
 }

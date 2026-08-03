@@ -4,9 +4,10 @@ use halcyon::{
     color::Rgba,
     rect::{Point, PointI32, RectF32},
     renderer::Renderer,
+    resource::{Ref, Resource},
     surface::Surface,
     texture::Texture,
-    traits::{BlendMode, Ref, Resource},
+    traits::BlendMode,
 };
 
 use rectpack2d_rs::{
@@ -143,7 +144,7 @@ impl Atlas {
 
     pub fn remove(&mut self, i: AtlasId) {
         let Some(data) = self.data.get_mut(i.0 as usize) else {
-            eprintln!("[Atlas] Trying to remove non-existent glyph ({i:?})");
+            halcyon::log!("[Atlas] Trying to remove non-existent glyph ({i:?})");
             return;
         };
 

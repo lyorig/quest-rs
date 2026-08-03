@@ -3,7 +3,8 @@ use std::{fmt::Write, time::Duration};
 use halcyon::{
     color::{Rgb, Rgba},
     rect::{PointF32, RectF32},
-    traits::{ColorModF32, Resource},
+    resource::Resource,
+    traits::ColorModF32,
 };
 use sdl3_sys::{events::SDL_MouseWheelEvent, keycode::SDL_Keycode, mouse::SDL_MouseWheelDirection};
 

@@ -6,7 +6,7 @@ mod writer;
 
 use std::time::Duration;
 
-use halcyon::traits::Resource;
+use halcyon::resource::Resource;
 
 use sdl3_sys::keycode::*;
 

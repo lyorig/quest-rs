@@ -1,7 +1,7 @@
 use halcyon::{
     Result,
     rect::{PointF32, PointI32},
-    traits::Resource,
+    resource::Resource,
     ttf::{self, Text},
 };
 

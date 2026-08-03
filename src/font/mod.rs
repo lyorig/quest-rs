@@ -1,6 +1,6 @@
 use std::ffi::CStr;
 
-use halcyon::{Result, rect::PointF32, traits::Resource, ttf};
+use halcyon::{Result, rect::PointF32, resource::Resource, ttf};
 
 use crate::{atlas::Atlas, font::provider::GlyphProvider, game::resources::Resources};
 

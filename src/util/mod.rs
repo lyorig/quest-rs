@@ -1,6 +1,5 @@
-use halcyon::{Result, renderer::Renderer, surface::Surface, texture::Texture, traits::Ref};
+use halcyon::{Result, renderer::Renderer, resource::Ref, surface::Surface, texture::Texture};
 
-pub mod lazy_static;
 pub mod resource_loader;
 pub mod scheduler;
 

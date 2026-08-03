@@ -1,7 +1,8 @@
 use std::time::Instant;
 
 use halcyon::{
-    Result, rect::PointF32, renderer::Renderer, surface::Surface, traits::Resource, window::Window,
+    Result, rect::PointF32, renderer::Renderer, resource::Resource, surface::Surface,
+    window::Window,
 };
 
 use crate::{

@@ -3,9 +3,9 @@ use halcyon::{
     color::Rgba,
     rect::{Point, RectF32},
     renderer::Renderer,
+    resource::Resource,
     surface::Surface,
     texture::Texture,
-    traits::Resource,
     window::{Window, WindowBuilder},
 };
 
