@@ -5,12 +5,12 @@ use halcyon::{
     color::Rgba,
     event::{Event, EventIter},
     rect::Point,
-    renderer::RendererBuilder,
+    renderer::Renderer,
     resource::Resource,
     traits::BlendMode,
     ttf,
     util::c_ptr_to_str,
-    window::{Window, WindowBuilder},
+    window::Window,
 };
 
 use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
@@ -35,14 +35,14 @@ pub struct Game<'t> {
 
 impl Game<'_> {
     pub fn new<'t>(ttf: &'t ttf::Context) -> Result<Game<'t>> {
-        let window = WindowBuilder::new()
+        let window = Window::builder()?
             .title(c"HalodaQuest")
             .size(Point::new(1280, 720))
             .position(Point::new(Window::POS_CENTERED, Window::POS_CENTERED))
             .resizable(true)
             .build()?;
 
-        let renderer = RendererBuilder::new(window.as_ref()).vsync(1).build()?;
+        let renderer = Renderer::builder(window.as_ref())?.vsync(1).build()?;
         renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
 
         let res_ldr = ResourceLoader::from_pref()?;

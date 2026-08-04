@@ -6,7 +6,7 @@ use halcyon::{
     resource::Resource,
     surface::Surface,
     texture::Texture,
-    window::{Window, WindowBuilder},
+    window::Window,
 };
 
 use crate::chk;
@@ -18,7 +18,7 @@ pub struct Viewer {
 
 impl Viewer {
     pub fn new() -> Result<Self> {
-        let window = WindowBuilder::new()
+        let window = Window::builder()?
             .title(c"Atlas Viewer")
             .position(Point::new(0, 0))
             .focusable(false)
