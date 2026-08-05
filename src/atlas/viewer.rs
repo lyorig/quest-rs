@@ -1,6 +1,7 @@
 use halcyon::{
     Result,
     color::Rgba,
+    properties::Properties,
     rect::{Point, RectF32},
     renderer::Renderer,
     resource::Resource,
@@ -18,7 +19,8 @@ pub struct Viewer {
 
 impl Viewer {
     pub fn new() -> Result<Self> {
-        let window = Window::builder()?
+        let props = Properties::new()?;
+        let window = Window::builder(props.as_ref())
             .title(c"Atlas Viewer")
             .position(Point::new(0, 0))
             .focusable(false)

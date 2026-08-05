@@ -4,6 +4,7 @@ use halcyon::{
     Result,
     color::Rgba,
     event::{Event, EventIter},
+    properties::Properties,
     rect::Point,
     renderer::Renderer,
     resource::Resource,
@@ -35,20 +36,28 @@ pub struct Game<'t> {
 
 impl Game<'_> {
     pub fn new<'t>(ttf: &'t ttf::Context) -> Result<Game<'t>> {
-        let window = Window::builder()?
+        let props = Properties::new()?;
+
+        let wnd = Window::builder(props.as_ref())
             .title(c"HalodaQuest")
             .size(Point::new(1280, 720))
             .position(Point::new(Window::POS_CENTERED, Window::POS_CENTERED))
             .resizable(true)
             .build()?;
 
-        let renderer = Renderer::builder(window.as_ref())?.vsync(1).build()?;
-        renderer.set_blend_mode(SDL_BLENDMODE_BLEND);
+        let rnd = Renderer::builder(props.as_ref())
+            .window(wnd.as_ref())
+            .vsync(1)
+            .build()?;
+
+        drop(props);
+
+        rnd.set_blend_mode(SDL_BLENDMODE_BLEND);
 
         let res_ldr = ResourceLoader::from_pref()?;
         let mut atlas = Atlas::new();
         let store = FontStore::new(ttf, res_ldr, &mut atlas)?;
-        let data = Resources::new(atlas, renderer, window, store);
+        let data = Resources::new(atlas, rnd, wnd, store);
         let console = Console::new(&data);
         let sched = Scheduler::new();
 
