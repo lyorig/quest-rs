@@ -19,8 +19,8 @@ pub struct Viewer {
 
 impl Viewer {
     pub fn new() -> Result<Self> {
-        let props = Properties::new()?;
-        let window = Window::builder(props.as_ref())
+        let props = Properties::global()?;
+        let window = Window::builder(props)
             .title(c"Atlas Viewer")
             .position(Point::new(0, 0))
             .focusable(false)

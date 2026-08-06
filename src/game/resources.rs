@@ -8,13 +8,13 @@ use halcyon::{
 use crate::{
     atlas::Atlas,
     font::{
-        provider::PreloadedGlyphMap,
+        provider::*,
         store::{FontId, FontStore},
     },
     util,
 };
 
-type GP = PreloadedGlyphMap;
+type GP = RefcountGlyphMap;
 
 pub struct Resources<'t> {
     pub atlas: Atlas,
