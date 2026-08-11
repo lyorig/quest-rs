@@ -1,12 +1,12 @@
 use std::ffi::{CStr, CString};
 
-use halcyon::{Result, sdl_string::SdlString};
+use halcyon::{Result, string::String};
 
 /// A simple string wrapper that provides utility methods for
 /// constructing a [`std::path::Path`] relative to the directory
 /// of the program that's running.
 pub struct ResourceLoader {
-    root: SdlString,
+    root: String,
 }
 
 impl ResourceLoader {
