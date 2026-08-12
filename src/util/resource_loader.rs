@@ -1,12 +1,12 @@
 use std::ffi::{CStr, CString};
 
-use halcyon::{Result, boxed::Box};
+use halcyon::{Result, boxed};
 
 /// A simple string wrapper that provides utility methods for
 /// constructing a [`std::path::Path`] relative to the directory
 /// of the program that's running.
 pub struct ResourceLoader {
-    root: Box<str>,
+    root: boxed::Box<str>,
 }
 
 impl ResourceLoader {
