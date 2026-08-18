@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use halcyon::{
-    Result, rect::PointF32, renderer::Renderer, resource::Resource, surface::Surface,
+    Result, gpu::Device, rect::PointF32, renderer::Renderer, resource::Resource, surface::Surface,
     window::Window,
 };
 
@@ -22,6 +22,12 @@ pub struct Resources<'t> {
     pub renderer: Renderer,
     pub window: Window,
 
+    /// The GPU device backing [`Self::renderer`].
+    ///
+    /// It must outlive both the renderer and the window: the renderer
+    /// releases the window from the device when it is dropped.
+    pub device: Device,
+
     pub fonts: FontStore<'t, GP>,
 
     /// Caches the time at which the frame began, so that all calculations within a frame
@@ -34,12 +40,14 @@ impl Resources<'_> {
         atlas: Atlas,
         renderer: Renderer,
         window: Window,
+        device: Device,
         fonts: FontStore<'t, GP>,
     ) -> Resources<'t> {
         Resources {
             atlas,
             renderer,
             window,
+            device,
             fonts,
             now: Instant::now(),
         }

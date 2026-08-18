@@ -4,17 +4,19 @@ use halcyon::{
     Result,
     color::Rgba,
     event::{Event, EventIter},
+    gpu::Device,
+    pixels::BlendMode,
     properties::Properties,
     rect::Point,
     renderer::Renderer,
     resource::Resource,
-    traits::BlendMode,
+    traits::BlendModeable,
     ttf,
     util::c_ptr_to_str,
     window::Window,
 };
 
-use sdl3_sys::{blendmode::SDL_BLENDMODE_BLEND, keycode::*};
+use sdl3_sys::keycode::*;
 
 use crate::{
     atlas::Atlas,
@@ -45,17 +47,27 @@ impl Game<'_> {
             .resizable(true)
             .build_cleanup()?;
 
-        let rnd = Renderer::builder(props)
-            .window(wnd.as_ref())
-            .vsync(1)
+        let device = Device::builder(props)
+            .debug_mode(false)
+            .prefer_low_power(true)
+            .shaders_metallib(true)
+            .shaders_dxil(true)
             .build_cleanup()?;
 
-        rnd.set_blend_mode(SDL_BLENDMODE_BLEND);
+        let rnd = Renderer::new_gpu(device.as_ref(), wnd.as_ref())?;
+
+        // `SDL_CreateGPURenderer` defaults to uncapped presentation,
+        // so the previous VSync behavior is restored manually.
+        if !rnd.set_vsync(1) {
+            return Err(halcyon::error::Error::current());
+        }
+
+        rnd.set_blend_mode(BlendMode::Blend);
 
         let res_ldr = ResourceLoader::from_pref()?;
         let mut atlas = Atlas::new();
         let store = FontStore::new(ttf, res_ldr, &mut atlas)?;
-        let data = Resources::new(atlas, rnd, wnd, store);
+        let data = Resources::new(atlas, rnd, wnd, device, store);
         let console = Console::new(&data);
         let sched = Scheduler::new();
 

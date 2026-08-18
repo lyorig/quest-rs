@@ -2,13 +2,14 @@ use std::fmt::Display;
 
 use halcyon::{
     color::Rgba,
+    pixels::BlendMode,
     properties::Properties,
     rect::{Point, PointI32, RectF32},
     renderer::Renderer,
     resource::{Ref, Resource},
     surface::Surface,
-    texture::Texture,
-    traits::BlendMode,
+    texture::{PixelFormat, Texture, TextureAccess},
+    traits::BlendModeable,
 };
 
 use rectpack2d_rs::{
@@ -18,8 +19,6 @@ use rectpack2d_rs::{
     finders_interface::{Input, find_best_packing},
     rect_structs::RectXYWH,
 };
-
-use sdl3_sys::{blendmode::*, pixels::SDL_PixelFormat, render::SDL_TextureAccess};
 
 use crate::{atlas::viewer::Viewer, chk, util};
 
@@ -155,15 +154,15 @@ impl Atlas {
     fn create_texture(&mut self, rnd: Ref<Renderer>, size: PointI32) {
         let props = Properties::global().unwrap();
         let new_tex = Texture::builder(rnd, props)
-            .format(SDL_PixelFormat::RGBA32)
-            .access(SDL_TextureAccess::TARGET)
+            .format(PixelFormat::RGBA32)
+            .access(TextureAccess::Target)
             .size(size)
             .build_cleanup()
             .unwrap();
 
         // PERF: This means "just copy the textures without doing any calculations"
         // which is absolutely sufficient for our case.
-        new_tex.set_blend_mode(SDL_BlendMode::NONE);
+        new_tex.set_blend_mode(BlendMode::None);
 
         let old_tgt = rnd.xchg_target(new_tex.as_ref()).unwrap();
         let old_col = rnd.xchg_draw_color_f32(Rgba::TRANSPARENT);
@@ -176,7 +175,7 @@ impl Atlas {
         }
 
         let s = util::read_pixels(rnd, new_tex.as_ref()).expect("Cannot read atlas texture");
-        new_tex.set_blend_mode(SDL_BlendMode::ADD_PREMULTIPLIED);
+        new_tex.set_blend_mode(BlendMode::AddPremultiplied);
         self.texture = Some(new_tex);
 
         if let Some(ref viewer) = self.viewer {
@@ -307,7 +306,8 @@ impl Atlas {
     // }
 
     fn copy_some(&mut self, rnd: Ref<Renderer>, tex: Ref<Texture>) {
-        tex.set_blend_mode(SDL_BlendMode::NONE);
+        tex.set_blend_mode(BlendMode::None);
+
         for d in &mut self.data {
             match d {
                 Data::Unused => continue,

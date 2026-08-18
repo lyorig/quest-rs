@@ -17,9 +17,6 @@ impl ResourceLoader {
     }
 
     pub fn resolve(&self, path: &str) -> Box<CStr> {
-        const NUL_ERROR: &str =
-            "ResourceLoader::resolve() should never be given a Path with embedded NUL bytes";
-
         let total_len = self.root.len() + path.len() + 1;
 
         let mut vec = Vec::<u8>::with_capacity(total_len);

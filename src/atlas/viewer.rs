@@ -1,6 +1,7 @@
 use halcyon::{
     Result,
     color::Rgba,
+    gpu::Device,
     properties::Properties,
     rect::{Point, RectF32},
     renderer::Renderer,
@@ -13,22 +14,36 @@ use halcyon::{
 use crate::chk;
 
 pub struct Viewer {
-    pub window: Window,
+    /// These fields must drop in this order: the renderer releases the
+    /// window from the device, then the window drops, then the device drops.
     renderer: Renderer,
+    pub window: Window,
+    device: Device,
 }
 
 impl Viewer {
     pub fn new() -> Result<Self> {
         let props = Properties::global()?;
-        let window = Window::builder(props)
+        let wnd = Window::builder(props)
             .title(c"Atlas Viewer")
             .position(Point::new(0, 0))
             .focusable(false)
             .build()?;
 
-        let renderer = Renderer::new(window.as_ref(), None)?;
+        let device = Device::builder(props)
+            .debug_mode(false)
+            .prefer_low_power(true)
+            .shaders_metallib(true)
+            .shaders_dxil(true)
+            .build_cleanup()?;
 
-        Ok(Self { window, renderer })
+        let renderer = Renderer::new_gpu(device.as_ref(), wnd.as_ref())?;
+
+        Ok(Self {
+            renderer,
+            window: wnd,
+            device,
+        })
     }
 
     pub fn update<T: Iterator<Item = RectF32>>(&self, s: Surface, rects: T) {

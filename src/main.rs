@@ -3,7 +3,7 @@
 
 use std::mem::ManuallyDrop;
 
-use halcyon::{Result, error::Error, subsystem::Video, ttf};
+use halcyon::{Result, error::Error, msgbox::ButtonLayout, subsystem::Video, ttf};
 
 use crate::game::Game;
 
@@ -23,7 +23,12 @@ fn fail(e: Error) {
     dprintln!("Launch error: \"{e}\"");
 
     let msg = e.into_cstring();
-    chk!(msgbox::show(Severity::Error, c"Game launch failed", &msg));
+    chk!(msgbox::show(
+        Severity::Error,
+        ButtonLayout::LeftToRight,
+        c"Game launch failed",
+        &msg
+    ));
 }
 
 fn run() -> Result {
