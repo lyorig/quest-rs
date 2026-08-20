@@ -34,11 +34,11 @@ fn fail(e: Error) {
 fn run() -> Result {
     let ctx = halcyon::Context::new();
     let _vid = ManuallyDrop::new(Video::new(&ctx)?);
+    let _ttf = ttf::Context::new()?;
 
-    let ttf = ttf::Context::new()?;
-    let mut game = Game::new(&ttf)?;
-
-    game.main_loop();
+    Game::init()?;
+    Game::get_mut().main_loop();
+    Game::drop();
 
     Ok(())
 }

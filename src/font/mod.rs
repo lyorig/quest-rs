@@ -14,13 +14,8 @@ pub struct Font<'t, GP: GlyphProvider> {
 }
 
 impl<GP: GlyphProvider> Font<'_, GP> {
-    pub fn new<'t>(
-        ttf: &'t ttf::Context,
-        font_path: &CStr,
-        size: f32,
-        atlas: &mut Atlas,
-    ) -> Result<Font<'t, GP>> {
-        let font = ttf.open(font_path, size)?;
+    pub fn new<'t>(font_path: &CStr, size: f32, atlas: &mut Atlas) -> Result<Font<'t, GP>> {
+        let font = unsafe { ttf::Font::new_unchecked(font_path, size) }?;
 
         assert!(
             font.is_mono(),
