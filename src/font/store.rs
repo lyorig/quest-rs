@@ -30,14 +30,10 @@ pub struct FontStoreGeneric<'t, GP: GlyphProvider> {
     array: [Font<'t, GP>; 1],
 }
 
-impl<GP: GlyphProvider> FontStoreGeneric<'_, GP> {
-    pub fn new<'t>(
-        ttf: &'t ttf::Context,
-        rl: ResourceLoader,
-        atlas: &mut Atlas,
-    ) -> Result<FontStoreGeneric<'t, GP>> {
+impl<'t, GP: GlyphProvider> FontStoreGeneric<'t, GP> {
+    pub fn new(ttf: &'t ttf::Context, rl: ResourceLoader, atlas: &mut Atlas) -> Result<Self> {
         let ubuntu = Font::new(ttf, &rl.resolve("UbuntuMono.ttf"), 32.0, atlas)?;
-        Ok(FontStoreGeneric { array: [ubuntu] })
+        Ok(Self { array: [ubuntu] })
     }
 
     pub fn alloc(&mut self, id: FontId, text: &str, atlas: &mut Atlas) {

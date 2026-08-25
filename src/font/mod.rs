@@ -19,13 +19,13 @@ pub struct Font<'t, GP: GlyphProvider> {
     map: GP,
 }
 
-impl<GP: GlyphProvider> Font<'_, GP> {
-    pub fn new<'t>(
+impl<'t, GP: GlyphProvider> Font<'t, GP> {
+    pub fn new(
         ttf: &'t ttf::Context,
         font_path: &CStr,
         size: f32,
         atlas: &mut Atlas,
-    ) -> Result<Font<'t, GP>> {
+    ) -> Result<Self> {
         let font = ttf.open(font_path, size)?;
 
         assert!(
@@ -36,7 +36,7 @@ impl<GP: GlyphProvider> Font<'_, GP> {
 
         let map = GP::new(atlas, font.as_ref());
 
-        Ok(Font { font, map })
+        Ok(Self { font, map })
     }
 
     /// Calls [`GlyphProvider::retain`] on the contained map; see its
