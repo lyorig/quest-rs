@@ -1,7 +1,10 @@
 use halcyon::clipboard;
 use sdl3_sys::keycode::*;
 
-use crate::{font::store::FontId, game::resources::Resources};
+use crate::{
+    atlas::Atlas,
+    font::store::{FontId, FontStore},
+};
 
 const MAX_CHARS: usize = 32;
 
@@ -39,17 +42,22 @@ impl Field {
         }
     }
 
-    pub fn process_str(&mut self, inp: &str, gd: &mut Resources) {
+    pub fn process_str(&mut self, inp: &str, fonts: &mut FontStore, atlas: &mut Atlas) {
         let fil: String = inp.chars().filter(char::is_ascii).collect();
 
         self.text.insert_str(self.cursor_byte_index(), &fil);
         self.cursor += fil.len();
 
-        gd.font_alloc(FontId::UBUNTU_MONO, &fil);
+        fonts.alloc(FontId::UBUNTU_MONO, &fil, atlas);
     }
 
     /// Returns whether the cursor should be moved.
-    pub fn process_key(&mut self, k: SDL_Keycode, gd: &mut Resources) -> bool {
+    pub fn process_key(
+        &mut self,
+        k: SDL_Keycode,
+        fonts: &mut FontStore,
+        atlas: &mut Atlas,
+    ) -> bool {
         match k {
             SDLK_BACKSPACE => 'a: {
                 if self.text.is_empty() {
@@ -154,7 +162,7 @@ impl Field {
             SDLK_V => {
                 if halcyon::keyboard::mod_state() & SDL_KMOD_CTRL != 0 && clipboard::has_text() {
                     let clip = clipboard::text();
-                    self.process_str(clip.to_str(), gd);
+                    self.process_str(clip.to_str(), fonts, atlas);
 
                     return true;
                 }

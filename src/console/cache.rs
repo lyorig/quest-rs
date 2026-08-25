@@ -1,8 +1,12 @@
-use halcyon::rect::{PointF32, PointI32, RectF32};
+use halcyon::{
+    rect::{PointF32, PointI32, RectF32},
+    renderer::Renderer,
+    resource::Ref,
+};
 
 use crate::{
     console::{CONSOLE_FONT, PREFIX_TEXT, inner::TEXT_OFFSET, writer::Writer},
-    game::resources::Resources,
+    font::store::FontStore,
 };
 
 const PLACEHOLDERS: [&str; 41] = [
@@ -73,8 +77,8 @@ pub struct CachedData {
 }
 
 impl CachedData {
-    pub fn new(res: &Resources) -> Self {
-        let glyph_size = res.fonts.glyph_size(CONSOLE_FONT).as_f32();
+    pub fn new(fonts: &FontStore, rnd: Ref<Renderer>) -> Self {
+        let glyph_size = fonts.glyph_size(CONSOLE_FONT).as_f32();
 
         let mut ret = Self {
             placeholder_index: 0,
@@ -86,16 +90,16 @@ impl CachedData {
             max_lines: 0,
         };
 
-        ret.resize(res.renderer.output_size(), res);
+        ret.resize(rnd.output_size(), rnd);
 
         ret
     }
 
-    pub fn resize(&mut self, size: PointI32, res: &Resources) {
+    pub fn resize(&mut self, size: PointI32, rnd: Ref<Renderer>) {
         let amnt = size.y / self.glyph_size.y as i32;
 
         self.max_lines = amnt - 1;
-        self.clamp_line(res);
+        self.clamp_line(rnd);
     }
 
     pub fn next_placeholder(&mut self) -> &'static str {
@@ -111,11 +115,11 @@ impl CachedData {
         self.placeholder_index = (self.placeholder_index + 1) % PLACEHOLDERS.len() as u8;
     }
 
-    pub fn update_scroll_bar(&mut self, res: &Resources) {
+    pub fn update_scroll_bar(&mut self, rnd: Ref<Renderer>) {
         let lines = self.writer.lines().count();
         let height = self.glyph_size.y * lines as f32;
 
-        let sz = res.renderer.output_size();
+        let sz = rnd.output_size();
         let wndy = sz.y as f32;
 
         let ratio = wndy / height;
@@ -131,8 +135,8 @@ impl CachedData {
         );
     }
 
-    pub fn clear(&mut self, res: &mut Resources) {
-        res.font_free(CONSOLE_FONT, self.writer.data());
+    pub fn clear(&mut self, fonts: &mut FontStore) {
+        fonts.free(CONSOLE_FONT, self.writer.data());
         self.writer.clear();
         self.line = 0;
     }
@@ -145,8 +149,8 @@ impl CachedData {
             + 1
     }
 
-    pub fn clamp_line(&mut self, res: &Resources) {
+    pub fn clamp_line(&mut self, rnd: Ref<Renderer>) {
         self.line = self.line.clamp(0, self.total_lines() as _);
-        self.update_scroll_bar(res);
+        self.update_scroll_bar(rnd);
     }
 }

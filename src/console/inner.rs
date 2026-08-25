@@ -3,14 +3,17 @@ use std::{fmt::Write, time::Duration};
 use halcyon::{
     color::{Rgb, Rgba},
     rect::{PointF32, RectF32},
-    resource::Resource,
+    renderer::Renderer,
+    resource::{Ref, Resource},
     traits::ColorModF32,
 };
 use sdl3_sys::{events::SDL_MouseWheelEvent, keycode::SDL_Keycode, mouse::SDL_MouseWheelDirection};
 
 use crate::{
+    atlas::Atlas,
     chk,
     console::{CONSOLE_FONT, PREFIX_TEXT, cache::CachedData, command, field::Field},
+    font::store::FontStore,
     game::resources::Resources,
 };
 
@@ -45,16 +48,28 @@ impl Inner {
     }
 
     /// This is the only way that text gets added do the [`Field`].
-    pub fn process_str(&mut self, cd: &mut CachedData, data: &mut Resources, input: &str) {
-        self.field.process_str(input, data);
+    pub fn process_str(
+        &mut self,
+        cd: &mut CachedData,
+        fonts: &mut FontStore,
+        atlas: &mut Atlas,
+        input: &str,
+    ) {
+        self.field.process_str(input, fonts, atlas);
         self.field.trim_check();
 
         self.update_outline(cd);
     }
 
     /// Hands over a pressed key to this console's [`Field`], which decides what to do next.
-    pub fn process_key(&mut self, cd: &mut CachedData, data: &mut Resources, k: SDL_Keycode) {
-        let op = self.field.process_key(k, data);
+    pub fn process_key(
+        &mut self,
+        cd: &mut CachedData,
+        fonts: &mut FontStore,
+        atlas: &mut Atlas,
+        k: SDL_Keycode,
+    ) {
+        let op = self.field.process_key(k, fonts, atlas);
 
         self.field.trim_check();
 
@@ -65,7 +80,7 @@ impl Inner {
 
     pub fn process_mouse(
         &mut self,
-        res: &mut Resources,
+        rnd: Ref<Renderer>,
         cd: &mut CachedData,
         m: SDL_MouseWheelEvent,
     ) {
@@ -78,30 +93,40 @@ impl Inner {
         let new = cd.line.cast_signed() - val;
         cd.line = new.clamp(0, cd.total_lines() as _) as _;
 
-        cd.clamp_line(res);
+        cd.clamp_line(rnd);
     }
 
-    pub fn process_command(&mut self, cd: &mut CachedData, gd: &mut Resources) {
+    pub fn process_command(&mut self, res: &mut Resources) {
         let mut args = self.field.text.split(' ');
         if let Some(name) = args.next()
             && !name.is_empty()
         {
-            cd.writer.write_command(&self.field.text);
+            res.console_cache.writer.write_command(&self.field.text);
 
             match command::find(name) {
-                Some(c) => c.execute(gd, cd, args),
-                None => _ = writeln!(cd.writer, "sh: no such command: \"{name}\""),
+                Some(c) => c.execute(res, args),
+                None => _ = writeln!(res.console_cache.writer, "sh: no such command: \"{name}\""),
             }
 
-            let added = cd.writer.added_since_last_check();
-            gd.font_alloc(CONSOLE_FONT, added);
+            let added = res.console_cache.writer.added_since_last_check();
+            res.fonts.alloc(CONSOLE_FONT, added, &mut res.atlas);
 
-            self.clear(cd, gd);
+            self.clear(
+                &mut res.console_cache,
+                res.renderer.as_ref(),
+                &mut res.fonts,
+                &mut res.atlas,
+            );
         }
     }
 
-    pub fn draw(&mut self, cd: &mut CachedData, data: &Resources) {
-        let rnd = data.renderer.as_ref();
+    pub fn draw(
+        &mut self,
+        cd: &mut CachedData,
+        rnd: Ref<Renderer>,
+        fonts: &mut FontStore,
+        atlas: &mut Atlas,
+    ) {
         let old = rnd.xchg_draw_color_f32(Rgb::BLACK.with_alpha(0.5));
         chk!(rnd.fill_target());
 
@@ -113,23 +138,44 @@ impl Inner {
             };
 
             if first == b'\0' {
-                let texref = data.atlas.tex();
-                let old = texref.xchg_rgb_mod_f32(Rgb::GREEN);
+                let old = atlas.tex().xchg_rgb_mod_f32(Rgb::GREEN);
 
-                data.font_draw(CONSOLE_FONT, PREFIX_TEXT, &mut curr_draw, cd.glyph_size);
-                texref.set_rgb_mod_f32(old);
+                fonts.draw(
+                    CONSOLE_FONT,
+                    rnd,
+                    atlas,
+                    PREFIX_TEXT,
+                    &mut curr_draw,
+                    cd.glyph_size,
+                );
+
+                atlas.tex().set_rgb_mod_f32(old);
 
                 curr_draw.x += cd.glyph_size.x;
-                data.font_draw(CONSOLE_FONT, &line[1..], &mut curr_draw, cd.glyph_size);
+                fonts.draw(
+                    CONSOLE_FONT,
+                    rnd,
+                    atlas,
+                    &line[1..],
+                    &mut curr_draw,
+                    cd.glyph_size,
+                );
             } else {
-                data.font_draw(CONSOLE_FONT, line, &mut curr_draw, cd.glyph_size);
+                fonts.draw(
+                    CONSOLE_FONT,
+                    rnd,
+                    atlas,
+                    line,
+                    &mut curr_draw,
+                    cd.glyph_size,
+                );
             }
 
             curr_draw.y += cd.glyph_size.y;
             curr_draw.x = TEXT_OFFSET.x;
         }
 
-        self.draw_prompt(cd, data, curr_draw);
+        self.draw_prompt(cd, rnd, fonts, atlas, curr_draw);
 
         rnd.set_draw_color_f32(Rgb::WHITE.with_alpha(0.5));
 
@@ -146,34 +192,53 @@ impl Inner {
 
     /// Clear the [`Field`], update the cursor,
     /// and signal for a repaint.
-    pub fn clear(&mut self, cd: &mut CachedData, res: &mut Resources) {
-        res.font_free(CONSOLE_FONT, &self.field.text);
+    pub fn clear(
+        &mut self,
+        cd: &mut CachedData,
+        rnd: Ref<Renderer>,
+        fonts: &mut FontStore,
+        atlas: &mut Atlas,
+    ) {
+        fonts.alloc(CONSOLE_FONT, &self.field.text, atlas);
 
         self.field.clear();
         self.update_outline(cd);
-        cd.update_scroll_bar(res);
+        cd.update_scroll_bar(rnd);
     }
 
-    fn draw_prompt(&self, cd: &CachedData, data: &Resources, mut origin: PointF32) {
-        let tex = data.atlas.tex();
-        let old = tex.xchg_rgb_mod_f32(Rgb::GREEN);
+    fn draw_prompt(
+        &self,
+        cd: &CachedData,
+        rnd: Ref<Renderer>,
+        fonts: &mut FontStore,
+        atlas: &mut Atlas,
+        mut origin: PointF32,
+    ) {
+        let old = atlas.tex().xchg_rgb_mod_f32(Rgb::GREEN);
 
-        data.font_draw(CONSOLE_FONT, PREFIX_TEXT, &mut origin, cd.glyph_size);
+        fonts.draw(
+            CONSOLE_FONT,
+            rnd,
+            atlas,
+            PREFIX_TEXT,
+            &mut origin,
+            cd.glyph_size,
+        );
 
         origin.x = cd.input_x_origin;
 
         let prompt = if self.field.text.is_empty() {
             // placeholder
-            tex.set_rgb_mod_f32(Rgb::new(0.5, 0.5, 0.5));
+            atlas.tex().set_rgb_mod_f32(Rgb::new(0.5, 0.5, 0.5));
             cd.current_placeholder()
         } else {
             // actual prompt
-            tex.set_rgb_mod_f32(Rgb::WHITE);
+            atlas.tex().set_rgb_mod_f32(Rgb::WHITE);
             &self.field.text
         };
 
-        data.font_draw(CONSOLE_FONT, prompt, &mut origin, cd.glyph_size);
+        fonts.draw(CONSOLE_FONT, rnd, atlas, prompt, &mut origin, cd.glyph_size);
 
-        tex.set_rgb_mod_f32(old);
+        atlas.tex().set_rgb_mod_f32(old);
     }
 }

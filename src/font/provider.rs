@@ -3,14 +3,12 @@ use std::{mem::MaybeUninit, num::NonZeroU32};
 use halcyon::{
     color::Rgba,
     rect::{PointF32, RectF32},
-    resource::{Ref, Resource},
+    renderer::Renderer,
+    resource::Ref,
     ttf::Font,
 };
 
-use crate::{
-    atlas::{Atlas, AtlasId},
-    game::resources::Resources,
-};
+use crate::atlas::{Atlas, AtlasId};
 
 /// 33 ('!') - 126 ('~')
 const GRAPHIC_ASCII_FIRST: char = '!';
@@ -28,15 +26,21 @@ pub trait GlyphProvider {
 
     /// Convenience method for drawing a string to the screen.
     /// Panics if any character in `text` isn't available in glyph form in `atlas`.
-    fn draw(&self, text: &str, res: &Resources, origin: &mut PointF32, glyph_size: PointF32) {
+    fn draw(
+        &self,
+        text: &str,
+        rnd: Ref<Renderer>,
+        atlas: &Atlas,
+        origin: &mut PointF32,
+        glyph_size: PointF32,
+    ) {
         for glyph in text.chars() {
             if !glyph.is_whitespace() {
                 let Some(id) = self.id(glyph) else {
                     panic!("[GlyphMap] Cannot draw unavailable glyph '{glyph}' from {text:?}")
                 };
 
-                res.atlas
-                    .draw_to(res.renderer.as_ref(), id, RectF32::new(*origin, glyph_size));
+                atlas.draw_to(rnd, id, RectF32::new(*origin, glyph_size));
             }
 
             origin.x += glyph_size.x;
@@ -215,15 +219,21 @@ impl RefcountGlyphMap {
 
     /// Convenience method for drawing a string to the screen.
     /// Panics if any character in `text` isn't available in glyph form in `atlas`.
-    pub fn draw(&self, text: &str, res: &Resources, origin: &mut PointF32, glyph_size: PointF32) {
+    pub fn draw(
+        &self,
+        text: &str,
+        rnd: Ref<Renderer>,
+        atlas: &mut Atlas,
+        origin: &mut PointF32,
+        glyph_size: PointF32,
+    ) {
         for glyph in text.chars() {
             if !glyph.is_whitespace() {
                 let Some(id) = self.id(glyph) else {
                     panic!("[GlyphMap] Cannot draw unavailable glyph '{glyph}' from {text:?}")
                 };
 
-                res.atlas
-                    .draw_to(res.renderer.as_ref(), id, RectF32::new(*origin, glyph_size));
+                atlas.draw_to(rnd, id, RectF32::new(*origin, glyph_size));
             }
 
             origin.x += glyph_size.x;

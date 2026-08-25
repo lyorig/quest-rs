@@ -1,8 +1,14 @@
 use std::ffi::CStr;
 
-use halcyon::{Result, rect::PointF32, resource::Resource, ttf};
+use halcyon::{
+    Result,
+    rect::PointF32,
+    renderer::Renderer,
+    resource::{Ref, Resource},
+    ttf,
+};
 
-use crate::{atlas::Atlas, font::provider::GlyphProvider, game::resources::Resources};
+use crate::{atlas::Atlas, font::provider::GlyphProvider};
 
 pub mod provider;
 pub mod store;
@@ -45,7 +51,14 @@ impl<GP: GlyphProvider> Font<'_, GP> {
         self.map.release(text);
     }
 
-    pub fn draw(&self, text: &str, res: &Resources, origin: &mut PointF32, glyph_size: PointF32) {
-        self.map.draw(text, res, origin, glyph_size);
+    pub fn draw(
+        &self,
+        text: &str,
+        rnd: Ref<Renderer>,
+        atlas: &Atlas,
+        origin: &mut PointF32,
+        glyph_size: PointF32,
+    ) {
+        self.map.draw(text, rnd, atlas, origin, glyph_size);
     }
 }

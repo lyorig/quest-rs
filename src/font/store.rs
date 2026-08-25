@@ -1,7 +1,8 @@
 use halcyon::{
     Result,
     rect::{PointF32, PointI32},
-    resource::Resource,
+    renderer::Renderer,
+    resource::{Ref, Resource},
     ttf::{self, Text},
 };
 
@@ -11,7 +12,6 @@ use crate::{
         Font,
         provider::{GlyphProvider, RefcountGlyphMap},
     },
-    game::resources::Resources,
     util::resource_loader::ResourceLoader,
 };
 
@@ -55,12 +55,13 @@ impl<GP: GlyphProvider> FontStoreGeneric<'_, GP> {
     pub fn draw(
         &self,
         id: FontId,
-        res: &Resources,
+        rnd: Ref<Renderer>,
+        atlas: &Atlas,
         text: &str,
         origin: &mut PointF32,
         glyph_size: PointF32,
     ) {
-        self.array[id.as_index()].draw(text, res, origin, glyph_size)
+        self.array[id.as_index()].draw(text, rnd, atlas, origin, glyph_size)
     }
 
     pub fn glyph_size(&self, id: FontId) -> PointI32 {

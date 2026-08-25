@@ -4,7 +4,6 @@ use halcyon::{
     Result,
     color::Rgba,
     event::{Event, EventIter},
-    gpu::Device,
     pixels::BlendMode,
     properties::Properties,
     rect::Point,
@@ -21,10 +20,8 @@ use sdl3_sys::keycode::*;
 use crate::{
     atlas::Atlas,
     chk,
-    console::Console,
     font::store::FontStore,
     game::resources::Resources,
-    ui::{Layer, ResizeInfo},
     util::{resource_loader::ResourceLoader, scheduler::Scheduler},
 };
 
@@ -33,7 +30,6 @@ pub mod resources;
 pub struct Game<'t> {
     pub data: Resources<'t>,
     sched: Scheduler<Resources<'t>>,
-    console: Console,
 }
 
 impl Game<'_> {
@@ -47,35 +43,20 @@ impl Game<'_> {
             .resizable(true)
             .build_cleanup()?;
 
-        let device = Device::builder(props)
-            .debug_mode(false)
-            .prefer_low_power(true)
-            .shaders_metallib(true)
-            .shaders_dxil(true)
+        let rnd = Renderer::builder(props)
+            .window(wnd.as_ref())
+            .vsync(1)
             .build_cleanup()?;
-
-        let rnd = Renderer::new_gpu(device.as_ref(), wnd.as_ref())?;
-
-        // `SDL_CreateGPURenderer` defaults to uncapped presentation,
-        // so the previous VSync behavior is restored manually.
-        if !rnd.set_vsync(1) {
-            return Err(halcyon::error::Error::current());
-        }
 
         rnd.set_blend_mode(BlendMode::Blend);
 
         let res_ldr = ResourceLoader::from_pref()?;
         let mut atlas = Atlas::new();
         let store = FontStore::new(ttf, res_ldr, &mut atlas)?;
-        let data = Resources::new(atlas, rnd, wnd, device, store);
-        let console = Console::new(&data);
+        let data = Resources::new(atlas, rnd, wnd, store);
         let sched = Scheduler::new();
 
-        Ok(Game {
-            data,
-            sched,
-            console,
-        })
+        Ok(Game { data, sched })
     }
 
     pub fn main_loop(&mut self) {
@@ -95,14 +76,22 @@ impl Game<'_> {
             let dt = now.duration_since(self.data.now);
             self.data.now = now;
 
-            self.console.update_delta(dt);
+            if let Some(ref mut c) = self.data.console {
+                c.update_delta(dt);
+            }
 
             self.sched.update(self.data.now, &mut self.data);
 
             self.data.atlas.pack(self.data.renderer.as_ref());
 
-            // --- Drawing ---
-            self.console.draw(&self.data);
+            if let Some(ref mut c) = self.data.console {
+                c.draw(
+                    &mut self.data.console_cache,
+                    self.data.renderer.as_ref(),
+                    &mut self.data.fonts,
+                    &mut self.data.atlas,
+                );
+            }
 
             chk!(self.data.renderer.present());
 
@@ -115,22 +104,38 @@ impl Game<'_> {
             match evt {
                 Event::Quit => return false,
                 Event::KeyDown(k) => match k.key {
-                    SDLK_F1 => self.console.switch(&mut self.data),
+                    SDLK_F1 => self.data.toggle_console(),
                     SDLK_RETURN => self.process_command(),
-                    other => self.console.process_key(&mut self.data, other),
+                    other => {
+                        if let Some(ref mut c) = self.data.console {
+                            c.process_key(
+                                &mut self.data.console_cache,
+                                &mut self.data.fonts,
+                                &mut self.data.atlas,
+                                other,
+                            );
+                        }
+                    }
                 },
                 Event::MouseWheelMotion(m) => {
-                    if let Some(ref mut ac) = self.console.state {
-                        ac.process_mouse(&mut self.data, &mut self.console.data, m);
+                    if let Some(ref mut c) = self.data.console {
+                        c.process_mouse(
+                            self.data.renderer.as_ref(),
+                            &mut self.data.console_cache,
+                            m,
+                        );
                     }
                 }
                 Event::TextInput(ti) => {
                     let text = unsafe { c_ptr_to_str(ti.text) };
-                    self.console.process_str(&mut self.data, text);
-                }
-                Event::WindowResized(r) => {
-                    let ri = ResizeInfo::new(r);
-                    self.console.resize(&ri, &mut self.data);
+                    if let Some(ref mut c) = self.data.console {
+                        c.process_str(
+                            &mut self.data.console_cache,
+                            &mut self.data.fonts,
+                            &mut self.data.atlas,
+                            text,
+                        );
+                    }
                 }
                 _ => (),
             }
@@ -140,9 +145,10 @@ impl Game<'_> {
     }
 
     fn process_command(&mut self) {
-        if let Some(ref mut ac) = self.console.state {
-            ac.process_command(&mut self.console.data, &mut self.data);
-        }
+        self.data.console = self.data.console.take().map(|mut c| {
+            c.process_command(&mut self.data);
+            c
+        });
     }
 
     pub fn quit() {
