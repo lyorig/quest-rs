@@ -7,7 +7,10 @@ use halcyon::{
 
 use crate::{
     atlas::Atlas,
-    font::{Font, provider::GlyphProvider},
+    font::{
+        Font,
+        provider::{GlyphProvider, RefcountGlyphMap},
+    },
     game::resources::Resources,
     util::resource_loader::ResourceLoader,
 };
@@ -23,18 +26,18 @@ impl FontId {
 }
 
 /// Contains all fonts used in the game.
-pub struct FontStore<'t, GP: GlyphProvider> {
+pub struct FontStoreGeneric<'t, GP: GlyphProvider> {
     array: [Font<'t, GP>; 1],
 }
 
-impl<GP: GlyphProvider> FontStore<'_, GP> {
+impl<GP: GlyphProvider> FontStoreGeneric<'_, GP> {
     pub fn new<'t>(
         ttf: &'t ttf::Context,
         rl: ResourceLoader,
         atlas: &mut Atlas,
-    ) -> Result<FontStore<'t, GP>> {
+    ) -> Result<FontStoreGeneric<'t, GP>> {
         let ubuntu = Font::new(ttf, &rl.resolve("UbuntuMono.ttf"), 32.0, atlas)?;
-        Ok(FontStore { array: [ubuntu] })
+        Ok(FontStoreGeneric { array: [ubuntu] })
     }
 
     pub fn alloc(&mut self, id: FontId, text: &str, atlas: &mut Atlas) {
@@ -66,3 +69,6 @@ impl<GP: GlyphProvider> FontStore<'_, GP> {
         tx.size()
     }
 }
+
+type GlyphMap = RefcountGlyphMap;
+pub type FontStore<'a> = FontStoreGeneric<'a, GlyphMap>;

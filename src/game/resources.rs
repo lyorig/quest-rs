@@ -7,14 +7,9 @@ use halcyon::{
 
 use crate::{
     atlas::Atlas,
-    font::{
-        provider::*,
-        store::{FontId, FontStore},
-    },
+    font::store::{FontId, FontStore},
     util,
 };
-
-type GP = RefcountGlyphMap;
 
 pub struct Resources<'t> {
     pub atlas: Atlas,
@@ -28,7 +23,7 @@ pub struct Resources<'t> {
     /// releases the window from the device when it is dropped.
     pub device: Device,
 
-    pub fonts: FontStore<'t, GP>,
+    pub fonts: FontStore<'t>,
 
     /// Caches the time at which the frame began, so that all calculations within a frame
     /// are consistent and only a single `rdtsc` (or similar) is performed.
@@ -41,7 +36,7 @@ impl Resources<'_> {
         renderer: Renderer,
         window: Window,
         device: Device,
-        fonts: FontStore<'t, GP>,
+        fonts: FontStore<'t>,
     ) -> Resources<'t> {
         Resources {
             atlas,
