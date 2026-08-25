@@ -4,7 +4,7 @@ use halcyon::{error::Error, resource::Resource};
 
 use crate::{
     atlas::viewer::Viewer,
-    console::cache::CachedData,
+    console::cache::Cache,
     game::{Game, resources::Resources},
 };
 
@@ -146,6 +146,6 @@ pub fn help_iter() -> impl Iterator<Item = &'static str> {
     COMMANDS.iter().map(|c| c.help)
 }
 
-fn help_exact(cmd: &Command, out: &mut CachedData) {
+fn help_exact(cmd: &Command, out: &mut Cache) {
     _ = writeln!(out.writer, "help: {} => {}", cmd.name, cmd.help);
 }

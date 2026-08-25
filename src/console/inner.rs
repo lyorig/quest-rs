@@ -12,7 +12,7 @@ use sdl3_sys::{events::SDL_MouseWheelEvent, keycode::SDL_Keycode, mouse::SDL_Mou
 use crate::{
     atlas::Atlas,
     chk,
-    console::{CONSOLE_FONT, PREFIX_TEXT, cache::CachedData, command, field::Field},
+    console::{CONSOLE_FONT, PREFIX_TEXT, cache::Cache, command, field::Field},
     font::store::FontStore,
     game::resources::Resources,
 };
@@ -30,7 +30,7 @@ pub struct Inner {
 }
 
 impl Inner {
-    pub fn new(data: &mut CachedData) -> Self {
+    pub fn new(data: &mut Cache) -> Self {
         Self {
             field: Field::new(),
             cursor_pos: data.input_x_origin,
@@ -38,7 +38,7 @@ impl Inner {
         }
     }
 
-    fn update_outline(&mut self, cd: &mut CachedData) {
+    fn update_outline(&mut self, cd: &mut Cache) {
         self.cursor_pos = cd.input_x_origin + self.field.cursor as f32 * cd.glyph_size.x;
         self.cursor_time = Duration::ZERO;
     }
@@ -50,7 +50,7 @@ impl Inner {
     /// This is the only way that text gets added do the [`Field`].
     pub fn process_str(
         &mut self,
-        cd: &mut CachedData,
+        cd: &mut Cache,
         fonts: &mut FontStore,
         atlas: &mut Atlas,
         input: &str,
@@ -64,7 +64,7 @@ impl Inner {
     /// Hands over a pressed key to this console's [`Field`], which decides what to do next.
     pub fn process_key(
         &mut self,
-        cd: &mut CachedData,
+        cd: &mut Cache,
         fonts: &mut FontStore,
         atlas: &mut Atlas,
         k: SDL_Keycode,
@@ -78,12 +78,7 @@ impl Inner {
         }
     }
 
-    pub fn process_mouse(
-        &mut self,
-        rnd: Ref<Renderer>,
-        cd: &mut CachedData,
-        m: SDL_MouseWheelEvent,
-    ) {
+    pub fn process_mouse(&mut self, rnd: Ref<Renderer>, cd: &mut Cache, m: SDL_MouseWheelEvent) {
         let val = if m.direction == SDL_MouseWheelDirection::NORMAL {
             m.integer_y
         } else {
@@ -122,7 +117,7 @@ impl Inner {
 
     pub fn draw(
         &mut self,
-        cd: &mut CachedData,
+        cd: &mut Cache,
         rnd: Ref<Renderer>,
         fonts: &mut FontStore,
         atlas: &mut Atlas,
@@ -194,7 +189,7 @@ impl Inner {
     /// and signal for a repaint.
     pub fn clear(
         &mut self,
-        cd: &mut CachedData,
+        cd: &mut Cache,
         rnd: Ref<Renderer>,
         fonts: &mut FontStore,
         atlas: &mut Atlas,
@@ -208,7 +203,7 @@ impl Inner {
 
     fn draw_prompt(
         &self,
-        cd: &CachedData,
+        cd: &Cache,
         rnd: Ref<Renderer>,
         fonts: &mut FontStore,
         atlas: &mut Atlas,

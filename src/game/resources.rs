@@ -8,7 +8,7 @@ use halcyon::{
 use crate::{
     atlas::Atlas,
     chk,
-    console::{self, CONSOLE_FONT, PREFIX_TEXT, cache::CachedData, writer::Writer},
+    console::{self, CONSOLE_FONT, Cache, PREFIX_TEXT, Writer},
     font::store::{FontId, FontStore},
     util,
 };
@@ -25,8 +25,8 @@ pub struct Resources<'t> {
     /// are consistent and only a single `rdtsc` (or similar) is performed.
     pub now: Instant,
 
-    pub console: Option<console::inner::Inner>,
-    pub console_cache: CachedData,
+    pub console: Option<console::Inner>,
+    pub console_cache: Cache,
 }
 
 impl Resources<'_> {
@@ -36,7 +36,7 @@ impl Resources<'_> {
         window: Window,
         fonts: FontStore<'t>,
     ) -> Resources<'t> {
-        let console_cache = CachedData::new(&fonts, renderer.as_ref());
+        let console_cache = Cache::new(&fonts, renderer.as_ref());
         Resources {
             atlas,
             renderer,
@@ -89,7 +89,7 @@ impl Resources<'_> {
                 self.fonts.alloc(CONSOLE_FONT, data, &mut self.atlas);
                 console::command::help_iter().for_each(|s| self.font_alloc(CONSOLE_FONT, s));
 
-                Some(console::inner::Inner::new(&mut self.console_cache))
+                Some(console::Inner::new(&mut self.console_cache))
             }
 
             Some(ac) => {

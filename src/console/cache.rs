@@ -57,7 +57,7 @@ const PLACEHOLDERS: [&str; 41] = [
 /// (i.e. on every [`super::Inner::new`]). This struct aims to achieve just
 /// that, while also preventing double-mutable-borrow errors that would otherwise
 /// occur if the calling [`super::Console`] passed itself as a parameter.
-pub struct CachedData {
+pub struct Cache {
     /// The current index into [`PLACEHOLDERS`] used for
     /// generating, well, placeholders.
     pub placeholder_index: u8,
@@ -76,7 +76,7 @@ pub struct CachedData {
     pub max_lines: i32,
 }
 
-impl CachedData {
+impl Cache {
     pub fn new(fonts: &FontStore, rnd: Ref<Renderer>) -> Self {
         let glyph_size = fonts.glyph_size(CONSOLE_FONT).as_f32();
 
