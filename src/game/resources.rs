@@ -35,8 +35,8 @@ pub struct Resources<'t> {
     pub now: Instant,
 }
 
-impl<'t> Resources<'t> {
-    pub fn new(
+impl Resources<'_> {
+    pub fn new<'t>(
         atlas: Atlas,
         renderer: Renderer,
         window: Window,

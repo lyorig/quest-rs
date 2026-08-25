@@ -1,6 +1,5 @@
 use halcyon::{Result, renderer::Renderer, resource::Ref, surface::Surface, texture::Texture};
 
-pub mod lazystatic;
 pub mod resource_loader;
 pub mod scheduler;
 
@@ -12,7 +11,7 @@ pub mod scheduler;
 /// # Example
 /// ```rust
 /// use halcyon::chk;
-/// use halcyon::resource::Ref;
+/// use halcyon::traits::Ref;
 /// use halcyon::renderer::Renderer;
 ///
 /// fn render(rnd: Ref<Renderer>) {

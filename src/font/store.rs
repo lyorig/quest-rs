@@ -2,7 +2,7 @@ use halcyon::{
     Result,
     rect::{PointF32, PointI32},
     resource::Resource,
-    ttf::Text,
+    ttf::{self, Text},
 };
 
 use crate::{
@@ -28,8 +28,12 @@ pub struct FontStore<'t, GP: GlyphProvider> {
 }
 
 impl<GP: GlyphProvider> FontStore<'_, GP> {
-    pub fn new<'t>(rl: ResourceLoader, atlas: &mut Atlas) -> Result<FontStore<'t, GP>> {
-        let ubuntu = Font::new(&rl.resolve("UbuntuMono.ttf"), 32.0, atlas)?;
+    pub fn new<'t>(
+        ttf: &'t ttf::Context,
+        rl: ResourceLoader,
+        atlas: &mut Atlas,
+    ) -> Result<FontStore<'t, GP>> {
+        let ubuntu = Font::new(ttf, &rl.resolve("UbuntuMono.ttf"), 32.0, atlas)?;
         Ok(FontStore { array: [ubuntu] })
     }
 

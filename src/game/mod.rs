@@ -11,6 +11,7 @@ use halcyon::{
     renderer::Renderer,
     resource::Resource,
     traits::BlendModeable,
+    ttf,
     util::c_ptr_to_str,
     window::Window,
 };
@@ -24,12 +25,10 @@ use crate::{
     font::store::FontStore,
     game::resources::Resources,
     ui::{Layer, ResizeInfo},
-    util::{lazystatic::LazyStatic, resource_loader::ResourceLoader, scheduler::Scheduler},
+    util::{resource_loader::ResourceLoader, scheduler::Scheduler},
 };
 
 pub mod resources;
-
-static GAME: LazyStatic<Game> = LazyStatic::new();
 
 pub struct Game<'t> {
     pub data: Resources<'t>,
@@ -38,29 +37,7 @@ pub struct Game<'t> {
 }
 
 impl Game<'_> {
-    pub fn init() -> Result {
-        match Self::new() {
-            Ok(g) => {
-                GAME.init(g);
-                Ok(())
-            }
-            Err(e) => Err(e),
-        }
-    }
-
-    pub fn drop() {
-        GAME.drop();
-    }
-
-    pub fn get() -> &'static Self {
-        GAME.get()
-    }
-
-    pub fn get_mut() -> &'static mut Self {
-        GAME.get_mut()
-    }
-
-    fn new<'t>() -> Result<Game<'t>> {
+    pub fn new<'t>(ttf: &'t ttf::Context) -> Result<Game<'t>> {
         let props = Properties::global()?;
 
         let wnd = Window::builder(props)
@@ -89,7 +66,7 @@ impl Game<'_> {
 
         let res_ldr = ResourceLoader::from_pref()?;
         let mut atlas = Atlas::new();
-        let store = FontStore::new(res_ldr, &mut atlas)?;
+        let store = FontStore::new(ttf, res_ldr, &mut atlas)?;
         let data = Resources::new(atlas, rnd, wnd, device, store);
         let console = Console::new(&data);
         let sched = Scheduler::new();
