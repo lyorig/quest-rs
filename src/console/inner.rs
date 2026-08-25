@@ -14,7 +14,7 @@ use crate::{
     chk,
     console::{CONSOLE_FONT, PREFIX_TEXT, cache::Cache, command, field::Field},
     font::store::FontStore,
-    game::resources::Resources,
+    game::Game,
 };
 
 pub const TEXT_OFFSET: PointF32 = PointF32::new(10.0, 10.0);
@@ -91,7 +91,7 @@ impl Inner {
         cd.clamp_line(rnd);
     }
 
-    pub fn process_command(&mut self, res: &mut Resources) {
+    pub fn process_command(&mut self, res: &mut Game) {
         let mut args = self.field.text.split(' ');
         if let Some(name) = args.next()
             && !name.is_empty()

@@ -2,14 +2,10 @@ use std::{fmt::Write, str::Split};
 
 use halcyon::{error::Error, resource::Resource};
 
-use crate::{
-    atlas::viewer::Viewer,
-    console::cache::Cache,
-    game::{Game, resources::Resources},
-};
+use crate::{atlas::viewer::Viewer, console::cache::Cache, game::Game};
 
 type ArgsSplit<'a> = Split<'a, char>;
-type CommandFn = fn(&mut Resources, ArgsSplit);
+type CommandFn = fn(&mut Game, ArgsSplit);
 
 pub struct Command {
     name: &'static str,
@@ -22,12 +18,12 @@ impl Command {
         Self { name, help, func }
     }
 
-    pub fn execute(&self, res: &mut Resources, args: ArgsSplit) {
+    pub fn execute(&self, res: &mut Game, args: ArgsSplit) {
         (self.func)(res, args)
     }
 }
 
-fn cmd_help(res: &mut Resources, mut args: ArgsSplit) {
+fn cmd_help(res: &mut Game, mut args: ArgsSplit) {
     let cmd = args.next();
     match cmd {
         Some(cmd) => match find(cmd) {
@@ -41,21 +37,21 @@ fn cmd_help(res: &mut Resources, mut args: ArgsSplit) {
     }
 }
 
-fn cmd_exit(_: &mut Resources, _: ArgsSplit) {
+fn cmd_exit(_: &mut Game, _: ArgsSplit) {
     Game::quit();
 }
 
-fn cmd_commit(res: &mut Resources, _: ArgsSplit) {
+fn cmd_commit(res: &mut Game, _: ArgsSplit) {
     _ = writeln!(res.writer(), env!("BUILD_COMMIT_HASH"));
 }
 
-fn cmd_test_args(res: &mut Resources, args: ArgsSplit) {
+fn cmd_test_args(res: &mut Game, args: ArgsSplit) {
     for (i, arg) in args.enumerate() {
         _ = writeln!(res.writer(), "{i}: {arg}");
     }
 }
 
-fn cmd_font(res: &mut Resources, mut args: ArgsSplit) {
+fn cmd_font(res: &mut Game, mut args: ArgsSplit) {
     let Some(arg) = args.next() else {
         _ = writeln!(res.writer(), "usage: font <subcommand>");
         return;
@@ -73,7 +69,7 @@ fn cmd_font(res: &mut Resources, mut args: ArgsSplit) {
     }
 }
 
-fn cmd_atlas(res: &mut Resources, mut args: ArgsSplit) {
+fn cmd_atlas(res: &mut Game, mut args: ArgsSplit) {
     let Some(arg) = args.next() else {
         _ = writeln!(res.writer(), "usage: atlas <subcommand>");
         return;
@@ -103,11 +99,11 @@ fn cmd_atlas(res: &mut Resources, mut args: ArgsSplit) {
     }
 }
 
-fn cmd_clear(game: &mut Resources, _: ArgsSplit) {
+fn cmd_clear(game: &mut Game, _: ArgsSplit) {
     game.console_cache.clear(&mut game.fonts);
 }
 
-fn cmd_commands(res: &mut Resources, mut args: ArgsSplit) {
+fn cmd_commands(res: &mut Game, mut args: ArgsSplit) {
     _ = writeln!(res.writer(), "available commands:");
     if args.next().is_some_and(|c| c == "--with-help") {
         COMMANDS.iter().for_each(|c| {
@@ -121,7 +117,7 @@ fn cmd_commands(res: &mut Resources, mut args: ArgsSplit) {
     }
 }
 
-fn cmd_last_error(res: &mut Resources, _: ArgsSplit) {
+fn cmd_last_error(res: &mut Game, _: ArgsSplit) {
     _ = writeln!(res.writer(), "\"{}\"", Error::current());
 }
 
