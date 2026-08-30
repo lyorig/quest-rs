@@ -29,7 +29,7 @@ fn fail(e: Error) {
     ));
 }
 
-fn run() -> Result {
+fn run() -> Result<()> {
     let ctx = halcyon::Context::new();
     let _vid = ManuallyDrop::new(Video::new(&ctx)?);
 

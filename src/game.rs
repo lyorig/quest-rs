@@ -1,3 +1,4 @@
+use halcyon::{traits::BlendMode as _, ttf};
 use std::time::Instant;
 
 use halcyon::{
@@ -10,8 +11,6 @@ use halcyon::{
     renderer::Renderer,
     resource::Resource,
     surface::Surface,
-    traits::BlendModeable,
-    ttf,
     util::c_ptr_to_str,
     window::Window,
 };

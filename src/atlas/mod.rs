@@ -1,3 +1,4 @@
+use halcyon::traits::BlendMode as _;
 use std::fmt::Display;
 
 use halcyon::{
@@ -9,7 +10,6 @@ use halcyon::{
     resource::{Ref, Resource},
     surface::Surface,
     texture::{PixelFormat, Texture, TextureAccess},
-    traits::BlendModeable,
 };
 
 use rectpack2d_rs::{
