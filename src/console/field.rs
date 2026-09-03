@@ -1,15 +1,10 @@
 use halcyon::clipboard;
 use sdl3_sys::keycode::*;
 
-use crate::{
-    atlas::Atlas,
-    font::store::{FontId, FontStore},
-};
+use crate::{atlas::Atlas, console::CONSOLE_FONT, font::store::FontStore};
 
 const MAX_CHARS: usize = 32;
 
-/// Represents [`super::Console`]'s text input field.
-///
 /// This is an intermediary between the console's graphical
 /// presentation of what's being typed, and the in-memory one.
 /// As such, many functions are written in a way that perform
@@ -48,7 +43,7 @@ impl Field {
         self.text.insert_str(self.cursor_byte_index(), &fil);
         self.cursor += fil.len();
 
-        fonts.alloc(FontId::UBUNTU_MONO, &fil, atlas);
+        fonts.alloc(CONSOLE_FONT, &fil, atlas);
     }
 
     /// Returns whether the cursor should be moved.

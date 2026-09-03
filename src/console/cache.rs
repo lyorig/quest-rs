@@ -78,7 +78,7 @@ pub struct Cache {
 
 impl Cache {
     pub fn new(fonts: &FontStore, rnd: Ref<Renderer>) -> Self {
-        let glyph_size = fonts.glyph_size(CONSOLE_FONT).as_f32();
+        let glyph_size = fonts.glyph_size(CONSOLE_FONT).to_f32();
 
         let mut ret = Self {
             placeholder_index: 0,

@@ -11,7 +11,7 @@ pub struct ResourceLoader {
 
 impl ResourceLoader {
     pub fn from_pref() -> Result<Self> {
-        halcyon::pref_path(c"cz.lyorig", c"quest").map(|s| Self {
+        halcyon::fs::pref_path(c"cz.lyorig", c"quest").map(|s| Self {
             root: s.into_boxed_str(),
         })
     }
